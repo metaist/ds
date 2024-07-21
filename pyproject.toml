@@ -95,7 +95,8 @@ docs = { shell = """\
     --output-dir docs \
     --config sort_identifiers=False \
     --config show_inherited_members=True \
-    --force $(basename $(pwd))
+    --force $(basename $(pwd));
+  mv docs/* docs/
 """ }
 
 lint = { composite = ["black", "ruff", "cspell", "pyright", "mypy"] }
