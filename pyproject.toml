@@ -1,0 +1,103 @@
+[build-system]
+requires = ["setuptools >= 40.8.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ds = ["py.typed"]
+
+[project.scripts]
+ds = "ds:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "ds.__version__" }
+
+[project.urls]
+Homepage = "https://github.com/metaist/ds"
+Documentation = "https://metaist.github.io/ds/"
+Repository = "https://github.com/metaist/ds.git"
+Changelog = "https://github.com/metaist/ds/blob/main/CHANGELOG.md"
+
+[project]
+name = "ds"
+description = "run developer scripts"
+keywords = ["developer", "scripts"]
+
+dynamic = ["version"]
+requires-python = ">=3.8"
+dependencies = [
+  # app => version pinned exactly
+  "tomli==2.0.1", # TODO 2026-10-04 [3.10 EOL]: remove
+]
+optional-dependencies = { dev = [
+  # dev => version latest
+  "black",
+  "coverage",
+  "mypy",
+  "pdm",
+  "pdoc3",
+  "pyright",
+  "pytest-cov",
+  "pytest",
+  "ruff",
+] }
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Metaist LLC", email = "metaist@metaist.com" }]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  # "Topic :: Software Development :: Libraries",
+  "Typing :: Typed",
+]
+
+[tool.pdm.scripts]
+black = { shell = "black ." }
+ruff = { shell = "ruff format ." }
+cspell = { shell = "cspell --gitignore '**/*.{py,txt,md,markdown}'" }
+pyright = { shell = "pyright src test" }
+
+mypy = { shell = """\
+  mypy \
+    --strict \
+    --install-types \
+    --non-interactive \
+    src test
+""" }
+
+test = { shell = """\
+  PYTHONPATH=src \
+  coverage run --branch --source=src -m \
+    pytest \
+      --doctest-modules \
+      --doctest-ignore-import-errors \
+      src test; \
+  coverage report -m
+""" }
+
+docs = { shell = """\
+  rm -rf docs; \
+  pdoc \
+    --html \
+    --output-dir docs \
+    --config sort_identifiers=False \
+    --config show_inherited_members=True \
+    --force $(basename $(pwd))
+""" }
+
+lint = { composite = ["black", "ruff", "cspell", "pyright", "mypy"] }
+dev = { composite = ["lint", "test"] }
+all = { composite = ["lint", "test", "docs"] }

@@ -1,0 +1,30 @@
+.env
+
+# general
+_ignore*
+_seed.py
+.venv*
+*.db
+
+# editors
+.idea
+.vim
+.vscode
+*.code-workspace
+.DS_Store
+
+# run
+__pycache__
+
+# test
+.coverage
+.mypy_cache
+.pytest_cache
+.ruff_cache
+/htmlcov
+
+# build
+.pdm-python
+*.egg-info
+/build
+/dist

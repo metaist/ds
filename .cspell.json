@@ -1,0 +1,21 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "codeql",
+    "docopt",
+    "metaist",
+    "mypy",
+    "pathlib",
+    "pdoc3",
+    "pypa",
+    "pypi",
+    "pyproject",
+    "pyright",
+    "pytest",
+    "setuptools",
+    "tomllib",
+    "typechecks",
+    "venv"
+  ]
+}
