@@ -70,7 +70,7 @@ Sections order is: `Fixed`, `Changed`, `Added`, `Deprecated`, `Removed`, `Securi
 export VER="X.0.1"
 
 # update docs
-pdm docs
+ds docs
 
 # check build
 pip install -e .
