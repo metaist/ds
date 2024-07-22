@@ -1,0 +1,44 @@
+# dev scripts <https://github.com/metaist/ds>
+[scripts]
+ruff = "ruff format . && ruff check ."
+cspell = "cspell --gitignore '**/*.{py,txt,md,markdown}'"
+pyright = "pyright src test"
+
+mypy = """\
+  mypy \
+    --strict \
+    --install-types \
+    --non-interactive \
+    src test
+"""
+
+test = """\
+  PYTHONPATH=src \
+  coverage run --branch --source=src -m \
+    pytest \
+      --doctest-modules \
+      --doctest-ignore-import-errors \
+      src test; \
+  coverage report -m
+"""
+
+docs = """\
+  rm -rf docs; \
+  pdoc \
+    --html \
+    --output-dir docs \
+    --config sort_identifiers=False \
+    --config show_inherited_members=True \
+    --force $(basename $(pwd));
+  mv docs/ds.html docs/index.html
+"""
+
+lint = ["ruff", "cspell", "pyright", "mypy"]
+dev = ["lint", "test"]
+all = ["lint", "test", "docs"]
+
+# for unit testing
+_foo = "touch foo.txt"
+_ls = "ls -la"
+_clean = "rm foo.txt"
+_tests = ["_foo", "_ls", "_clean"]

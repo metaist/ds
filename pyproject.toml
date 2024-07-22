@@ -29,14 +29,12 @@ dynamic = ["version"]
 requires-python = ">=3.8"
 dependencies = [
   # app => version pinned exactly
-  "tomli==2.0.1", # TODO 2026-10-04 [3.10 EOL]: remove
+  "tomli==2.0.1; python_version < '3.11'", # TODO 2026-10-04 [3.10 EOL]: remove
 ]
 optional-dependencies = { dev = [
   # dev => version latest
-  "black",
   "coverage",
   "mypy",
-  "pdm",
   "pdoc3",
   "pyright",
   "pytest-cov",
@@ -63,42 +61,3 @@ classifiers = [
   # "Topic :: Software Development :: Libraries",
   "Typing :: Typed",
 ]
-
-[tool.pdm.scripts]
-black = { shell = "black ." }
-ruff = { shell = "ruff format ." }
-cspell = { shell = "cspell --gitignore '**/*.{py,txt,md,markdown}'" }
-pyright = { shell = "pyright src test" }
-
-mypy = { shell = """\
-  mypy \
-    --strict \
-    --install-types \
-    --non-interactive \
-    src test
-""" }
-
-test = { shell = """\
-  PYTHONPATH=src \
-  coverage run --branch --source=src -m \
-    pytest \
-      --doctest-modules \
-      --doctest-ignore-import-errors \
-      src test; \
-  coverage report -m
-""" }
-
-docs = { shell = """\
-  rm -rf docs; \
-  pdoc \
-    --html \
-    --output-dir docs \
-    --config sort_identifiers=False \
-    --config show_inherited_members=True \
-    --force $(basename $(pwd));
-  mv docs/* docs/
-""" }
-
-lint = { composite = ["black", "ruff", "cspell", "pyright", "mypy"] }
-dev = { composite = ["lint", "test"] }
-all = { composite = ["lint", "test", "docs"] }

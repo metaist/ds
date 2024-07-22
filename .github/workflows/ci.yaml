@@ -32,26 +32,22 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -e ".[dev]"
 
-      - name: Format (black)
+      - name: Format & Lint (ruff)
         run: |
-          pdm run black
-
-      - name: Lint (ruff)
-        run: |
-          pdm run ruff
+          ds ruff
 
       - name: Type check (mypy)
         run: |
-          pdm run mypy
+          ds mypy
 
-      # - name: Type check (pyright)
-      #   run: |
-      #     pdm run pyright
+      - name: Type check (pyright)
+        run: |
+          ds pyright
 
       - name: Run tests
         run: |
-          pdm run test
+          ds test
 
       - name: Build docs
         run: |
-          pdm run docs
+          ds docs
