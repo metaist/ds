@@ -18,6 +18,7 @@ def test_single() -> None:
     """Run a task."""
     tasks: Tasks = {"ls": "ls -la"}
     run_task(tasks, "ls")
+    run_task(tasks, "ls", ["-h"])
 
 
 def test_multiple() -> None:

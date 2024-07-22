@@ -17,6 +17,7 @@ from typing import List
 from typing import Optional
 from typing import Union
 import os
+import shlex
 import sys
 import textwrap
 
@@ -35,7 +36,7 @@ class Args:
     """ds: Run dev scripts.
 
     Usage: ds [--help | --version] [--debug]
-              [--list | <task>...]
+              [--list | (<task> [<options> --])...]
 
     Options:
     -h, --help                    show this message and exit
@@ -44,10 +45,21 @@ class Args:
 
     -l, --list                    list available tasks
     <task>                        one or more tasks to run
+    <options>                     task-specific arguments;
+        use double dashes (--) to end arguments for a task
 
     Examples:
-    Run the build task.
+    Run the task named build:
     $ ds build
+
+    Run tasks named clean and build:
+    $ ds clean build
+
+    If one task fails, subsequent tasks are not run.
+
+    Provide arguments to one or more tasks (the following are equivalent):
+    $ ds clean --all -- build test --no-gpu
+    $ ds clean --all && ds build && ds test --no-gpu
     """
 
     help: bool = False
@@ -62,7 +74,7 @@ class Args:
     list_: bool = False
     """-l, --list           show available tasks"""
 
-    task: List[str] = field(default_factory=list)
+    task: Dict[str, List[str]] = field(default_factory=dict)
     """<task>               one or more tasks to run"""
 
 
@@ -70,17 +82,18 @@ Tasks = Dict[str, Union[str, List[str]]]
 """Mapping a task name to a command or names of other tasks."""
 
 
-def run_task(tasks: Tasks, name: str) -> None:
+def run_task(tasks: Tasks, name: str, args: Optional[List[str]] = None) -> None:
     """Run a task."""
     cmd = tasks.get(name)
     if cmd is None:
         raise ValueError(f"Unknown task: {name}")
     elif isinstance(cmd, list):
         for n in cmd:
-            run_task(tasks, n)
+            run_task(tasks, n, args)
         return
 
     assert isinstance(cmd, str)
+    cmd = f"{cmd} {shlex.join(args or [])}"
     print(f"\n$ {cmd}")
     proc = run(cmd, shell=True, text=True)
     if proc.returncode != 0:
@@ -133,18 +146,37 @@ def find_config(start: Path, debug: bool = False) -> Optional[Path]:
 def parse_args(argv: List[str]) -> Args:
     """Parse command-line arguments in a docopt-like way."""
     args = Args()
+    is_ours = True
+    is_task = False
+    task = ""
     while argv:
         arg = argv.pop(0)
-        if arg in ["--help", "--version", "--debug"]:
-            setattr(args, arg[2:], True)
+        if is_ours:
+            if arg in ["--help", "--version", "--debug"]:
+                setattr(args, arg[2:], True)
+                continue
+            elif arg == "-h":
+                args.help = True
+            elif arg in ["-l", "--list"]:
+                args.list_ = True
+            else:
+                is_ours = False
+        # our args processed
+
+        if task and arg.startswith("-"):  # start task args
+            is_task = True
+
+        if arg == "--":  # end task args
+            task, is_task = "", False
             continue
-        elif arg == "-h":
-            args.help = True
-        elif arg in ["-l", "--list"]:
-            args.list_ = True
-        else:
-            args.task.append(arg)
-    # args processed
+
+        if is_task:  # add task args
+            args.task[task].append(arg)
+            continue
+
+        task = arg
+        args.task[task] = []
+    # all args processed
 
     if args.help:
         # https://github.com/python/mypy/issues/9170
@@ -181,13 +213,16 @@ def main(argv: Optional[List[str]] = None) -> None:
         print_tasks(path, tasks)
         sys.exit(0)
 
-    os.chdir(path.parent)
-    for name in args.task:
-        run_task(tasks, name)
+    try:
+        os.chdir(path.parent)
+        for name, extra in args.task.items():
+            run_task(tasks, name, extra)
+    except ValueError as e:
+        print(e)
+        sys.exit(1)
+    except KeyboardInterrupt:  # pragma: no cover
+        return
 
 
 if __name__ == "__main__":  # pragma: no cover
-    try:
-        main()
-    except KeyboardInterrupt:
-        pass
+    main()
