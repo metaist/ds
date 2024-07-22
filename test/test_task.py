@@ -19,6 +19,7 @@ def test_single() -> None:
     tasks: Tasks = {"ls": "ls -la"}
     run_task(tasks, "ls")
     run_task(tasks, "ls", ["-h"])
+    run_task(tasks, "ls", ["test"])
 
 
 def test_multiple() -> None:

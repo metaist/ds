@@ -22,6 +22,7 @@ def test_parse_args() -> None:
     assert parse_args(shlex.split("--debug a --debug -- b")) == Args(
         debug=True, task={"a": ["--debug"], "b": []}
     )
+    assert parse_args(shlex.split("a : b -- c")) == Args(task={"a": ["b"], "c": []})
 
 
 def test_help() -> None:

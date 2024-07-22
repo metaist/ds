@@ -159,18 +159,24 @@ def parse_args(argv: List[str]) -> Args:
                 continue
             elif arg == "-h":
                 args.help = True
+                continue
             elif arg in ["-l", "--list"]:
                 args.list_ = True
+                continue
             else:
                 is_ours = False
         # our args processed
 
-        if task and arg.startswith("-"):  # start task args
+        if task and arg == ":":  # explicit arg start
             is_task = True
+            continue  # not an argument
 
-        if arg == "--":  # end task args
+        if arg == "--":  # explicit arg end
             task, is_task = "", False
-            continue
+            continue  # not an argument
+
+        if task and arg.startswith("-"):  # implicit arg start
+            is_task = True
 
         if is_task:  # add task args
             args.task[task].append(arg)
