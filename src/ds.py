@@ -42,7 +42,7 @@ class Args:
     --version                     show program version and exit
     --debug                       show debug messages
 
-    -l, --list                    list available task
+    -l, --list                    list available tasks
     <task>                        one or more tasks to run
 
     Examples:
