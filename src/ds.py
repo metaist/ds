@@ -16,6 +16,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+import os
 import sys
 import textwrap
 
@@ -180,6 +181,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         print_tasks(path, tasks)
         sys.exit(0)
 
+    os.chdir(path.parent)
     for name in args.task:
         run_task(tasks, name)
 
