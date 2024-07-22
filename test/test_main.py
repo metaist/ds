@@ -56,8 +56,8 @@ def test_list() -> None:
 
 def test_task() -> None:
     """Run some dummy tasks."""
-    main(shlex.split("ds _tests"))
-    main(shlex.split("ds --debug _tests"))
+    main(shlex.split("ds -f test/ds.toml _tests"))
+    main(shlex.split("ds -f test/ds.toml --debug _tests"))
 
 
 def test_no_task() -> None:

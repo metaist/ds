@@ -33,13 +33,15 @@ __pubdate__ = "unpublished"
 usage = """ds: Run dev scripts.
 
 Usage: ds [--help | --version] [--debug]
-            [--list | (<task> [<options> --])...]
+          [--file PATH]
+          [--list | (<task> [<options> --])...]
 
 Options:
   -h, --help                    show this message and exit
   --version                     show program version and exit
   --debug                       show debug messages
 
+  -f PATH, --file PATH          read tasks from file
   -l, --list                    list available tasks
   <task>                        one or more tasks to run
   <options>                     task-specific arguments;
@@ -73,6 +75,9 @@ class Args:
     debug: bool = False
     """Whether to show debug messages"""
 
+    file_: Optional[Path] = None
+    """Path to task definitions."""
+
     list_: bool = False
     """Whether to show available tasks"""
 
@@ -84,18 +89,18 @@ Tasks = Dict[str, Union[str, List[str]]]
 """Mapping a task name to a command or names of other tasks."""
 
 
-def run_task(tasks: Tasks, name: str, args: Optional[List[str]] = None) -> None:
+def run_task(tasks: Tasks, name: str, extra: Optional[List[str]] = None) -> None:
     """Run a task."""
     cmd = tasks.get(name)
     if cmd is None:
         raise ValueError(f"Unknown task: {name}")
     elif isinstance(cmd, list):
         for n in cmd:
-            run_task(tasks, n, args)
+            run_task(tasks, n, extra)
         return
 
     assert isinstance(cmd, str)
-    cmd = f"{cmd} {shlex.join(args or [])}"
+    cmd = f"{cmd} {shlex.join(extra or [])}"
     print(f"\n$ {cmd}")
     proc = run(cmd, shell=True, text=True)
     if proc.returncode != 0:
@@ -163,6 +168,9 @@ def parse_args(argv: List[str]) -> Args:
             elif arg in ["-l", "--list"]:
                 args.list_ = True
                 continue
+            elif arg in ["-f", "--file"]:
+                args.file_ = Path(argv.pop(0)).resolve()
+                continue
             else:
                 is_ours = False
         # our args processed
@@ -203,7 +211,10 @@ def parse_args(argv: List[str]) -> Args:
 def main(argv: Optional[List[str]] = None) -> None:
     """Main entry point."""
     args = parse_args((argv or sys.argv)[1:])
-    path = find_config(Path("."), args.debug)
+    if args.debug:
+        print("CWD:", Path.cwd())
+
+    path = args.file_ or find_config(Path("."), args.debug)
     if not path or not path.exists():
         print(f"ERROR: Could not find: {', '.join(PARSERS)}.")
         sys.exit(1)
@@ -220,9 +231,11 @@ def main(argv: Optional[List[str]] = None) -> None:
         sys.exit(0)
 
     try:
+        curr = os.getcwd()
         os.chdir(path.parent)
         for name, extra in args.task.items():
             run_task(tasks, name, extra)
+        os.chdir(curr)
     except ValueError as e:
         print(e)
         sys.exit(1)

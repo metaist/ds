@@ -1,0 +1,5 @@
+[scripts]
+_foo = "touch foo.txt"
+_ls = "ls -la"
+_clean = "rm foo.txt"
+_tests = ["_foo", "_ls", "_clean"]
