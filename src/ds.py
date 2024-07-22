@@ -30,52 +30,54 @@ else:  # pragma: no cover
 __version__ = "0.1.0"
 __pubdate__ = "unpublished"
 
+usage = """ds: Run dev scripts.
+
+Usage: ds [--help | --version] [--debug]
+            [--list | (<task> [<options> --])...]
+
+Options:
+  -h, --help                    show this message and exit
+  --version                     show program version and exit
+  --debug                       show debug messages
+
+  -l, --list                    list available tasks
+  <task>                        one or more tasks to run
+  <options>                     task-specific arguments;
+      use double dashes (--) to end arguments for a task
+
+Examples:
+Run the task named build:
+$ ds build
+
+Run tasks named clean and build:
+$ ds clean build
+
+If one task fails, subsequent tasks are not run.
+
+Provide arguments to one or more tasks (the following are equivalent):
+$ ds clean --all -- build test --no-gpu
+$ ds clean --all && ds build && ds test --no-gpu
+"""
+
 
 @dataclass
 class Args:
-    """ds: Run dev scripts.
-
-    Usage: ds [--help | --version] [--debug]
-              [--list | (<task> [<options> --])...]
-
-    Options:
-    -h, --help                    show this message and exit
-    --version                     show program version and exit
-    --debug                       show debug messages
-
-    -l, --list                    list available tasks
-    <task>                        one or more tasks to run
-    <options>                     task-specific arguments;
-        use double dashes (--) to end arguments for a task
-
-    Examples:
-    Run the task named build:
-    $ ds build
-
-    Run tasks named clean and build:
-    $ ds clean build
-
-    If one task fails, subsequent tasks are not run.
-
-    Provide arguments to one or more tasks (the following are equivalent):
-    $ ds clean --all -- build test --no-gpu
-    $ ds clean --all && ds build && ds test --no-gpu
-    """
+    """Type-checked arguments."""
 
     help: bool = False
-    """-h, --help           show usage and exit"""
+    """Whether to show the usage."""
 
     version: bool = False
-    """--version            show version and exit"""
+    """Whether to show the version."""
 
     debug: bool = False
-    """--debug              show debug messages"""
+    """Whether to show debug messages"""
 
     list_: bool = False
-    """-l, --list           show available tasks"""
+    """Whether to show available tasks"""
 
     task: Dict[str, List[str]] = field(default_factory=dict)
-    """<task>               one or more tasks to run"""
+    """Mapping of task names to extra arguments."""
 
 
 Tasks = Dict[str, Union[str, List[str]]]
@@ -179,9 +181,7 @@ def parse_args(argv: List[str]) -> Args:
     # all args processed
 
     if args.help:
-        # https://github.com/python/mypy/issues/9170
-        assert Args.__doc__ is not None
-        print(textwrap.dedent("\n    " + Args.__doc__).lstrip())
+        print(usage)
         return sys.exit(0)
 
     if args.version:
