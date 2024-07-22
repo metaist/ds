@@ -68,6 +68,8 @@ def test_no_task() -> None:
 
 def test_no_config() -> None:
     """Fail to find a config file."""
+    curr = os.getcwd()
     os.chdir("/")
     with pytest.raises(SystemExit):
         main(shlex.split("ds _tests"))
+    os.chdir(curr)
