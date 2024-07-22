@@ -8,6 +8,7 @@
 # std
 from dataclasses import dataclass
 from dataclasses import field
+from os.path import relpath
 from pathlib import Path
 from subprocess import run
 from typing import Any
@@ -32,13 +33,15 @@ __pubdate__ = "unpublished"
 class Args:
     """ds: Run dev scripts.
 
-    Usage: ds [--help | --version] [--debug] <task>...
+    Usage: ds [--help | --version] [--debug]
+              [--list | <task>...]
 
     Options:
     -h, --help                    show this message and exit
     --version                     show program version and exit
     --debug                       show debug messages
 
+    -l, --list                    list available task
     <task>                        one or more tasks to run
 
     Examples:
@@ -55,8 +58,11 @@ class Args:
     debug: bool = False
     """--debug              show debug messages"""
 
+    list_: bool = False
+    """-l, --list           show available tasks"""
+
     task: List[str] = field(default_factory=list)
-    """<task>               one or more names """
+    """<task>               one or more tasks to run"""
 
 
 Tasks = Dict[str, Union[str, List[str]]]
@@ -78,6 +84,16 @@ def run_task(tasks: Tasks, name: str) -> None:
     proc = run(cmd, shell=True, text=True)
     if proc.returncode != 0:
         sys.exit(proc.returncode)
+
+
+def print_tasks(path: Path, tasks: Tasks) -> None:
+    """Pretty print task names."""
+    print(f"Available tasks (from {relpath(path, Path.cwd())}):\n")
+    for name, task in tasks.items():
+        cmd = str(task)
+        if len(cmd) > 60:
+            cmd = textwrap.indent(textwrap.fill(cmd, 60), " " * 22)[22:] + "\n"
+        print(f"  {name:15}     {cmd}")
 
 
 def parse_ds(config: Dict[str, Any]) -> Tasks:
@@ -123,6 +139,8 @@ def parse_args(argv: List[str]) -> Args:
             continue
         elif arg == "-h":
             args.help = True
+        elif arg in ["-l", "--list"]:
+            args.list_ = True
         else:
             args.task.append(arg)
     # args processed
@@ -157,6 +175,11 @@ def main(argv: Optional[List[str]] = None) -> None:
     config = toml.loads(path.read_text())
     parser = PARSERS[path.name]
     tasks = parser(config)
+
+    if args.list_ or not args.task:
+        print_tasks(path, tasks)
+        sys.exit(0)
+
     for name in args.task:
         run_task(tasks, name)
 

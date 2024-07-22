@@ -42,6 +42,14 @@ def test_version(capsys: CaptureFixture[str]) -> None:
     assert captured.out.startswith(__version__)
 
 
+def test_list() -> None:
+    """--list shows available tasks"""
+    for arg in ["", "-l", "--list"]:
+        with pytest.raises(SystemExit) as e:
+            main(shlex.split(f"ds {arg}"))
+        assert e.value.code == 0
+
+
 def test_task() -> None:
     """Run some dummy tasks."""
     main(shlex.split("ds _tests"))
