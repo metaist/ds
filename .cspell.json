@@ -5,6 +5,7 @@
     "capsys",
     "codeql",
     "docopt",
+    "justfile",
     "metaist",
     "mypy",
     "pathlib",
