@@ -18,10 +18,10 @@ from typing import Union
 import sys
 import textwrap
 
-# TODO 2026-10-04 [3.10 EOL]: switch to native tomllib
-try:
-    import tomllib as toml  # type: ignore
-except ImportError:
+# TODO 2026-10-04 [3.10 EOL]: remove conditional
+if sys.version_info >= (3, 11):  # pragma: no cover
+    import tomllib as toml
+else:  # pragma: no cover
     import tomli as toml
 
 __version__ = "0.1.0"
