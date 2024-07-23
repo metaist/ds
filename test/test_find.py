@@ -10,7 +10,7 @@ from ds import find_config
 def test_no_config() -> None:
     """Fail to find a config."""
     assert find_config(Path("/")) is None
-    assert find_config(Path("/"), True) is None
+    assert find_config(Path("/"), debug=True) is None
 
 
 def test_find_config() -> None:

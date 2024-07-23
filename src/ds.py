@@ -6,14 +6,17 @@
 """
 
 # std
+from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 from os.path import relpath
 from pathlib import Path
 from subprocess import run
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Union
 import json
@@ -81,6 +84,19 @@ $ ds clean --all && ds build && ds test --no-gpu
 """
 
 
+Loader = Callable[[str], Dict[str, Any]]
+"""A loader takes text and returns a mapping of strings to values."""
+
+LOADERS: Dict[str, Loader] = {".toml": toml.loads, ".json": json.loads}
+"""Mapping of file extensions to string load functions."""
+
+SEARCH_FILES = ["ds.toml", ".ds.toml", "package.json", "pyproject.toml"]
+"""Search order for configuration file names."""
+
+SEARCH_KEYS = ["scripts", "tool.ds.scripts", "tool.pdm.scripts"]
+"""Search order for configuration keys."""
+
+
 @dataclass
 class Args:
     """Type-checked arguments."""
@@ -107,26 +123,146 @@ class Args:
     """Mapping of task names to extra arguments."""
 
 
-Tasks = Dict[str, Union[str, List[str]]]
-"""Mapping a task name to a command or names of other tasks."""
+@dataclass
+class Task:
+    """Represents a thing to be done."""
+
+    name: str = ""
+    """Name of the task."""
+
+    cmd: str = ""
+    """Shell command to execute after `depends`."""
+
+    depends: List[Task] = field(default_factory=list)
+    """Tasks to execute before this one."""
+
+    keep_going: bool = False
+    """Ignore a non-zero return code."""
+
+    @staticmethod
+    def parse(config: Any) -> Task:
+        """Parse a config into a `Task`."""
+        task = Task()
+        if isinstance(config, list):
+            task.depends.extend(Task.parse(x) for x in config)
+
+        elif isinstance(config, str):
+            task.cmd = config
+            if config.startswith("-"):  # suppress error
+                task.cmd = config[1:]
+                task.keep_going = True
+
+        elif isinstance(config, Mapping):
+            if "composite" in config:
+                assert isinstance(config["composite"], list)
+                task = Task.parse(config["composite"])
+
+            elif "shell" in config:
+                task.cmd = str(config["shell"])
+
+            elif "cmd" in config:
+                cmd = config["cmd"]
+                task.cmd = shlex.join(cmd) if isinstance(cmd, list) else str(cmd)
+
+            elif "call" in config:
+                # See: https://github.com/pdm-project/pdm/blob/c76e982e46c6e77a54a0fca4d4417eabb70cc85d/src/pdm/cli/commands/run.py#L333
+                cmd = config["call"]
+                assert isinstance(cmd, str)
+                mod, _, f = cmd.partition(":")
+                if not f.endswith(")"):
+                    f += "()"
+                task.cmd = f"python -c 'import sys, {mod} as _1; sys.exit(_1.{f})'"
+        else:
+            raise TypeError(f"Unknown task type: {config}")
+        return task
+
+    def pprint(self) -> None:
+        """Pretty-print a representation of this task."""
+        cmd = f"{'-' if self.keep_going else ''}{self.cmd}"
+        if self.depends:
+            cmd = str([t.cmd for t in self.depends])
+
+        indent = " " * 4
+        print(f"{self.name}:")
+        if len(cmd) < 80 - len(indent):
+            print(f"{indent}{cmd.strip()}\n")
+        else:
+            print(
+                textwrap.fill(
+                    cmd.strip(),
+                    78,
+                    initial_indent=indent,
+                    subsequent_indent=indent,
+                    break_on_hyphens=False,
+                    tabsize=len(indent),
+                ).replace("\n", " \\\n")
+                + "\n"
+            )
+
+    def run(
+        self, tasks: Tasks, extra: Optional[List[str]] = None, keep_going: bool = False
+    ) -> int:
+        """Run this task."""
+        extra = extra or []
+        keep_going = keep_going or self.keep_going
+
+        # First, run all the dependencies.
+        for dep in self.depends:
+            try:
+                dep.run(tasks, extra)
+            except SystemExit as e:
+                if not keep_going:
+                    raise e
+
+        if not self.cmd.strip():  # nothing to do
+            return 0
+
+        # Next try to run this task.
+        cmd, *args = shlex.split(self.cmd)
+        if cmd in tasks and self != tasks[cmd]:
+            # TODO: do I need a try/catch here?
+            code = tasks[cmd].run(tasks, args + extra, keep_going=keep_going)
+        else:
+            cmd = f"{self.cmd} {" ".join(extra)}".strip()
+            print(f"\n$ {cmd}")
+            # TODO: can I just use check=not keep_going
+            proc = run(cmd, shell=True, text=True)
+            code = proc.returncode
+
+        if code != 0 and not keep_going:
+            sys.exit(code)
+        return 0  # either it was zero or we keep going
+
+
+Tasks = Dict[str, Task]
+"""Mapping a task name to a `Task`."""
+
+
+def get_path(
+    src: Dict[str, Any], path: Union[str, List[str]], default: Optional[Any] = None
+) -> Any:
+    """Return"""
+    if isinstance(path, str):
+        path = path.split(".")
+
+    result: Any = default
+    try:
+        for key in path:
+            result = src[key]  # take step
+            if isinstance(result, dict):
+                src = result  # preserve context
+    except (KeyError, IndexError, TypeError):
+        # key doesn't exist, index is unreachable, or item is not indexable
+        result = default
+    return result
 
 
 def run_task(tasks: Tasks, name: str, extra: Optional[List[str]] = None) -> None:
     """Run a task."""
-    cmd = tasks.get(name)
-    if cmd is None:
+    task = tasks.get(name)
+    if task is None:
         raise ValueError(f"Unknown task: {name}")
-    elif isinstance(cmd, list):
-        for n in cmd:
-            run_task(tasks, n, extra)
-        return
-
-    assert isinstance(cmd, str)
-    cmd = f"{cmd} {shlex.join(extra or [])}"
-    print(f"\n$ {cmd}")
-    proc = run(cmd, shell=True, text=True)
-    if proc.returncode != 0:
-        sys.exit(proc.returncode)
+    task.run(tasks, extra)
 
 
 def print_tasks(path: Path, tasks: Tasks) -> None:
@@ -139,102 +275,40 @@ def print_tasks(path: Path, tasks: Tasks) -> None:
     location = path_abs if len(path_abs) < len(path_rel) else path_rel
 
     print(f"# Found {count} task{plural} in {location}\n")
-    indent = " " * 4
-    for name, task in tasks.items():
-        prefix = "\n"
-        if isinstance(task, list):
-            prefix = " "
-            task = " ".join(task)
-        elif len(task) < 80 - len(indent):
-            task = f"{indent}{task.strip()}"
-        else:
-            task = textwrap.fill(
-                task.strip(),
-                78,
-                initial_indent=indent,
-                subsequent_indent=indent,
-                break_on_hyphens=False,
-                tabsize=len(indent),
-            )
-
-        task = task.replace("\n", " \\\n")
-        print(f"{name}:{prefix}{task}\n")
+    for task in tasks.values():
+        task.pprint()
 
 
-def parse_ds(config: Dict[str, Any]) -> Tasks:
-    """Parse a ds.toml or .ds.toml file."""
-    result: Tasks = {}
-    if "scripts" in config:
-        for name, cmd in config["scripts"].items():
-            if isinstance(cmd, str):
-                result[name] = cmd
-            elif isinstance(cmd, list):
-                result[name] = cmd
-            else:
-                raise ValueError(f"Script [{name}] has unknown value type:", cmd)
+def parse_config(config: Dict[str, Any], keys: Optional[List[str]] = None) -> Tasks:
+    """Parse a configuration file."""
+    result = {}
+    for key in keys or SEARCH_KEYS:
+        section = get_path(config, key)
+        if section is not None:
+            assert isinstance(section, Mapping)
+            for name, cmd in section.items():
+                if name.startswith("#"):
+                    continue
+                task = Task.parse(cmd)
+                task.name = name
+                result[name] = task
+            break
     return result
 
 
-def parse_npm(config: Dict[str, Any]) -> Tasks:
-    """Parse a package.json file."""
-    result: Tasks = {}
-    if "scripts" in config:
-        for name, cmd in config["scripts"].items():
-            if not isinstance(cmd, str):
-                raise ValueError(f"Script [{name}] has unknown type:", cmd)
-
-            if name.startswith("#") or not cmd.strip():
-                continue
-
-            result[name] = cmd
-    return result
-
-
-LOADERS = {".toml": toml.loads, ".json": json.loads}
-"""Mapping of file extensions to string load functions."""
-
-PARSERS = {
-    "ds.toml": parse_ds,
-    ".ds.toml": parse_ds,
-    "package.json": parse_npm,
-}
-"""Mapping of file names to config parsers."""
-
-
-def parse_generic(config: Dict[str, Any]) -> Tasks:
-    """Parse an unknown file type."""
-    result: Tasks = {}
-    can_parse = False
-    for parser in set(PARSERS.values()):
-        try:
-            result = parser(config)
-            can_parse = True
-            if result:
-                break
-        except ValueError:
-            continue
-
-    if not can_parse:
-        raise ValueError("Cannot find a compatible parser.")
-
-    return result
-
-
-def parse_config(path: Path) -> Tasks:
-    """Parse the configuration file."""
+def load_config(path: Path) -> Tasks:
+    """Load and parse the configuration file."""
     if path.suffix not in LOADERS:
         raise ValueError(f"Not sure how to read a {path.suffix} file: {path}")
 
     config = LOADERS[path.suffix](path.read_text())
-    parser = PARSERS.get(path.name, parse_generic)
-    tasks = parser(config)
-    return tasks
+    return parse_config(config)
 
 
 def find_config(start: Path, debug: bool = False) -> Optional[Path]:
     """Return the config file in `start` or its parents."""
     for path in (start / "x").resolve().parents:  # to include start
-        for name in PARSERS:
+        for name in SEARCH_FILES:
             check = path / name
             if debug:
                 print("check", check.resolve())
@@ -315,7 +389,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         if not args.cwd.exists():
             raise ValueError(f"Cannot find directory: {args.cwd}")
 
-        tasks = parse_config(args.file_)
+        tasks = load_config(args.file_)
     except ValueError as e:
         print("ERROR:", e)
         sys.exit(1)
