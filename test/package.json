@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "foo": "touch foo.txt",
+    "ls": "ls -la",
+    "clean": "rm foo.txt",
+    "tests": "ds foo & ds ls & ds clean"
+  }
+}

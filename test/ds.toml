@@ -1,5 +1,5 @@
 [scripts]
-_foo = "touch foo.txt"
-_ls = "ls -la"
-_clean = "rm foo.txt"
-_tests = ["_foo", "_ls", "_clean"]
+foo = "touch foo.txt"
+ls = "ls -la"
+clean = "rm foo.txt"
+tests = ["foo", "ls", "clean"]

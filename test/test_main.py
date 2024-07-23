@@ -56,8 +56,8 @@ def test_list() -> None:
 
 def test_task() -> None:
     """Run some dummy tasks."""
-    main(shlex.split("ds --cwd test -f test/ds.toml _tests"))
-    main(shlex.split("ds -f test/ds.toml --debug _tests"))
+    main(shlex.split("ds --cwd test -f test/ds.toml tests"))
+    main(shlex.split("ds -f test/ds.toml --debug tests"))
 
 
 def test_no_task() -> None:
@@ -86,5 +86,5 @@ def test_no_config() -> None:
     curr = os.getcwd()
     os.chdir("/")
     with pytest.raises(SystemExit):
-        main(shlex.split("ds _tests"))
+        main(shlex.split("ds tests"))
     os.chdir(curr)

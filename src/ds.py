@@ -152,9 +152,25 @@ def parse_ds(config: Dict[str, Any]) -> Tasks:
     return result
 
 
+def parse_npm(config: Dict[str, Any]) -> Tasks:
+    """Parse a package.json file."""
+    result: Tasks = {}
+    if "scripts" in config:
+        for name, cmd in config["scripts"].items():
+            if not isinstance(cmd, str):
+                raise ValueError(f"Script [{name}] has unknown type:", cmd)
+
+            if name.startswith("#") or not cmd.strip():
+                continue
+
+            result[name] = cmd
+    return result
+
+
 PARSERS = {
     "ds.toml": parse_ds,
     ".ds.toml": parse_ds,
+    "package.json": parse_npm,
 }
 """Mapping of file names to config parsers."""
 
