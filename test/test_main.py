@@ -56,7 +56,7 @@ def test_list() -> None:
 
 def test_task() -> None:
     """Run some dummy tasks."""
-    main(shlex.split("ds -f test/ds.toml _tests"))
+    main(shlex.split("ds --cwd test -f test/ds.toml _tests"))
     main(shlex.split("ds -f test/ds.toml --debug _tests"))
 
 
@@ -64,6 +64,20 @@ def test_no_task() -> None:
     """Try to run a missing task."""
     with pytest.raises(SystemExit) as e:
         main(shlex.split("ds _does_not_exist"))
+    assert e.value.code == 1
+
+
+def test_bad_cwd() -> None:
+    """Try to point to a non-existent directory."""
+    with pytest.raises(SystemExit) as e:
+        main(shlex.split("ds --cwd /does-not-exist"))
+    assert e.value.code == 1
+
+
+def test_bad_config() -> None:
+    """Try to load a non-existent config file."""
+    with pytest.raises(SystemExit) as e:
+        main(shlex.split("ds -f /does-not-exist.toml"))
     assert e.value.code == 1
 
 

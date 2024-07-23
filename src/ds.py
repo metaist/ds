@@ -33,28 +33,46 @@ __pubdate__ = "unpublished"
 usage = """ds: Run dev scripts.
 
 Usage: ds [--help | --version] [--debug]
-          [--file PATH]
-          [--list | (<task> [<options> --])...]
+          [--cwd PATH] [--file PATH]
+          [--list | (<task> [: <options>... --])...]
 
 Options:
-  -h, --help                    show this message and exit
-  --version                     show program version and exit
-  --debug                       show debug messages
+  -h, --help
+    Show this message and exit.
 
-  -f PATH, --file PATH          read tasks from file
-  -l, --list                    list available tasks
-  <task>                        one or more tasks to run
-  <options>                     task-specific arguments;
-      use double dashes (--) to end arguments for a task
+  --version
+    Show program version and exit.
+
+  --debug
+    Show debug messages.
+
+  --cwd PATH
+    Set the working directory (default: task file parent).
+
+  -f PATH, --file PATH
+    File with task definitions (default: search in parents).
+
+  -l, --list
+    List available tasks and exit.
+
+  <task> [: <options>... --]
+    One or more tasks to run with task-specific arguments.
+    Use a colon (`:`) to indicate start of arguments and
+    double-dash (`--`) to indicate the end.
+
+    If the first <option> starts with a hyphen (`-`), you may omit the
+    colon (`:`). If there are no more tasks after the last option, you
+    may omit the double-dash (`--`).
 
 Examples:
-Run the task named build:
-$ ds build
+List the available tasks:
+$ ds
 
-Run tasks named clean and build:
+Run one or more tasks:
+$ ds build
 $ ds clean build
 
-If one task fails, subsequent tasks are not run.
+If a task fails, subsequent tasks are not run.
 
 Provide arguments to one or more tasks (the following are equivalent):
 $ ds clean --all -- build test --no-gpu
@@ -74,6 +92,9 @@ class Args:
 
     debug: bool = False
     """Whether to show debug messages"""
+
+    cwd: Optional[Path] = None
+    """Path to run tasks in."""
 
     file_: Optional[Path] = None
     """Path to task definitions."""
@@ -153,26 +174,27 @@ def find_config(start: Path, debug: bool = False) -> Optional[Path]:
 def parse_args(argv: List[str]) -> Args:
     """Parse command-line arguments in a docopt-like way."""
     args = Args()
+    task = ""
     is_ours = True
     is_task = False
-    task = ""
     while argv:
         arg = argv.pop(0)
         if is_ours:
             if arg in ["--help", "--version", "--debug"]:
                 setattr(args, arg[2:], True)
-                continue
             elif arg == "-h":
                 args.help = True
-                continue
             elif arg in ["-l", "--list"]:
                 args.list_ = True
-                continue
+            elif arg == "--cwd":
+                args.cwd = Path(argv.pop(0)).resolve()
             elif arg in ["-f", "--file"]:
                 args.file_ = Path(argv.pop(0)).resolve()
-                continue
             else:
                 is_ours = False
+
+        if is_ours:
+            continue  # processed
         # our args processed
 
         if task and arg == ":":  # explicit arg start
@@ -188,7 +210,7 @@ def parse_args(argv: List[str]) -> Args:
 
         if is_task:  # add task args
             args.task[task].append(arg)
-            continue
+            continue  # processed
 
         task = arg
         args.task[task] = []
@@ -204,40 +226,42 @@ def parse_args(argv: List[str]) -> Args:
 
     if args.debug:
         print(args)
-
     return args
 
 
 def main(argv: Optional[List[str]] = None) -> None:
     """Main entry point."""
-    args = parse_args((argv or sys.argv)[1:])
-    if args.debug:
-        print("CWD:", Path.cwd())
+    try:
+        args = parse_args((argv or sys.argv)[1:])
+        args.file_ = args.file_ or find_config(Path.cwd(), args.debug)
+        if not args.file_:
+            raise ValueError("No configuration file found.")
+        if not args.file_.exists():
+            raise ValueError(f"Cannot find file: {args.file_}")
 
-    path = args.file_ or find_config(Path("."), args.debug)
-    if not path or not path.exists():
-        print(f"ERROR: Could not find: {', '.join(PARSERS)}.")
+        args.cwd = args.cwd or args.file_.parent
+        if not args.cwd.exists():
+            raise ValueError(f"Cannot find directory: {args.cwd}")
+    except ValueError as e:
+        print("ERROR:", e)
         sys.exit(1)
 
-    if args.debug:
-        print("found", path)
-
-    config = toml.loads(path.read_text())
-    parser = PARSERS[path.name]
+    config = toml.loads(args.file_.read_text())
+    parser = PARSERS[args.file_.name]
     tasks = parser(config)
 
     if args.list_ or not args.task:
-        print_tasks(path, tasks)
+        print_tasks(args.file_, tasks)
         sys.exit(0)
 
     try:
         curr = os.getcwd()
-        os.chdir(path.parent)
+        os.chdir(args.cwd)
         for name, extra in args.task.items():
             run_task(tasks, name, extra)
         os.chdir(curr)
     except ValueError as e:
-        print(e)
+        print("ERROR:", e)
         sys.exit(1)
     except KeyboardInterrupt:  # pragma: no cover
         return
