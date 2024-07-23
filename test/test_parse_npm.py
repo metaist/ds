@@ -1,9 +1,13 @@
 """Test package.json parser."""
 
+# std
+from pathlib import Path
+
 # lib
 import pytest
 
 # pkg
+from ds import parse_config
 from ds import parse_npm
 
 
@@ -17,6 +21,12 @@ def test_empty() -> None:
 def test_basic() -> None:
     """Parse basic commands."""
     assert parse_npm({"scripts": {"ls": "ls -la"}}) == {"ls": "ls -la"}
+
+
+def test_loader() -> None:
+    """Load .json file."""
+    tasks = parse_config(Path("examples") / "package.json")
+    assert len(tasks) > 0
 
 
 def test_error() -> None:

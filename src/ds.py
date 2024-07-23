@@ -16,6 +16,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+import json
 import os
 import shlex
 import sys
@@ -189,12 +190,45 @@ def parse_npm(config: Dict[str, Any]) -> Tasks:
     return result
 
 
+LOADERS = {".toml": toml.loads, ".json": json.loads}
+"""Mapping of file extensions to string load functions."""
+
 PARSERS = {
     "ds.toml": parse_ds,
     ".ds.toml": parse_ds,
     "package.json": parse_npm,
 }
 """Mapping of file names to config parsers."""
+
+
+def parse_generic(config: Dict[str, Any]) -> Tasks:
+    """Parse an unknown file type."""
+    result: Tasks = {}
+    can_parse = False
+    for parser in set(PARSERS.values()):
+        try:
+            result = parser(config)
+            can_parse = True
+            if result:
+                break
+        except ValueError:
+            continue
+
+    if not can_parse:
+        raise ValueError("Cannot find a compatible parser.")
+
+    return result
+
+
+def parse_config(path: Path) -> Tasks:
+    """Parse the configuration file."""
+    if path.suffix not in LOADERS:
+        raise ValueError(f"Not sure how to read a {path.suffix} file: {path}")
+
+    config = LOADERS[path.suffix](path.read_text())
+    parser = PARSERS.get(path.name, parse_generic)
+    tasks = parser(config)
+    return tasks
 
 
 def find_config(start: Path, debug: bool = False) -> Optional[Path]:
@@ -280,13 +314,11 @@ def main(argv: Optional[List[str]] = None) -> None:
         args.cwd = args.cwd or args.file_.parent
         if not args.cwd.exists():
             raise ValueError(f"Cannot find directory: {args.cwd}")
+
+        tasks = parse_config(args.file_)
     except ValueError as e:
         print("ERROR:", e)
         sys.exit(1)
-
-    config = toml.loads(args.file_.read_text())
-    parser = PARSERS[args.file_.name]
-    tasks = parser(config)
 
     if args.list_ or not args.task:
         print_tasks(args.file_, tasks)

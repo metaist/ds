@@ -29,7 +29,7 @@ docs = """\
     --output-dir docs \
     --config sort_identifiers=False \
     --config show_inherited_members=True \
-    --force $(basename $(pwd));
+    --force $(basename $(pwd)); \
   mv docs/ds.html docs/index.html
 """
 
