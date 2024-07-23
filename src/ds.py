@@ -130,12 +130,34 @@ def run_task(tasks: Tasks, name: str, extra: Optional[List[str]] = None) -> None
 
 def print_tasks(path: Path, tasks: Tasks) -> None:
     """Pretty print task names."""
-    print(f"Available tasks (from {relpath(path, Path.cwd())}):\n")
+    count = len(tasks)
+    plural = "s" if count != 1 else ""
+
+    path_abs = str(path.resolve())
+    path_rel = relpath(path, Path.cwd())
+    location = path_abs if len(path_abs) < len(path_rel) else path_rel
+
+    print(f"# Found {count} task{plural} in {location}\n")
+    indent = " " * 4
     for name, task in tasks.items():
-        cmd = str(task)
-        if len(cmd) > 60:
-            cmd = textwrap.indent(textwrap.fill(cmd, 60), " " * 22)[22:] + "\n"
-        print(f"  {name:15}     {cmd}")
+        prefix = "\n"
+        if isinstance(task, list):
+            prefix = " "
+            task = " ".join(task)
+        elif len(task) < 80 - len(indent):
+            task = f"{indent}{task.strip()}"
+        else:
+            task = textwrap.fill(
+                task.strip(),
+                78,
+                initial_indent=indent,
+                subsequent_indent=indent,
+                break_on_hyphens=False,
+                tabsize=len(indent),
+            )
+
+        task = task.replace("\n", " \\\n")
+        print(f"{name}:{prefix}{task}\n")
 
 
 def parse_ds(config: Dict[str, Any]) -> Tasks:
