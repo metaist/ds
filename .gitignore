@@ -28,3 +28,8 @@ __pycache__
 *.egg-info
 /build
 /dist
+
+# rye
+.python-version
+requirements-dev.lock
+requirements.lock
