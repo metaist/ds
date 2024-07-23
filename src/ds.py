@@ -231,7 +231,7 @@ class Task:
             return other.run(tasks, extra, keep_going, seen)
 
         # 4. Run our command.
-        cmd = f"{self.cmd} {" ".join(extra)}".strip()
+        cmd = f"{self.cmd} {' '.join(extra)}".strip()
         print(f"\n$ {cmd}")
         proc = run(cmd, shell=True, text=True)
         code = proc.returncode
