@@ -299,7 +299,7 @@ def parse_config(config: Dict[str, Any], keys: Optional[List[str]] = None) -> Ta
                 result[name] = task
             break
     if not found:
-        raise LookupError(f"Could not find one of: {", ".join(keys or SEARCH_KEYS)}")
+        raise LookupError(f"Could not find one of: {', '.join(keys or SEARCH_KEYS)}")
     return result
 
 
