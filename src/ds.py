@@ -18,10 +18,8 @@ from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
-from typing import Union
 import json
 import os
-import shlex
 import sys
 import textwrap
 
@@ -96,6 +94,9 @@ SEARCH_FILES = ["ds.toml", ".ds.toml", "package.json", "pyproject.toml"]
 SEARCH_KEYS = ["scripts", "tool.ds.scripts", "tool.pdm.scripts"]
 """Search order for configuration keys."""
 
+PYTHON_CALL = "python -c 'import sys, {module} as _1; sys.exit(_1.{func})'"
+"""Template for a python call."""
+
 
 @dataclass
 class Args:
@@ -162,16 +163,17 @@ class Task:
 
             elif "cmd" in config:
                 cmd = config["cmd"]
-                task.cmd = shlex.join(cmd) if isinstance(cmd, list) else str(cmd)
+                task.cmd = " ".join(cmd) if isinstance(cmd, list) else str(cmd)
 
             elif "call" in config:
                 # See: https://github.com/pdm-project/pdm/blob/c76e982e46c6e77a54a0fca4d4417eabb70cc85d/src/pdm/cli/commands/run.py#L333
                 cmd = config["call"]
                 assert isinstance(cmd, str)
-                mod, _, f = cmd.partition(":")
-                if not f.endswith(")"):
-                    f += "()"
-                task.cmd = f"python -c 'import sys, {mod} as _1; sys.exit(_1.{f})'"
+                module, _, func = cmd.partition(":")
+                func += "()" if not func.endswith(")") else ""
+                task.cmd = PYTHON_CALL.format(module=module, func=func)
+            else:
+                raise TypeError(f"Unknown task type: {config}")
         else:
             raise TypeError(f"Unknown task type: {config}")
         return task
@@ -200,34 +202,39 @@ class Task:
             )
 
     def run(
-        self, tasks: Tasks, extra: Optional[List[str]] = None, keep_going: bool = False
+        self,
+        tasks: Tasks,
+        extra: Optional[List[str]] = None,
+        keep_going: bool = False,
+        seen: Optional[List[Task]] = None,
     ) -> int:
         """Run this task."""
+        seen = seen or []
+        if self in seen:
+            return 0
+        seen.append(self)  # avoid loops
+
         extra = extra or []
         keep_going = keep_going or self.keep_going
 
-        # First, run all the dependencies.
+        # 1. Run all the dependencies.
         for dep in self.depends:
-            try:
-                dep.run(tasks, extra)
-            except SystemExit as e:
-                if not keep_going:
-                    raise e
+            dep.run(tasks, extra, keep_going, seen)
 
+        # 2. Check if we have anything to do.
         if not self.cmd.strip():  # nothing to do
             return 0
 
-        # Next try to run this task.
-        cmd, *args = shlex.split(self.cmd)
-        if cmd in tasks and self != tasks[cmd]:
-            # TODO: do I need a try/catch here?
-            code = tasks[cmd].run(tasks, args + extra, keep_going=keep_going)
-        else:
-            cmd = f"{self.cmd} {" ".join(extra)}".strip()
-            print(f"\n$ {cmd}")
-            # TODO: can I just use check=not keep_going
-            proc = run(cmd, shell=True, text=True)
-            code = proc.returncode
+        # 3. If the command is exactly equal to a task, run that task.
+        other = tasks.get(self.cmd)
+        if other and other != self:
+            return other.run(tasks, extra, keep_going, seen)
+
+        # 4. Run our command.
+        cmd = f"{self.cmd} {" ".join(extra)}".strip()
+        print(f"\n$ {cmd}")
+        proc = run(cmd, shell=True, text=True)
+        code = proc.returncode
 
         if code != 0 and not keep_going:
             sys.exit(code)
@@ -238,19 +245,14 @@ Tasks = Dict[str, Task]
 """Mapping a task name to a `Task`."""
 
 
-def get_path(
-    src: Dict[str, Any], path: Union[str, List[str]], default: Optional[Any] = None
-) -> Any:
+def get_path(src: Dict[str, Any], name: str, default: Optional[Any] = None) -> Any:
     """Return"""
-    if isinstance(path, str):
-        path = path.split(".")
-
+    path = name.split(".")
     result: Any = default
     try:
         for key in path:
             result = src[key]  # take step
-            if isinstance(result, dict):
-                src = result  # preserve context
+            src = result  # preserve context
     except (KeyError, IndexError, TypeError):
         # key doesn't exist, index is unreachable, or item is not indexable
         result = default
@@ -282,24 +284,29 @@ def print_tasks(path: Path, tasks: Tasks) -> None:
 def parse_config(config: Dict[str, Any], keys: Optional[List[str]] = None) -> Tasks:
     """Parse a configuration file."""
     result = {}
+    found = False
     for key in keys or SEARCH_KEYS:
         section = get_path(config, key)
         if section is not None:
             assert isinstance(section, Mapping)
+            found = True
             for name, cmd in section.items():
-                if name.startswith("#"):
+                name = name.strip()
+                if not name or name.startswith("#"):
                     continue
                 task = Task.parse(cmd)
                 task.name = name
                 result[name] = task
             break
+    if not found:
+        raise LookupError(f"Could not find one of: {", ".join(keys or SEARCH_KEYS)}")
     return result
 
 
 def load_config(path: Path) -> Tasks:
     """Load and parse the configuration file."""
     if path.suffix not in LOADERS:
-        raise ValueError(f"Not sure how to read a {path.suffix} file: {path}")
+        raise LookupError(f"Not sure how to read a {path.suffix} file: {path}")
 
     config = LOADERS[path.suffix](path.read_text())
     return parse_config(config)
@@ -381,16 +388,16 @@ def main(argv: Optional[List[str]] = None) -> None:
         args = parse_args((argv or sys.argv)[1:])
         args.file_ = args.file_ or find_config(Path.cwd(), args.debug)
         if not args.file_:
-            raise ValueError("No configuration file found.")
+            raise FileNotFoundError("No configuration file found.")
         if not args.file_.exists():
-            raise ValueError(f"Cannot find file: {args.file_}")
+            raise FileNotFoundError(f"Cannot find file: {args.file_}")
 
         args.cwd = args.cwd or args.file_.parent
         if not args.cwd.exists():
-            raise ValueError(f"Cannot find directory: {args.cwd}")
+            raise NotADirectoryError(f"Cannot find directory: {args.cwd}")
 
         tasks = load_config(args.file_)
-    except ValueError as e:
+    except (FileNotFoundError, NotADirectoryError, LookupError) as e:
         print("ERROR:", e)
         sys.exit(1)
 

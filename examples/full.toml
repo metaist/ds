@@ -1,12 +1,13 @@
 [scripts]
 "#disabled" = "exit 1" # "commented" out
-nop = ""
-basic = "ls -la" # string
-with_arg = "ls -h test" # call other task with args
-no_error = "-with_arg" # suppress error
-composite = ["no_error", "with_arg test/*.py"]
+nop = "" # takes no action
+basic = "ls -la" # basic shell call
+no_error = "-exit 1"
+composite = ["no_error", "basic"]
 
+
+# We support many of the `pdm` conventions.
 pdm1 = { cmd = "ls -la" } # basic command
 pdm2 = { shell = "ls -la >/dev/null" } # supports redirection
-pdm3 = { call = "ds:main" }
-pdm4 = { composite = ["pdm1", "pdm2"] }
+pdm3 = { call = "ds:main" } # python call
+pdm4 = { composite = ["pdm1", "pdm2"] } # call other actions

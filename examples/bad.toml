@@ -1,6 +1,0 @@
-# This example configuration file has an unknown name (`bad.toml`) and
-# is not in a format that we recognize.
-
-[scripts]
-ls = "ls -la"
-bad = false # This is the invalid value.

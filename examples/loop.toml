@@ -1,0 +1,11 @@
+# This example file demonstrates how `ds` handles loops.
+
+[scripts]
+# Typically if the command has the exact same name as a task,
+# that other task is run. However, if it's the same name as
+# the current task, it's run as a command.
+ls = "ls" # this is ok
+
+# We don't let the same task run twice so trying to call itself
+# ends up doing nothing.
+nop = ["nop"] # this is a nop

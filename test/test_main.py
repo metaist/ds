@@ -60,6 +60,12 @@ def test_task() -> None:
     main(shlex.split("ds -f examples/ds.toml --debug tests"))
 
 
+def test_loop() -> None:
+    """Run some loop tasks."""
+    main(shlex.split("ds -f examples/loop.toml ls"))  # ok
+    main(shlex.split("ds -f examples/loop.toml nop"))  # nop
+
+
 def test_no_task() -> None:
     """Try to run a missing task."""
     with pytest.raises(SystemExit) as e:

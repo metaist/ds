@@ -1,0 +1,6 @@
+# In this example, the top-level key is correct, but there is
+# an unknown type for one of the commands.
+
+[scripts]
+ls = "ls -la"
+bad-value = false # We don't know how to parse this.
