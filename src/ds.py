@@ -20,6 +20,7 @@ from typing import Mapping
 from typing import Optional
 import json
 import os
+import re
 import shlex
 import sys
 import textwrap
@@ -97,6 +98,9 @@ SEARCH_KEYS = ["scripts", "tool.ds.scripts", "tool.pdm.scripts"]
 
 PYTHON_CALL = "python -c 'import sys, {module} as _1; sys.exit(_1.{func})'"
 """Template for a python call."""
+
+RE_ARGS = re.compile(r"(\$(?:@|\d+))")
+"""Regex for matching an argument to be interpolated."""
 
 
 @dataclass
@@ -238,8 +242,9 @@ class Task:
                 return other.run(tasks, args + extra, keep_going, seen)
 
         # 4. Run our command.
-        cmd = f"{self.cmd} {' '.join(extra)}".strip()
-        print(f"\n$ {cmd}")
+        dash = "-" if keep_going else ""
+        cmd = interpolate_args(self.cmd, [*extra])
+        print(f"\n$ {dash}{cmd}")
         proc = run(cmd, shell=True, text=True)
         code = proc.returncode
 
@@ -250,6 +255,22 @@ class Task:
 
 Tasks = Dict[str, Task]
 """Mapping a task name to a `Task`."""
+
+
+def interpolate_args(cmd: str, args: List[str]) -> str:
+    """Return `args` interpolated into `cmd`."""
+
+    # By default, we append all args to the end of the command.
+    if not RE_ARGS.search(cmd):
+        cmd = f"{cmd} $@"
+
+    def _replace_arg(match: re.Match[str]) -> str:
+        """Return the argument replacement."""
+        if match[0] == "$@":
+            return " ".join(args)
+        return args[int(match[0][1:]) - 1]
+
+    return RE_ARGS.sub(_replace_arg, cmd).rstrip()
 
 
 def get_path(src: Dict[str, Any], name: str, default: Optional[Any] = None) -> Any:
@@ -412,17 +433,18 @@ def main(argv: Optional[List[str]] = None) -> None:
         print_tasks(args.file_, tasks)
         sys.exit(0)
 
+    curr = os.getcwd()
+    os.chdir(args.cwd)
     try:
-        curr = os.getcwd()
-        os.chdir(args.cwd)
         for name, extra in args.task.items():
             run_task(tasks, name, extra)
-        os.chdir(curr)
     except ValueError as e:
         print("ERROR:", e)
         sys.exit(1)
     except KeyboardInterrupt:  # pragma: no cover
         return
+    finally:
+        os.chdir(curr)
 
 
 if __name__ == "__main__":  # pragma: no cover

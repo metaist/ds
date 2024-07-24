@@ -83,7 +83,7 @@ test = """\
     pytest \
       --doctest-modules \
       --doctest-ignore-import-errors \
-      src test; \
+      $@ src test; \
   coverage report -m
 """
 

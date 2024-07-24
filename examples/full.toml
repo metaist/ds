@@ -1,10 +1,10 @@
 [scripts]
 "#disabled" = "exit 1" # "commented" out
 nop = "" # takes no action
-basic = "ls -la" # basic shell call
-no_error = "-exit 1"
+basic = "ls $@ -la" # basic shell call
+no_error = "-exit $1"
 with_arg = ["basic -h test"]
-composite = ["no_error", "with_arg", "echo 'something else'"]
+composite = ["no_error 1", "with_arg", "echo 'something else'"]
 
 
 # We support many of the `pdm` conventions.

@@ -58,6 +58,7 @@ def test_task() -> None:
     """Run some dummy tasks."""
     main(shlex.split("ds --cwd test -f examples/ds.toml tests"))
     main(shlex.split("ds -f examples/ds.toml --debug tests"))
+    main(shlex.split("ds --cwd . -f examples/full.toml composite"))
 
 
 def test_loop() -> None:
