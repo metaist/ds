@@ -404,6 +404,10 @@ def parse_args(argv: List[str]) -> Args:
             args.task[task].append(arg)
             continue  # processed
 
+        if arg.endswith(":"):  # task name + explicit arg start
+            arg = arg[:-1]
+            is_task = True
+
         task = arg
         args.task[task] = []
     # all args processed

@@ -18,11 +18,18 @@ from ds import parse_args
 def test_parse_args() -> None:
     """Parse arguments."""
     assert parse_args(shlex.split("--debug")) == Args(debug=True)
+
+    # no args
     assert parse_args(shlex.split("a b c")) == Args(task={"a": [], "b": [], "c": []})
+
+    # implicit start / explicit end
     assert parse_args(shlex.split("--debug a --debug -- b")) == Args(
         debug=True, task={"a": ["--debug"], "b": []}
     )
+
+    # explicit arg start/end
     assert parse_args(shlex.split("a : b -- c")) == Args(task={"a": ["b"], "c": []})
+    assert parse_args(shlex.split("a: b -- c")) == Args(task={"a": ["b"], "c": []})
 
 
 def test_help() -> None:
