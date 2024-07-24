@@ -90,10 +90,21 @@ Loader = Callable[[str], Dict[str, Any]]
 LOADERS: Dict[str, Loader] = {".toml": toml.loads, ".json": json.loads}
 """Mapping of file extensions to string load functions."""
 
-SEARCH_FILES = ["ds.toml", ".ds.toml", "package.json", "pyproject.toml"]
+SEARCH_FILES = [
+    "ds.toml",
+    ".ds.toml",
+    "package.json",
+    "pyproject.toml",
+    "Cargo.toml",
+]
 """Search order for configuration file names."""
 
-SEARCH_KEYS = ["scripts", "tool.ds.scripts", "tool.pdm.scripts"]
+SEARCH_KEYS = [
+    "scripts",  # ds.toml, .ds.toml, package.json
+    "tool.ds.scripts",  # pyproject.toml
+    "tool.pdm.scripts",  # pyproject.toml
+    "package.metadata.scripts",  # Cargo.toml
+]
 """Search order for configuration keys."""
 
 PYTHON_CALL = "python -c 'import sys, {module} as _1; sys.exit(_1.{func})'"

@@ -120,6 +120,11 @@ def test_pyproject() -> None:
     assert load_config(Path("examples") / "pyproject.toml")
 
 
+def test_cargo() -> None:
+    """Load Cargo.toml file."""
+    assert load_config(Path("examples") / "Cargo.toml")
+
+
 def test_load_npm() -> None:
     """Load package.json file."""
     assert load_config(Path("examples") / "package.json")

@@ -1,0 +1,7 @@
+# Example of a minimal Cargo.toml file with some scripts.
+
+[package]
+name = "ds"
+
+[package.metadata.scripts]
+ls = "ls -lah"
