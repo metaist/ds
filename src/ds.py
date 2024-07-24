@@ -179,11 +179,11 @@ class Task:
                 task = Task.parse(config["composite"])
 
             elif "shell" in config:
-                task.cmd = str(config["shell"])
+                task = Task.parse(str(config["shell"]))
 
             elif "cmd" in config:
                 cmd = config["cmd"]
-                task.cmd = " ".join(cmd) if isinstance(cmd, list) else str(cmd)
+                task = Task.parse(" ".join(cmd) if isinstance(cmd, list) else str(cmd))
 
             elif "call" in config:
                 # See: https://github.com/pdm-project/pdm/blob/c76e982e46c6e77a54a0fca4d4417eabb70cc85d/src/pdm/cli/commands/run.py#L333
