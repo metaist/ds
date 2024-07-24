@@ -43,12 +43,24 @@ def test_composite() -> None:
     """Parse a `composite` command."""
     # ds-style
     assert parse_config({"scripts": {"all": ["clean", "build"]}}) == {
-        "all": Task(name="all", depends=[Task(cmd="clean"), Task(cmd="build")])
+        "all": Task(
+            name="all",
+            depends=[
+                Task(name="#composite", cmd="clean"),
+                Task(name="#composite", cmd="build"),
+            ],
+        )
     }
 
     # pdm-style
     assert parse_config({"scripts": {"all": {"composite": ["clean", "build"]}}}) == {
-        "all": Task(name="all", depends=[Task(cmd="clean"), Task(cmd="build")])
+        "all": Task(
+            name="all",
+            depends=[
+                Task(name="#composite", cmd="clean"),
+                Task(name="#composite", cmd="build"),
+            ],
+        )
     }
 
 

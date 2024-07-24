@@ -64,8 +64,8 @@ classifiers = [
 
 [tool.ds.scripts] # dev scripts <https://github.com/metaist/ds>
 "ruff:format" = "ruff format ."
-"ruff:check" = "ruff check . --fix"
-ruff = ["ruff:format", "ruff:check"]
+"ruff:check" = "ruff check ."
+ruff = ["ruff:format", "ruff:check --fix"]
 cspell = "cspell --gitignore '**/*.{py,txt,md,markdown}'"
 pyright = "pyright src test"
 

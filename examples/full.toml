@@ -3,7 +3,8 @@
 nop = "" # takes no action
 basic = "ls -la" # basic shell call
 no_error = "-exit 1"
-composite = ["no_error", "basic"]
+with_arg = ["basic -h test"]
+composite = ["no_error", "with_arg", "echo 'something else'"]
 
 
 # We support many of the `pdm` conventions.

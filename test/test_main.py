@@ -61,9 +61,10 @@ def test_task() -> None:
 
 
 def test_loop() -> None:
-    """Run some loop tasks."""
+    """Run some loop-looking tasks."""
     main(shlex.split("ds -f examples/loop.toml ls"))  # ok
-    main(shlex.split("ds -f examples/loop.toml nop"))  # nop
+    main(shlex.split("ds -f examples/loop.toml df"))  # ok
+    main(shlex.split("ds -f examples/loop.toml ls2"))  # only one runs
 
 
 def test_no_task() -> None:

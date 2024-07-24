@@ -1,11 +1,11 @@
 # This example file demonstrates how `ds` handles loops.
 
 [scripts]
-# Typically if the command has the exact same name as a task,
-# that other task is run. However, if it's the same name as
-# the current task, it's run as a command.
-ls = "ls" # this is ok
+# Simple string tasks cannot call other tasks, so this is not a loop.
+ls = "ls" # => $ ls
 
-# We don't let the same task run twice so trying to call itself
-# ends up doing nothing.
-nop = ["nop"] # this is a nop
+# Composite tasks can pass parameters to tasks that have a different
+# name than the parent. Otherwise, they're executed as a shell.
+df = ["df"] # => $ df
+
+ls2 = ["ls", "ls"]

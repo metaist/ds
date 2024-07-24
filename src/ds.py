@@ -20,6 +20,7 @@ from typing import Mapping
 from typing import Optional
 import json
 import os
+import shlex
 import sys
 import textwrap
 
@@ -145,7 +146,11 @@ class Task:
         """Parse a config into a `Task`."""
         task = Task()
         if isinstance(config, list):
-            task.depends.extend(Task.parse(x) for x in config)
+            for item in config:
+                parsed = Task.parse(item)
+                parsed.name = "#composite"
+                task.depends.append(parsed)
+            # task.depends.extend(Task.parse(x) for x in config)
 
         elif isinstance(config, str):
             task.cmd = config
@@ -182,7 +187,7 @@ class Task:
         """Pretty-print a representation of this task."""
         cmd = f"{'-' if self.keep_going else ''}{self.cmd}"
         if self.depends:
-            cmd = str([t.cmd for t in self.depends])
+            cmd = str([f"{'-' if t.keep_going else ''}{t.cmd}" for t in self.depends])
 
         indent = " " * 4
         print(f"{self.name}:")
@@ -225,10 +230,12 @@ class Task:
         if not self.cmd.strip():  # nothing to do
             return 0
 
-        # 3. If the command is exactly equal to a task, run that task.
-        other = tasks.get(self.cmd)
-        if other and other != self:
-            return other.run(tasks, extra, keep_going, seen)
+        # 3. Check if a part of a composite command is calling another task.
+        if self.name == "#composite":
+            cmd, *args = shlex.split(self.cmd)
+            other = tasks.get(cmd)
+            if other and other != self and self not in other.depends:
+                return other.run(tasks, args + extra, keep_going, seen)
 
         # 4. Run our command.
         cmd = f"{self.cmd} {' '.join(extra)}".strip()
