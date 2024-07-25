@@ -1,2 +1,4 @@
-[tool.pdm.scripts]
+# Example: minimal pyproject.toml configuration.
+
+[tool.ds.scripts]
 ls = "ls -lah"

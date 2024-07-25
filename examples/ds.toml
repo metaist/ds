@@ -1,3 +1,5 @@
+# Example: Basic ds configuration.
+
 [scripts]
 foo = "touch foo.txt"
 ls = "ls -la"

@@ -29,13 +29,21 @@ dynamic = ["version"]
 requires-python = ">=3.8"
 dependencies = [
   # app => version pinned exactly
-  "tomli==2.0.1; python_version < '3.11'", # TODO 2026-10-04 [3.10 EOL]: remove
+
+  # TODO 2026-10-04 [3.10 EOL]: remove
+  "tomli==2.0.1; python_version < '3.11'",
+
+  # TODO 2024-10-31 [3.8 EOL]: remove
+  "graphlib_backport==1.1.0; python_version < '3.9'",
 ]
 optional-dependencies = { dev = [
   # dev => version latest
+  "cogapp",
   "coverage",
+  "ds>=0.0.1",
   "mypy",
   "pdoc3",
+  "pip",
   "pyright",
   "pytest-cov",
   "pytest",
@@ -58,7 +66,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  # "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Build Tools",
   "Typing :: Typed",
 ]
 
@@ -84,8 +92,10 @@ test = """\
       --doctest-modules \
       --doctest-ignore-import-errors \
       $@ src test; \
-  coverage report -m
+  coverage report --omit=src/cog_helpers.py -m
 """
+
+cog = "cog -r README.md"
 
 docs = """\
   rm -rf docs; \
@@ -100,4 +110,4 @@ docs = """\
 
 lint = ["ruff", "-cspell", "pyright", "mypy"]
 dev = ["lint", "test"]
-all = ["lint", "test", "docs"]
+all = ["lint", "test", "cog", "docs"]

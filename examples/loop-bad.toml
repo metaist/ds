@@ -1,5 +1,4 @@
-# This example file demonstrates how `ds` handles "bad" loops. In a true
-# loop like this, none of the tasks will be executed until the loop is removed.
+# Example: None of the tasks will be executed until the loop is removed.
 
 [scripts]
 this = ["bad"]

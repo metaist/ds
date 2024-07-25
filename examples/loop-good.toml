@@ -1,12 +1,11 @@
-# This example file demonstrates how `ds` handles configurations that look
-# like loops, but are actually ok.
+# Example: Tasks that look like loops, but are actually ok.
 
 [scripts]
-# Simple string tasks cannot call other tasks, so this is not a loop.
+# Basic tasks cannot call other tasks, so this is not a loop.
 ls = "ls" # => $ ls
 
 # Composite tasks can pass parameters to tasks that have a different
-# name than the parent. Otherwise, they're executed as a shell.
+# name than the parent. Otherwise, they're executed as a basic command.
 df = ["df"] # => $ df
 
 # Calling the same task multiple times is not a loop.

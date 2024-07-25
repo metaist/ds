@@ -1,4 +1,4 @@
-# In this example, we don't know how to get to the appropriate section.
+# Example: We don't know how to get to the appropriate section.
 
 [bad.key.scripts]
 ls = "ls -lah"

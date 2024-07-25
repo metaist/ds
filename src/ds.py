@@ -35,11 +35,12 @@ else:  # pragma: no cover
 __version__ = "0.1.0"
 __pubdate__ = "unpublished"
 
+# NOTE: Used by cog in README.md
 usage = """ds: Run dev scripts.
 
 Usage: ds [--help | --version] [--debug]
           [--cwd PATH] [--file PATH]
-          [--list | (<task> [: <options>... --])...]
+          [--list | (<task>[: <options>... --])...]
 
 Options:
   -h, --help
@@ -60,7 +61,7 @@ Options:
   -l, --list
     List available tasks and exit.
 
-  <task> [: <options>... --]
+  <task>[: <options>... --]
     One or more tasks to run with task-specific arguments.
     Use a colon (`:`) to indicate start of arguments and
     double-dash (`--`) to indicate the end.
@@ -91,6 +92,7 @@ Loader = Callable[[str], Dict[str, Any]]
 LOADERS: Dict[str, Loader] = {".toml": toml.loads, ".json": json.loads}
 """Mapping of file extensions to string load functions."""
 
+# NOTE: Used by cog in README.md
 SEARCH_FILES = [
     "ds.toml",
     ".ds.toml",
@@ -100,6 +102,7 @@ SEARCH_FILES = [
 ]
 """Search order for configuration file names."""
 
+# NOTE: Used by cog in README.md
 SEARCH_KEYS = [
     "scripts",  # ds.toml, .ds.toml, package.json
     "tool.ds.scripts",  # pyproject.toml
@@ -257,7 +260,7 @@ Tasks = Dict[str, Task]
 
 def interpolate_args(cmd: str, args: List[str]) -> str:
     """Return `args` interpolated into `cmd`."""
-    not_done = args.copy()
+    not_done: List[Optional[str]] = [arg for arg in args]
 
     # By default, we append all args to the end of the command.
     if not RE_ARGS.search(cmd):
@@ -299,7 +302,9 @@ def check_cycles(tasks: Tasks) -> List[str]:
         edges = set()
         for dep in task.depends:
             other = shlex.split(dep.cmd)[0]
-            if other.startswith("-"):
+
+            # In theory, this should have been stripped when parsing commands.
+            if other.startswith("-"):  # pragma: no cover
                 other = other[1:]
             if other != name:
                 edges.add(other)

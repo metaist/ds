@@ -1,0 +1,6 @@
+# Example: Basic `ds` configuration.
+
+[scripts]
+clean = "rm -rf build/"
+build = "mkdir $@" # pass arguments
+all = ["clean", "build -p build"] # a composite task

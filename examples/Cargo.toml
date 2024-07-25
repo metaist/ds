@@ -1,4 +1,4 @@
-# Example of a minimal Cargo.toml file with some scripts.
+# Example: Minimal Cargo.toml file with a script.
 
 [package]
 name = "ds"

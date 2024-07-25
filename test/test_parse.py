@@ -104,16 +104,21 @@ def test_bad_types() -> None:
 def test_load_ds() -> None:
     """Load ds.toml file."""
     assert load_config(Path("examples") / "ds.toml")
+    assert load_config(Path("examples") / "readme-example.toml")
 
 
 def test_load_full() -> None:
     """Load complex toml file."""
     assert load_config(Path("examples") / "full.toml")
+    assert load_config(Path("examples") / "readme-basic.toml")
+    assert load_config(Path("examples") / "readme-composite.toml")
+    assert load_config(Path("examples") / "readme-error-suppression.toml")
 
 
 def test_pyproject() -> None:
     """Load pyproject.toml file."""
     assert load_config(Path("examples") / "pyproject.toml")
+    assert load_config(Path("examples") / "pyproject-pdm.toml")
 
 
 def test_cargo() -> None:

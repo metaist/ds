@@ -1,3 +1,5 @@
+# Example: More complex ds configuration file.
+
 [scripts]
 "#disabled" = "exit 1" # "commented" out
 nop = "" # takes no action
@@ -6,9 +8,7 @@ no_error = "-exit $1"
 with_arg = ["basic -h test"]
 composite = ["no_error 1", "with_arg", "echo 'something else'"]
 
-
 # We support many of the `pdm` conventions.
 pdm1 = { cmd = "ls -la" } # basic command
 pdm2 = { shell = "ls -la >/dev/null" } # supports redirection
-pdm3 = { call = "ds:main" } # python call
-pdm4 = { composite = ["pdm1", "pdm2"] } # call other actions
+pdm3 = { composite = ["pdm1", "pdm2"] } # call other actions
