@@ -31,10 +31,10 @@ I often need to run scripts to build my code, run my server, lint my files, etc.
 ## Install
 
 ```bash
-python -m pip install dev-scripts
+python -m pip install ds-run
 
 # or, if you use uv:
-uv pip install dev-scripts
+uv pip install ds-run
 ```
 
 ## Example
