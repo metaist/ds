@@ -17,6 +17,20 @@ Sections order is: `Fixed`, `Changed`, `Added`, `Deprecated`, `Removed`, `Securi
 
 These are changes that are on `main` that are not yet in `prod`.
 
+[#38]: https://github.com/metaist/ds/issues/38
+[#39]: https://github.com/metaist/ds/issues/39
+[0.1.2]: https://github.com/metaist/ds/compare/0.1.1...0.1.2
+
+## [0.1.2] - 2024-07-25T06:06:36Z
+
+**Fixed**
+
+- [#38]: typo in `CHANGELOG.md`
+
+**Changed**
+
+- [#39]: moved `src/ds.py` into `src/ds/__init__.py` in the hope this will fix the PyPI publishing error
+
 ---
 
 [#36]: https://github.com/metaist/ds/issues/36

@@ -33,7 +33,7 @@ git checkout prod
 git merge --no-ff --no-edit main
 ```
 
-Update `ds.py`:
+Update top-most `__init__.py`:
 
 ```python
 __version__ = "X.0.1"
