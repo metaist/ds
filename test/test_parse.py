@@ -2,7 +2,7 @@
 
 # std
 from pathlib import Path
-from graphlib import CycleError  # type: ignore
+import sys
 
 # lib
 import pytest
@@ -13,6 +13,13 @@ from ds import interpolate_args
 from ds import load_config
 from ds import parse_config
 from ds import Task
+
+
+# TODO 2024-10-31 [3.8 EOL]: remove conditional
+if sys.version_info >= (3, 9):  # pragma: no cover
+    from graphlib import CycleError
+else:  # pragma: no cover
+    from graphlib import CycleError  # type: ignore
 
 
 def test_skipped() -> None:
