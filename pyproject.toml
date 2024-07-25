@@ -38,9 +38,9 @@ dependencies = [
 ]
 optional-dependencies = { dev = [
   # dev => version latest
+  "build",
   "cogapp",
   "coverage",
-  "ds>=0.0.1",
   "mypy",
   "pdoc3",
   "pip",
@@ -111,3 +111,22 @@ docs = """\
 lint = ["ruff", "-cspell", "pyright", "mypy"]
 dev = ["lint", "test"]
 all = ["lint", "test", "cog", "docs"]
+
+build = ["pip install -e .", "python -m build"]
+clean = """\
+  rm -rf .mypy_cache;\
+  rm -rf .pytest_cache;\
+  rm -rf .ruff_cache;\
+  rm -rf dist;\
+  rm -rf .coverage;
+"""
+
+release = """\
+  git commit -am "release: $1";\
+  git tag $1;\
+  git push;\
+  git push --tags;\
+  git checkout main;\
+  git merge --no-ff --no-edit prod;\
+  git push
+"""
