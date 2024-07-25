@@ -19,6 +19,22 @@ These are changes that are on `main` that are not yet in `prod`.
 
 ---
 
+[#36]: https://github.com/metaist/ds/issues/36
+[#37]: https://github.com/metaist/ds/issues/37
+[0.1.1]: https://github.com/metaist/attrbox/compare/0.1.0...0.1.1
+
+## [0.1.1] - 2024-07-25T05:29:41Z
+
+**Fixed**
+
+- [#36]: self-referential dependency
+
+**Added**
+
+- [#37]: release task
+
+---
+
 [#1]: https://github.com/metaist/ds/issues/1
 [#2]: https://github.com/metaist/ds/issues/2
 [#3]: https://github.com/metaist/ds/issues/2
