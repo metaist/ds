@@ -138,6 +138,12 @@ def test_load_npm() -> None:
     assert load_config(Path("examples") / "package.json")
 
 
+def test_load_composer() -> None:
+    """Load package.json file."""
+    assert load_config(Path("examples") / "package.json")
+    assert load_config(Path("examples") / "composer.json")
+
+
 def test_unknown_name() -> None:
     """Try to parse a file with an unknown file name."""
     assert load_config(Path("examples") / "unknown.json")

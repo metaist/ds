@@ -151,9 +151,10 @@ cog.outl(f"\n{text}\n")
 
 - `ds.toml`
 - `.ds.toml`
+- `Cargo.toml`
+- `composer.json`
 - `package.json`
 - `pyproject.toml`
-- `Cargo.toml`
 
 <!--[[[end]]]-->
 
@@ -173,7 +174,7 @@ text = replace_many(text, {
 cog.outl(f"\n{text}\n")
 ]]]-->
 
-- `scripts` for `ds.toml`, `.ds.toml`, `package.json`
+- `scripts` for `ds.toml`, `.ds.toml`, `package.json`, `composer.json`
 - `tool.ds.scripts` for `pyproject.toml`
 - `tool.pdm.scripts` for `pyproject.toml`
 - `package.metadata.scripts` for `Cargo.toml`
@@ -188,6 +189,7 @@ To avoid making lots of top-level files, `ds` tries to use common project config
 
 - **Node**: `package.json` under `scripts` (see [Lifecycle Events Not Supported](#lifecycle-events-not-supported))
 - **Python**: `pyproject.toml` under `[tool.ds.scripts]`
+- **PHP**: `composer.json` under `scripts` (see [Lifecycle Events Not Supported](#lifecycle-events-not-supported))
 - **Rust**: `Cargo.toml` under `[package.metadata.scripts]`
 - **Other**: `ds.toml` under `[scripts]`
 
@@ -332,6 +334,8 @@ I've used several task runners, usually as part of build tools. Below is a list 
 
 - 2010: [`pdm`] (Python) - Supports 4 different types of tasks including `cmd`, `shell`, `call`, and `composite`.
 
+- 2012: [`composer`] (PHP) - Uses `composer.json`, similar to `package.json`. Supports pre- and post- task lifecycle for special tasks, command-line arguments, composite tasks, and other options.
+
 - 2016: [`yarn`] (JavaScript) - An alternative to `npm` which also supports command-line arguments.
 
 - 2016: [`pnpm`] (JavaScript) - Another alternative to `npm` which supports many more options including running tasks in parallel.
@@ -358,6 +362,7 @@ I've used several task runners, usually as part of build tools. Below is a list 
 [`bun`]: https://en.wikipedia.org/wiki/Bun_(software)
 [`cargo-make`]: https://github.com/sagiegurari/cargo-make
 [`cargo-run-script`]: https://github.com/JoshMcguigan/cargo-run-script/
+[`composer`]: https://getcomposer.org/doc/articles/scripts.md
 [`gradle`]: https://en.wikipedia.org/wiki/Gradle
 [`hatch`]: https://hatch.pypa.io/1.12/config/environment/overview/#scripts
 [`just`]: https://github.com/casey/just

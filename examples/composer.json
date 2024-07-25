@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "ls": "ls -la",
+    "all": [
+      "ls",
+      "ls"
+    ]
+  }
+}

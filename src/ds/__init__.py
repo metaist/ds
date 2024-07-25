@@ -102,15 +102,16 @@ LOADERS: Dict[str, Loader] = {".toml": toml.loads, ".json": json.loads}
 SEARCH_FILES = [
     "ds.toml",
     ".ds.toml",
+    "Cargo.toml",
+    "composer.json",
     "package.json",
     "pyproject.toml",
-    "Cargo.toml",
 ]
 """Search order for configuration file names."""
 
 # NOTE: Used by cog in README.md
 SEARCH_KEYS = [
-    "scripts",  # ds.toml, .ds.toml, package.json
+    "scripts",  # ds.toml, .ds.toml, package.json, composer.json
     "tool.ds.scripts",  # pyproject.toml
     "tool.pdm.scripts",  # pyproject.toml
     "package.metadata.scripts",  # Cargo.toml
