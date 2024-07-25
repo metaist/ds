@@ -18,13 +18,18 @@ from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
-import graphlib  # type: ignore
 import json
 import os
 import re
 import shlex
 import sys
 import textwrap
+
+# TODO 2024-10-31 [3.8 EOL]: remove conditional
+if sys.version_info >= (3, 9):  # pragma: no cover
+    import graphlib
+else:  # pragma: no cover
+    import graphlib  # type: ignore
 
 
 # TODO 2026-10-04 [3.10 EOL]: remove conditional
