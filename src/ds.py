@@ -176,22 +176,17 @@ class Task:
         elif isinstance(config, Mapping):
             if "composite" in config:
                 assert isinstance(config["composite"], list)
-                task = Task.parse(config["composite"])
+                return Task.parse(config["composite"])
 
             elif "shell" in config:
-                task = Task.parse(str(config["shell"]))
+                return Task.parse(str(config["shell"]))
 
             elif "cmd" in config:
                 cmd = config["cmd"]
-                task = Task.parse(" ".join(cmd) if isinstance(cmd, list) else str(cmd))
+                return Task.parse(" ".join(cmd) if isinstance(cmd, list) else str(cmd))
 
             elif "call" in config:
-                # See: https://github.com/pdm-project/pdm/blob/c76e982e46c6e77a54a0fca4d4417eabb70cc85d/src/pdm/cli/commands/run.py#L333
-                cmd = config["call"]
-                assert isinstance(cmd, str)
-                module, _, func = cmd.partition(":")
-                func += "()" if not func.endswith(")") else ""
-                task.cmd = PYTHON_CALL.format(module=module, func=func)
+                raise ValueError(f"pdm-style `call` commands not supported: {config}")
             else:
                 raise TypeError(f"Unknown task type: {config}")
         else:

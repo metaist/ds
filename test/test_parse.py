@@ -83,15 +83,9 @@ def test_shell_cmd() -> None:
 
 
 def test_call() -> None:
-    """Parse a `call` command."""
-    assert parse_config({"scripts": {"ls": {"call": "ds:main"}}}) == {
-        "ls": Task(name="ls", cmd=PYTHON_CALL.format(module="ds", func="main()"))
-    }
-
-    # you can provide static arguments
-    assert parse_config({"scripts": {"ls": {"call": "ds:main(['ds'])"}}}) == {
-        "ls": Task(name="ls", cmd=PYTHON_CALL.format(module="ds", func="main(['ds'])"))
-    }
+    """Try to parse a `call` command."""
+    with pytest.raises(ValueError):
+        parse_config({"scripts": {"ls": {"call": "ds:main"}}})
 
 
 def test_bad_types() -> None:
