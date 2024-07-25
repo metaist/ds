@@ -6,8 +6,8 @@
 </p>
 <p align="center">
   <a href="https://github.com/metaist/ds/actions/workflows/ci.yaml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/metaist/ds/.github/workflows/ci.yaml?branch=main&logo=github"/></a>
-  <a href="https://pypi.org/project/ds"><img alt="PyPI" src="https://img.shields.io/pypi/v/ds.svg?color=blue" /></a>
-  <a href="https://pypi.org/project/ds"><img alt="Supported Python Versions" src="https://img.shields.io/pypi/pyversions/ds" /></a>
+  <a href="https://pypi.org/project/ds-run"><img alt="PyPI" src="https://img.shields.io/pypi/v/ds-run.svg?color=blue" /></a>
+  <a href="https://pypi.org/project/ds-run"><img alt="Supported Python Versions" src="https://img.shields.io/pypi/pyversions/ds-run" /></a>
 </p>
 
 <!--
