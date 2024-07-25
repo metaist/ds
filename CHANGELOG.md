@@ -17,6 +17,19 @@ Sections order is: `Fixed`, `Changed`, `Added`, `Deprecated`, `Removed`, `Securi
 
 These are changes that are on `main` that are not yet in `prod`.
 
+---
+
+[#40]: https://github.com/metaist/ds/issues/40
+[0.1.3]: https://github.com/metaist/ds/compare/0.1.2...0.1.3
+
+## [0.1.3] - 2024-07-25T06:20:18Z
+
+**Fixed**
+
+- [#40]: renamed PyPI package to `ds-run`
+
+---
+
 [#38]: https://github.com/metaist/ds/issues/38
 [#39]: https://github.com/metaist/ds/issues/39
 [0.1.2]: https://github.com/metaist/ds/compare/0.1.1...0.1.2
