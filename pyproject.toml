@@ -21,9 +21,9 @@ Repository = "https://github.com/metaist/ds.git"
 Changelog = "https://github.com/metaist/ds/blob/main/CHANGELOG.md"
 
 [project]
-name = "ds"
-description = "run developer scripts"
-keywords = ["developer", "scripts"]
+name = "ds-run"
+description = "run dev scripts"
+keywords = ["dev", "scripts"]
 
 dynamic = ["version"]
 requires-python = ">=3.8"
