@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Run dev scripts.
 
-.. include:: ../README.md
+.. include:: ../../README.md
    :start-line: 2
 """
 

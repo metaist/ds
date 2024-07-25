@@ -99,13 +99,15 @@ cog = "cog -r README.md"
 
 docs = """\
   rm -rf docs; \
+  mkdir -p docs; \
   pdoc \
     --html \
     --output-dir docs \
     --config sort_identifiers=False \
     --config show_inherited_members=True \
-    --force $(basename $(pwd)); \
-  mv docs/ds.html docs/index.html
+    --force src/$(basename $(pwd)); \
+  mv docs/**/* docs/; \
+  touch docs/.nojekyll
 """
 
 lint = ["ruff", "-cspell", "pyright", "mypy"]
