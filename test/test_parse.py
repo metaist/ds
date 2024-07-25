@@ -9,6 +9,7 @@ import pytest
 
 # pkg
 from ds import check_cycles
+from ds import interpolate_args
 from ds import load_config
 from ds import parse_config
 from ds import Task
@@ -160,3 +161,15 @@ def test_bad_loop() -> None:
                 "b": Task(depends=[Task(name="#composite", cmd="a")]),
             }
         )
+
+
+def test_interpolate_args() -> None:
+    """Interpolate args properly."""
+    assert interpolate_args("a $1 c", ["b"]) == "a b c"
+    assert interpolate_args("a $1 $@ $3 $@", ["b", "c", "d"]) == "a b c d d c"
+
+
+def test_missing_args() -> None:
+    """Try to parse a command with insufficient args."""
+    with pytest.raises(IndexError):
+        interpolate_args("ls $1", [])

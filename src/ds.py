@@ -257,6 +257,7 @@ Tasks = Dict[str, Task]
 
 def interpolate_args(cmd: str, args: List[str]) -> str:
     """Return `args` interpolated into `cmd`."""
+    not_done = args.copy()
 
     # By default, we append all args to the end of the command.
     if not RE_ARGS.search(cmd):
@@ -264,9 +265,15 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
 
     def _replace_arg(match: re.Match[str]) -> str:
         """Return the argument replacement."""
-        if match[0] == "$@":
-            return " ".join(args)
-        return args[int(match[0][1:]) - 1]
+        if match[0] == "$@":  # remaining args
+            return " ".join(arg for arg in not_done if arg is not None)
+
+        idx = int(match[0][1:]) - 1
+        if idx >= len(args):
+            raise IndexError(f"Not enough arguments provided: ${idx+1}")
+
+        not_done[idx] = None
+        return args[idx]
 
     return RE_ARGS.sub(_replace_arg, cmd).rstrip()
 
