@@ -2,7 +2,7 @@
 
 # std
 from pathlib import Path
-from graphlib import CycleError
+from graphlib import CycleError  # type: ignore
 
 # lib
 import pytest
