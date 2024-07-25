@@ -73,15 +73,10 @@ ds all
 
 # check build
 pip install -e .
+python -m build
 
 # commit and push tags
-git commit -am "release: $VER"
-git tag $VER
-git push
-git push --tags
-git checkout main
-git merge --no-ff --no-edit prod
-git push
+ds release $VER
 ```
 
 [Create the release on GitHub](https://github.com/metaist/ds/releases/new). The `pypi.yaml` workflow will attempt to publish it to PyPI.
