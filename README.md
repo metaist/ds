@@ -44,6 +44,8 @@ Create a `ds.toml` file in the top-level of your project or you can also put thi
 <!--[[[cog insert_file("examples/readme-example.toml")]]]-->
 
 ```toml
+# Example: Basic `ds` configuration.
+
 [scripts]
 clean = "rm -rf build/"
 build = "mkdir $@" # pass arguments
@@ -100,7 +102,7 @@ cog.outl(f"\n```\n{text[beg:end].strip()}\n```\n")
 ```
 Usage: ds [--help | --version] [--debug]
           [--cwd PATH] [--file PATH]
-          [--list | (<task> [: <options>... --])...]
+          [--list | (<task>[: <options>... --])...]
 
 Options:
   -h, --help
@@ -121,7 +123,7 @@ Options:
   -l, --list
     List available tasks and exit.
 
-  <task> [: <options>... --]
+  <task>[: <options>... --]
     One or more tasks to run with task-specific arguments.
     Use a colon (`:`) to indicate start of arguments and
     double-dash (`--`) to indicate the end.
@@ -206,13 +208,14 @@ To avoid making lots of top-level files, `ds` tries to use common project config
 <!--[[[cog insert_file("examples/readme-basic.toml")]]]-->
 
 ```toml
-# Basic commands are strings.
+# Example: Basic commands become strings.
+
 [scripts]
 ls = "ls -lah"
 no_error = "-exit 1" # See "Error Suppression"
 
-# We also support pdm-style commands.
-# The following all produce the same command.
+# We also support `pdm`-style commands.
+# The following all produce the same command as `ls` above.
 ls2 = { cmd = "ls -lah" }
 ls3 = { cmd = ["ls", "-lah"] }
 ls4 = { shell = "ls -lah" }
@@ -231,6 +234,8 @@ A basic command is just a string of what should be executed in a shell.
 <!--[[[cog insert_file("examples/readme-composite.toml")]]]-->
 
 ```toml
+# Example: Composite commands call other tasks or shell commands.
+
 [scripts]
 build = "touch build/$1"
 clean = "rm -rf build"
@@ -294,6 +299,8 @@ This is particularly useful in [composite commands](#composite-command) where yo
 <!--[[[cog insert_file("examples/readme-error-suppression.toml")]]]-->
 
 ```toml
+# Example: Error suppression lets a command continue even if it fails.
+
 [scripts]
 cspell = "cspell --gitignore '**/*.{py,txt,md,markdown}'"
 format = "ruff format ."
