@@ -2,15 +2,16 @@
 
 # std
 from pathlib import Path
+from graphlib import CycleError
 
 # lib
 import pytest
 
 # pkg
+from ds import check_cycles
 from ds import load_config
 from ds import parse_config
 from ds import Task
-from ds import PYTHON_CALL
 
 
 def test_skipped() -> None:
@@ -148,3 +149,14 @@ def test_bad_value() -> None:
     """Try to parse a file with an invalid type."""
     with pytest.raises(TypeError):
         load_config(Path("examples") / "bad-value.toml")
+
+
+def test_bad_loop() -> None:
+    """Try to parse a loop."""
+    with pytest.raises(CycleError):
+        check_cycles(
+            {
+                "a": Task(depends=[Task(name="#composite", cmd="b")]),
+                "b": Task(depends=[Task(name="#composite", cmd="a")]),
+            }
+        )

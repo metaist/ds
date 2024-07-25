@@ -1,4 +1,5 @@
-# This example file demonstrates how `ds` handles loops.
+# This example file demonstrates how `ds` handles configurations that look
+# like loops, but are actually ok.
 
 [scripts]
 # Simple string tasks cannot call other tasks, so this is not a loop.
@@ -8,4 +9,5 @@ ls = "ls" # => $ ls
 # name than the parent. Otherwise, they're executed as a shell.
 df = ["df"] # => $ df
 
-ls2 = ["ls", "ls"]
+# Calling the same task multiple times is not a loop.
+ls2 = ["ls", "ls"] # => $ ls && ls

@@ -24,6 +24,7 @@ import re
 import shlex
 import sys
 import textwrap
+import graphlib  # requires python >=3.9
 
 # TODO 2026-10-04 [3.10 EOL]: remove conditional
 if sys.version_info >= (3, 11):  # pragma: no cover
@@ -217,24 +218,15 @@ class Task:
             )
 
     def run(
-        self,
-        tasks: Tasks,
-        extra: Optional[List[str]] = None,
-        keep_going: bool = False,
-        seen: Optional[List[Task]] = None,
+        self, tasks: Tasks, extra: Optional[List[str]] = None, keep_going: bool = False
     ) -> int:
         """Run this task."""
-        seen = seen or []
-        if self in seen:
-            return 0
-        seen.append(self)  # avoid loops
-
         extra = extra or []
         keep_going = keep_going or self.keep_going
 
         # 1. Run all the dependencies.
         for dep in self.depends:
-            dep.run(tasks, extra, keep_going, seen)
+            dep.run(tasks, extra, keep_going)
 
         # 2. Check if we have anything to do.
         if not self.cmd.strip():  # nothing to do
@@ -245,7 +237,7 @@ class Task:
             cmd, *args = shlex.split(self.cmd)
             other = tasks.get(cmd)
             if other and other != self and self not in other.depends:
-                return other.run(tasks, args + extra, keep_going, seen)
+                return other.run(tasks, args + extra, keep_going)
 
         # 4. Run our command.
         dash = "-" if keep_going else ""
@@ -291,6 +283,21 @@ def get_path(src: Dict[str, Any], name: str, default: Optional[Any] = None) -> A
         # key doesn't exist, index is unreachable, or item is not indexable
         result = default
     return result
+
+
+def check_cycles(tasks: Tasks) -> List[str]:
+    """Raise a `CycleError` if there is a cycle in the task graph."""
+    graph = {}
+    for name, task in tasks.items():
+        edges = set()
+        for dep in task.depends:
+            other = shlex.split(dep.cmd)[0]
+            if other.startswith("-"):
+                other = other[1:]
+            if other != name:
+                edges.add(other)
+        graph[name] = edges
+    return list(graphlib.TopologicalSorter(graph).static_order())
 
 
 def run_task(tasks: Tasks, name: str, extra: Optional[List[str]] = None) -> None:
@@ -435,6 +442,11 @@ def main(argv: Optional[List[str]] = None) -> None:
             raise NotADirectoryError(f"Cannot find directory: {args.cwd}")
 
         tasks = load_config(args.file_)
+        check_cycles(tasks)
+    except graphlib.CycleError as e:
+        cycle = e.args[1]
+        print("ERROR: Task cycle detected:", " => ".join(cycle))
+        sys.exit(1)
     except (FileNotFoundError, NotADirectoryError, LookupError) as e:
         print("ERROR:", e)
         sys.exit(1)

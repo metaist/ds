@@ -68,11 +68,18 @@ def test_task() -> None:
     main(shlex.split("ds --cwd . -f examples/full.toml composite"))
 
 
-def test_loop() -> None:
+def test_good_loop() -> None:
     """Run some loop-looking tasks."""
-    main(shlex.split("ds -f examples/loop.toml ls"))  # ok
-    main(shlex.split("ds -f examples/loop.toml df"))  # ok
-    main(shlex.split("ds -f examples/loop.toml ls2"))  # only one runs
+    main(shlex.split("ds -f examples/loop-good.toml ls"))  # ok
+    main(shlex.split("ds -f examples/loop-good.toml df"))  # ok
+    main(shlex.split("ds -f examples/loop-good.toml ls2"))  # ok
+
+
+def test_bad_loop() -> None:
+    """Try to run bad loops."""
+    with pytest.raises(SystemExit) as e:
+        main(shlex.split("ds -f examples/loop-bad.toml bad"))
+    assert e.value.code == 1
 
 
 def test_no_task() -> None:
