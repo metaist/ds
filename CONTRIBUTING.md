@@ -76,7 +76,7 @@ pip install -e .
 python -m build
 
 # commit and push tags
-ds release $VER
+ds release: $VER
 ```
 
 [Create the release on GitHub](https://github.com/metaist/ds/releases/new). The `pypi.yaml` workflow will attempt to publish it to PyPI.
