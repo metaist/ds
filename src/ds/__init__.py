@@ -38,8 +38,8 @@ if sys.version_info >= (3, 11):  # pragma: no cover
 else:  # pragma: no cover
     import tomli as toml
 
-__version__ = "0.1.2"
-__pubdate__ = "2024-07-25T06:06:36Z"
+__version__ = "0.1.3"
+__pubdate__ = "2024-07-25T06:20:18Z"
 
 # NOTE: Used by cog in README.md
 usage = """ds: Run dev scripts.
