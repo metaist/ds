@@ -39,7 +39,7 @@ else:  # pragma: no cover
     import tomli as toml
 
 __version__ = "0.1.0"
-__pubdate__ = "unpublished"
+__pubdate__ = "2024-07-25T04:42:52Z"
 
 # NOTE: Used by cog in README.md
 usage = """ds: Run dev scripts.

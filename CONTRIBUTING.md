@@ -19,8 +19,7 @@ pip install -e ".[dev]"
 As you work on the code, you should periodically run:
 
 ```bash
-ds lint  # for type checks
-ds test  # for unit tests
+ds dev # check lint, type-checks, and run tests
 ```
 
 This repo generally tries to maintain type-correctness (via `mypy` and `pyright`) and complete unit test coverage.
@@ -34,7 +33,7 @@ git checkout prod
 git merge --no-ff --no-edit main
 ```
 
-Update top-most `__init__.py`:
+Update `ds.py`:
 
 ```python
 __version__ = "X.0.1"
@@ -69,8 +68,8 @@ Sections order is: `Fixed`, `Changed`, `Added`, `Deprecated`, `Removed`, `Securi
 ```bash
 export VER="X.0.1"
 
-# update docs
-ds docs
+# final checks
+ds all
 
 # check build
 pip install -e .
