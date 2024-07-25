@@ -41,7 +41,6 @@ optional-dependencies = { dev = [
   "build",
   "cogapp",
   "coverage",
-  "ds>=0.0.1",
   "mypy",
   "pdoc3",
   "pip",
