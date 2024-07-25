@@ -92,7 +92,7 @@ Read more:
 ## Usage
 
 <!--[[[cog
-text = Path("src/ds.py").read_text()
+text = Path("src/ds/__init__.py").read_text()
 beg = text.find("Usage:")
 end = text.find("Examples:", beg)
 
@@ -140,7 +140,7 @@ Options:
 If you don't provide a config file using the `--file` flag, `ds` will search the current directory and all of its parents for files with these names in the following order:
 
 <!--[[[cog
-text = snip_file("src/ds.py", skip_beg=True, beg="SEARCH_FILES = [", end="]")
+text = snip_file("src/ds/__init__.py", skip_beg=True, beg="SEARCH_FILES = [", end="]")
 text = replace_many(text, {
   '    "': "- `",   # make into a list
   '",': "`",        # convert quotes to backticks
@@ -162,7 +162,7 @@ The first file found will be used.
 `ds` currently supports `json` and `toml` files. It searches for the following keys in the following order:
 
 <!--[[[cog
-text = snip_file("src/ds.py", skip_beg=True, beg="SEARCH_KEYS = [", end="]")[1:]
+text = snip_file("src/ds/__init__.py", skip_beg=True, beg="SEARCH_KEYS = [", end="]")[1:]
 text = replace_many(text, {
   '    "': "- `",     # make into a list
   '",': "`",          # backticks for key name

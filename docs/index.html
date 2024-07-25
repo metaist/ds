@@ -22,7 +22,7 @@ hljs.highlightAll();
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>ds</code></h1>
+<h1 class="title">Package <code>ds</code></h1>
 </header>
 <section id="section-intro">
 <p>Run dev scripts.</p>
@@ -99,7 +99,7 @@ ds all
 </ul>
 <h2 id="usage">Usage</h2>
 <!--[[[cog
-text = Path("src/ds.py").read_text()
+text = Path("src/ds/__init__.py").read_text()
 beg = text.find("Usage:")
 end = text.find("Examples:", beg)
 cog.outl(f"\n```\n{text[beg:end].strip()}\n```\n")
@@ -140,7 +140,7 @@ Options:
 <h2 id="configuration-file">Configuration File</h2>
 <p>If you don't provide a config file using the <code>--file</code> flag, <code><a title="ds" href="#ds">ds</a></code> will search the current directory and all of its parents for files with these names in the following order:</p>
 <!--[[[cog
-text = snip_file("src/ds.py", skip_beg=True, beg="SEARCH_FILES = [", end="]")
+text = snip_file("src/ds/__init__.py", skip_beg=True, beg="SEARCH_FILES = [", end="]")
 text = replace_many(text, {
 '
 "': "- `",
@@ -161,7 +161,7 @@ cog.outl(f"\n{text}\n")
 <p>The first file found will be used.</p>
 <p><code><a title="ds" href="#ds">ds</a></code> currently supports <code>json</code> and <code>toml</code> files. It searches for the following keys in the following order:</p>
 <!--[[[cog
-text = snip_file("src/ds.py", skip_beg=True, beg="SEARCH_KEYS = [", end="]")[1:]
+text = snip_file("src/ds/__init__.py", skip_beg=True, beg="SEARCH_KEYS = [", end="]")[1:]
 text = replace_many(text, {
 '
 "': "- `",
