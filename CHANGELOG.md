@@ -129,7 +129,7 @@ Initial release.
 - New CLI options
   - [#3]: `--list` to list tasks
   - [#10]: `--file` to specify a config file
-  - [#11]: `--cwd` tp specify current working directory
+  - [#11]: `--cwd` to specify current working directory
 - Other
   - [#1]: setup repo
   - [#13]: [inspirations to README](https://github.com/metaist/ds#inspirations)
