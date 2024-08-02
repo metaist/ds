@@ -18,6 +18,7 @@ from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
+from typing import Tuple
 import json
 import os
 import re
@@ -372,7 +373,7 @@ def load_config(path: Path) -> Tasks:
     return parse_config(config)
 
 
-def find_config(start: Path, debug: bool = False) -> Optional[Path]:
+def find_config(start: Path, debug: bool = False) -> Tuple[Path, Tasks]:
     """Return the config file in `start` or its parents."""
     for path in (start / "x").resolve().parents:  # to include start
         for name in SEARCH_FILES:
@@ -380,8 +381,12 @@ def find_config(start: Path, debug: bool = False) -> Optional[Path]:
             if debug:
                 print("check", check.resolve())
             if check.exists():
-                return check
-    return None
+                try:
+                    return check, load_config(check)
+                except LookupError:  # pragma: no cover
+                    # No valid sections.
+                    continue
+    raise FileNotFoundError("No valid configuration file found.")
 
 
 def parse_args(argv: List[str]) -> Args:
@@ -450,17 +455,17 @@ def main(argv: Optional[List[str]] = None) -> None:
     """Main entry point."""
     try:
         args = parse_args((argv or sys.argv)[1:])
-        args.file_ = args.file_ or find_config(Path.cwd(), args.debug)
-        if not args.file_:
-            raise FileNotFoundError("No configuration file found.")
-        if not args.file_.exists():
-            raise FileNotFoundError(f"Cannot find file: {args.file_}")
+        if args.file_:
+            if not args.file_.exists():
+                raise FileNotFoundError(f"Cannot find file: {args.file_}")
+            tasks = load_config(args.file_)
+        else:
+            args.file_, tasks = find_config(Path.cwd(), args.debug)
 
         args.cwd = args.cwd or args.file_.parent
         if not args.cwd.exists():
             raise NotADirectoryError(f"Cannot find directory: {args.cwd}")
 
-        tasks = load_config(args.file_)
         check_cycles(tasks)
     except graphlib.CycleError as e:
         cycle = e.args[1]
