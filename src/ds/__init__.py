@@ -287,7 +287,7 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
 
 
 def get_path(src: Dict[str, Any], name: str, default: Optional[Any] = None) -> Any:
-    """Return"""
+    """Return value of `name` within `src` or `default` if it's missing."""
     path = name.split(".")
     result: Any = default
     try:
