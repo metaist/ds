@@ -43,7 +43,7 @@ def test_string() -> None:
     }
 
     # Task commands that start with a hyphen suppress errors.
-    assert parse_config({"scripts": {"ls": "-ls -la"}}) == {
+    assert parse_config({"scripts": {"ls": "+ls -la"}}) == {
         "ls": Task(name="ls", cmd="ls -la", keep_going=True)
     }
 
@@ -51,7 +51,7 @@ def test_string() -> None:
 def test_composite() -> None:
     """Parse a `composite` command."""
     # ds-style
-    assert parse_config({"scripts": {"all": ["-clean", "build"]}}) == {
+    assert parse_config({"scripts": {"all": ["+clean", "build"]}}) == {
         "all": Task(
             name="all",
             depends=[
@@ -76,17 +76,17 @@ def test_composite() -> None:
 def test_shell_cmd() -> None:
     """Parse a `shell` or `cmd` command."""
     # shell
-    assert parse_config({"scripts": {"ls": {"shell": "-ls -la"}}}) == {
+    assert parse_config({"scripts": {"ls": {"shell": "+ls -la"}}}) == {
         "ls": Task(name="ls", cmd="ls -la", keep_going=True)
     }
 
     # cmd (str)
-    assert parse_config({"scripts": {"ls": {"cmd": "-ls -la"}}}) == {
+    assert parse_config({"scripts": {"ls": {"cmd": "+ls -la"}}}) == {
         "ls": Task(name="ls", cmd="ls -la", keep_going=True)
     }
 
     # cmd (list)
-    assert parse_config({"scripts": {"ls": {"cmd": ["-ls", "-la"]}}}) == {
+    assert parse_config({"scripts": {"ls": {"cmd": ["+ls", "-la"]}}}) == {
         "ls": Task(name="ls", cmd="ls -la", keep_going=True)
     }
 

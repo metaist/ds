@@ -122,6 +122,9 @@ SEARCH_KEYS = [
 RE_ARGS = re.compile(r"(\$(?:@|\d+))")
 """Regex for matching an argument to be interpolated."""
 
+PREFIX_KEEP_GOING = "+"
+"""Error suppression prefix."""
+
 
 @dataclass
 class Args:
@@ -174,12 +177,11 @@ class Task:
                 parsed = Task.parse(item)
                 parsed.name = "#composite"
                 task.depends.append(parsed)
-            # task.depends.extend(Task.parse(x) for x in config)
 
         elif isinstance(config, str):
             task.cmd = config
-            if config.startswith("-"):  # suppress error
-                task.cmd = config[1:]
+            if config.startswith(PREFIX_KEEP_GOING):  # suppress error
+                task.cmd = config[len(PREFIX_KEEP_GOING) :]
                 task.keep_going = True
 
         elif isinstance(config, Mapping):
@@ -204,9 +206,14 @@ class Task:
 
     def pprint(self) -> None:
         """Pretty-print a representation of this task."""
-        cmd = f"{'-' if self.keep_going else ''}{self.cmd}"
+        cmd = f"{PREFIX_KEEP_GOING if self.keep_going else ''}{self.cmd}"
         if self.depends:
-            cmd = str([f"{'-' if t.keep_going else ''}{t.cmd}" for t in self.depends])
+            cmd = str(
+                [
+                    f"{PREFIX_KEEP_GOING if t.keep_going else ''}{t.cmd}"
+                    for t in self.depends
+                ]
+            )
 
         indent = " " * 4
         print(f"{self.name}:")
@@ -248,9 +255,9 @@ class Task:
                 return other.run(tasks, args + extra, keep_going)
 
         # 4. Run our command.
-        dash = "-" if keep_going else ""
+        prefix = PREFIX_KEEP_GOING if keep_going else ""
         cmd = interpolate_args(self.cmd, [*extra])
-        print(f"\n$ {dash}{cmd}")
+        print(f"\n$ {prefix}{cmd}")
         proc = run(cmd, shell=True, text=True)
         code = proc.returncode
 

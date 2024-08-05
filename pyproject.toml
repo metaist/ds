@@ -110,7 +110,7 @@ docs = """\
   touch docs/.nojekyll
 """
 
-lint = ["ruff", "-cspell", "pyright", "mypy"]
+lint = ["ruff", "+cspell", "pyright", "mypy"]
 dev = ["lint", "test"]
 all = ["lint", "test", "cog", "docs"]
 
