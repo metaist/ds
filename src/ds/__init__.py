@@ -119,7 +119,7 @@ SEARCH_KEYS = [
 ]
 """Search order for configuration keys."""
 
-RE_ARGS = re.compile(r"(\$(?:@|\d+))")
+RE_ARGS = re.compile(r"(?:\$(@|\d+)|\$\{(@|\d+)(?::-(.*?))?\})")
 """Regex for matching an argument to be interpolated."""
 
 ARG_START = ":"
@@ -298,12 +298,16 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
 
     def _replace_arg(match: re.Match[str]) -> str:
         """Return the argument replacement."""
-        if match[0] == "$@":  # remaining args
+        arg = (match[1] or "") + (match[2] or "")
+        if arg == "@":  # remaining args
             return " ".join(arg for arg in not_done if arg is not None)
 
-        idx = int(match[0][1:]) - 1
+        idx = int(arg) - 1
+        default = match[3]
         if idx >= len(args):
-            raise IndexError(f"Not enough arguments provided: ${idx+1}")
+            if default is None:
+                raise IndexError(f"Not enough arguments provided: ${idx+1}")
+            return default
 
         not_done[idx] = None
         return args[idx]
