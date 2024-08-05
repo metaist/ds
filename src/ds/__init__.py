@@ -122,8 +122,20 @@ SEARCH_KEYS = [
 RE_ARGS = re.compile(r"(\$(?:@|\d+))")
 """Regex for matching an argument to be interpolated."""
 
+ARG_START = ":"
+"""Explicit command-line start of task arguments."""
+
+ARG_END = "--"
+"""Explicit command-line end of task arguments."""
+
 PREFIX_KEEP_GOING = "+"
 """Error suppression prefix."""
+
+PREFIX_ARG_START = "-"
+"""Implicit start of command-line task arguments."""
+
+COMPOSITE_NAME = "#composite"
+"""Name of a task that is part of a composite task."""
 
 
 @dataclass
@@ -175,7 +187,7 @@ class Task:
         if isinstance(config, list):
             for item in config:
                 parsed = Task.parse(item)
-                parsed.name = "#composite"
+                parsed.name = COMPOSITE_NAME
                 task.depends.append(parsed)
 
         elif isinstance(config, str):
@@ -248,7 +260,7 @@ class Task:
             return 0
 
         # 3. Check if a part of a composite command is calling another task.
-        if self.name == "#composite":
+        if self.name == COMPOSITE_NAME:
             cmd, *args = shlex.split(self.cmd)
             other = tasks.get(cmd)
             if other and other != self and self not in other.depends:
@@ -419,23 +431,23 @@ def parse_args(argv: List[str]) -> Args:
             continue  # processed
         # our args processed
 
-        if task and arg == ":":  # explicit arg start
+        if task and arg == ARG_START:  # explicit arg start
             is_task = True
             continue  # not an argument
 
-        if arg == "--":  # explicit arg end
+        if arg == ARG_END:  # explicit arg end
             task, is_task = "", False
             continue  # not an argument
 
-        if task and arg.startswith("-"):  # implicit arg start
+        if task and arg.startswith(PREFIX_ARG_START):  # implicit arg start
             is_task = True
 
         if is_task:  # add task args
             args.task[task].append(arg)
             continue  # processed
 
-        if arg.endswith(":"):  # task name + explicit arg start
-            arg = arg[:-1]
+        if arg.endswith(ARG_START):  # task name + explicit arg start
+            arg = arg[: -len(ARG_START)]
             is_task = True
 
         task = arg
