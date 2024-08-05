@@ -119,9 +119,6 @@ SEARCH_KEYS = [
 ]
 """Search order for configuration keys."""
 
-PYTHON_CALL = "python -c 'import sys, {module} as _1; sys.exit(_1.{func})'"
-"""Template for a python call."""
-
 RE_ARGS = re.compile(r"(\$(?:@|\d+))")
 """Regex for matching an argument to be interpolated."""
 
