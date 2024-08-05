@@ -11,8 +11,10 @@ import pytest
 # pkg
 from ds import __version__
 from ds import Args
+from ds import COMPOSITE_NAME
 from ds import main
 from ds import parse_args
+from ds import Task
 
 
 def test_parse_args() -> None:
@@ -20,16 +22,51 @@ def test_parse_args() -> None:
     assert parse_args(shlex.split("--debug")) == Args(debug=True)
 
     # no args
-    assert parse_args(shlex.split("a b c")) == Args(task={"a": [], "b": [], "c": []})
-
-    # implicit start / explicit end
-    assert parse_args(shlex.split("--debug a --debug -- b")) == Args(
-        debug=True, task={"a": ["--debug"], "b": []}
+    assert parse_args(shlex.split("a b c")) == Args(
+        task=Task(
+            depends=[
+                Task(name=COMPOSITE_NAME, cmd="a", allow_shell=False),
+                Task(name=COMPOSITE_NAME, cmd="b", allow_shell=False),
+                Task(name=COMPOSITE_NAME, cmd="c", allow_shell=False),
+            ]
+        )
     )
 
-    # explicit arg start/end
-    assert parse_args(shlex.split("a : b -- c")) == Args(task={"a": ["b"], "c": []})
-    assert parse_args(shlex.split("a: b -- c")) == Args(task={"a": ["b"], "c": []})
+
+def test_implicit_arg_start() -> None:
+    """Test parsing implicit task arg start / explicit end."""
+    assert parse_args(shlex.split("--debug a --debug -- b")) == Args(
+        debug=True,
+        task=Task(
+            depends=[
+                Task(name=COMPOSITE_NAME, cmd="a --debug", allow_shell=False),
+                Task(name=COMPOSITE_NAME, cmd="b", allow_shell=False),
+            ]
+        ),
+    )
+
+
+def test_explicit_arg_start_end() -> None:
+    """Test parsing explicit task args."""
+    # separate
+    assert parse_args(shlex.split("a : b -- c")) == Args(
+        task=Task(
+            depends=[
+                Task(name=COMPOSITE_NAME, cmd="a b", allow_shell=False),
+                Task(name=COMPOSITE_NAME, cmd="c", allow_shell=False),
+            ]
+        ),
+    )
+
+    # attached
+    assert parse_args(shlex.split("a: b -- c")) == Args(
+        task=Task(
+            depends=[
+                Task(name=COMPOSITE_NAME, cmd="a b", allow_shell=False),
+                Task(name=COMPOSITE_NAME, cmd="c", allow_shell=False),
+            ]
+        ),
+    )
 
 
 def test_help() -> None:

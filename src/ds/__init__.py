@@ -139,32 +139,6 @@ COMPOSITE_NAME = "#composite"
 
 
 @dataclass
-class Args:
-    """Type-checked arguments."""
-
-    help: bool = False
-    """Whether to show the usage."""
-
-    version: bool = False
-    """Whether to show the version."""
-
-    debug: bool = False
-    """Whether to show debug messages"""
-
-    cwd: Optional[Path] = None
-    """Path to run tasks in."""
-
-    file_: Optional[Path] = None
-    """Path to task definitions."""
-
-    list_: bool = False
-    """Whether to show available tasks"""
-
-    task: Dict[str, List[str]] = field(default_factory=dict)
-    """Mapping of task names to extra arguments."""
-
-
-@dataclass
 class Task:
     """Represents a thing to be done."""
 
@@ -179,6 +153,9 @@ class Task:
 
     keep_going: bool = False
     """Ignore a non-zero return code."""
+
+    allow_shell: bool = True
+    """Whether this task is allowed to run on the shell."""
 
     @staticmethod
     def parse(config: Any) -> Task:
@@ -266,6 +243,9 @@ class Task:
             if other and other != self and self not in other.depends:
                 return other.run(tasks, args + extra, keep_going)
 
+        if not self.allow_shell:
+            raise ValueError(f"Unknown task: {self.cmd}")
+
         # 4. Run our command.
         prefix = PREFIX_KEEP_GOING if keep_going else ""
         cmd = interpolate_args(self.cmd, [*extra])
@@ -280,6 +260,32 @@ class Task:
 
 Tasks = Dict[str, Task]
 """Mapping a task name to a `Task`."""
+
+
+@dataclass
+class Args:
+    """Type-checked arguments."""
+
+    help: bool = False
+    """Whether to show the usage."""
+
+    version: bool = False
+    """Whether to show the version."""
+
+    debug: bool = False
+    """Whether to show debug messages"""
+
+    cwd: Optional[Path] = None
+    """Path to run tasks in."""
+
+    file_: Optional[Path] = None
+    """Path to task definitions."""
+
+    list_: bool = False
+    """Whether to show available tasks"""
+
+    task: Task = field(default_factory=Task)
+    """A composite task for the tasks given on the command-line."""
 
 
 def interpolate_args(cmd: str, args: List[str]) -> str:
@@ -334,14 +340,6 @@ def check_cycles(tasks: Tasks) -> List[str]:
                 edges.add(other)
         graph[name] = edges
     return list(graphlib.TopologicalSorter(graph).static_order())
-
-
-def run_task(tasks: Tasks, name: str, extra: Optional[List[str]] = None) -> None:
-    """Run a task."""
-    task = tasks.get(name)
-    if task is None:
-        raise ValueError(f"Unknown task: {name}")
-    task.run(tasks, extra)
 
 
 def print_tasks(path: Path, tasks: Tasks) -> None:
@@ -408,6 +406,7 @@ def find_config(start: Path, debug: bool = False) -> Tuple[Path, Tasks]:
 def parse_args(argv: List[str]) -> Args:
     """Parse command-line arguments in a docopt-like way."""
     args = Args()
+    tasks: List[str] = []
     task = ""
     is_ours = True
     is_task = False
@@ -442,8 +441,8 @@ def parse_args(argv: List[str]) -> Args:
         if task and arg.startswith(PREFIX_ARG_START):  # implicit arg start
             is_task = True
 
-        if is_task:  # add task args
-            args.task[task].append(arg)
+        if is_task:  # append task args
+            tasks[-1] += f" {arg}"
             continue  # processed
 
         if arg.endswith(ARG_START):  # task name + explicit arg start
@@ -451,7 +450,13 @@ def parse_args(argv: List[str]) -> Args:
             is_task = True
 
         task = arg
-        args.task[task] = []
+        tasks.append(task)
+
+    args.task = Task.parse(tasks)
+    for dep in args.task.depends:
+        # top-level tasks can't be shell commands
+        dep.allow_shell = False
+
     # all args processed
 
     if args.help:
@@ -491,15 +496,14 @@ def main(argv: Optional[List[str]] = None) -> None:
         print("ERROR:", e)
         sys.exit(1)
 
-    if args.list_ or not args.task:
+    if args.list_ or not args.task.depends:
         print_tasks(args.file_, tasks)
         sys.exit(0)
 
     curr = os.getcwd()
     os.chdir(args.cwd)
     try:
-        for name, extra in args.task.items():
-            run_task(tasks, name, extra)
+        args.task.run(tasks)
     except ValueError as e:
         print("ERROR:", e)
         sys.exit(1)

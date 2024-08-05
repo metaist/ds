@@ -4,7 +4,6 @@
 import pytest
 
 # pkg
-from ds import run_task
 from ds import Task
 from ds import Tasks
 
@@ -12,25 +11,28 @@ from ds import Tasks
 def test_missing() -> None:
     """Try to run a missing task."""
     with pytest.raises(ValueError):
-        run_task({}, "ls")
+        task = Task.parse("ls")
+        task.allow_shell = False
+        task.run({})
 
 
 def test_single() -> None:
     """Run a task."""
     tasks: Tasks = {"ls": Task.parse("ls -la")}
-    run_task(tasks, "ls")
-    run_task(tasks, "ls", ["-h"])
-    run_task(tasks, "ls", ["test"])
+    tasks["ls"].run(tasks)
+    tasks["ls"].run(tasks, ["-h"])
+    tasks["ls"].run(tasks, ["test"])
 
 
 def test_multiple() -> None:
     """Run multiple tasks."""
     tasks: Tasks = {"ls": Task.parse("ls -la"), "all": Task.parse(["ls"])}
-    run_task(tasks, "all")
+    tasks["all"].run(tasks)
 
 
 def test_failing() -> None:
+    """Run a failing task."""
     tasks: Tasks = {"fail": Task.parse("exit 123")}
     with pytest.raises(SystemExit) as e_info:
-        run_task(tasks, "fail")
+        tasks["fail"].run(tasks)
     assert e_info.value.code == 123
