@@ -2,6 +2,7 @@
 
 # std
 from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
 from typing import Any
 from typing import Callable
@@ -21,10 +22,10 @@ else:  # pragma: no cover
 
 # pkg
 from .tasks import Task
+from .tasks import PREFIX_DISABLED
 
 Tasks = Dict[str, Task]
 """Mapping a task name to a `Task`."""
-
 
 Loader = Callable[[str], Dict[str, Any]]
 """A loader takes text and returns a mapping of strings to values."""
@@ -65,7 +66,16 @@ SEARCH_KEYS_WORKSPACE = [
 
 @dataclass
 class Config:
-    """"""
+    """ds configuration."""
+
+    path: Path
+    """Path to the configuration file."""
+
+    tasks: Dict[str, Task] = field(default_factory=dict)
+    """Task definitions."""
+
+    members: List[Path] = field(default_factory=list)
+    """List of workspace members."""
 
 
 def get_path(src: Dict[str, Any], name: str, default: Optional[Any] = None) -> Any:
@@ -93,7 +103,7 @@ def parse_config(config: Dict[str, Any], keys: Optional[List[str]] = None) -> Ta
             found = True
             for name, cmd in section.items():
                 name = name.strip()
-                if not name or name.startswith("#"):
+                if not name or name.startswith(PREFIX_DISABLED):
                     continue
                 task = Task.parse(cmd)
                 task.name = name

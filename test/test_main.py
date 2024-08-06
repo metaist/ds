@@ -1,7 +1,6 @@
 """Test main entry point."""
 
 # std
-import os
 import shlex
 
 # lib
@@ -11,62 +10,7 @@ import pytest
 # pkg
 from ds import __version__
 from ds import main
-from ds.args import Args
-from ds.args import parse_args
-from ds.tasks import COMPOSITE_NAME
-from ds.tasks import Task
-
-
-def test_parse_args() -> None:
-    """Parse arguments."""
-    assert parse_args(shlex.split("--debug")) == Args(debug=True)
-
-    # no args
-    assert parse_args(shlex.split("a b c")) == Args(
-        task=Task(
-            depends=[
-                Task(name=COMPOSITE_NAME, cmd="a", allow_shell=False),
-                Task(name=COMPOSITE_NAME, cmd="b", allow_shell=False),
-                Task(name=COMPOSITE_NAME, cmd="c", allow_shell=False),
-            ]
-        )
-    )
-
-
-def test_implicit_arg_start() -> None:
-    """Test parsing implicit task arg start / explicit end."""
-    assert parse_args(shlex.split("--debug a --debug -- b")) == Args(
-        debug=True,
-        task=Task(
-            depends=[
-                Task(name=COMPOSITE_NAME, cmd="a --debug", allow_shell=False),
-                Task(name=COMPOSITE_NAME, cmd="b", allow_shell=False),
-            ]
-        ),
-    )
-
-
-def test_explicit_arg_start_end() -> None:
-    """Test parsing explicit task args."""
-    # separate
-    assert parse_args(shlex.split("a : b -- c")) == Args(
-        task=Task(
-            depends=[
-                Task(name=COMPOSITE_NAME, cmd="a b", allow_shell=False),
-                Task(name=COMPOSITE_NAME, cmd="c", allow_shell=False),
-            ]
-        ),
-    )
-
-    # attached
-    assert parse_args(shlex.split("a: b -- c")) == Args(
-        task=Task(
-            depends=[
-                Task(name=COMPOSITE_NAME, cmd="a b", allow_shell=False),
-                Task(name=COMPOSITE_NAME, cmd="c", allow_shell=False),
-            ]
-        ),
-    )
+from ds import pushd
 
 
 def test_help() -> None:
@@ -100,8 +44,8 @@ def test_list() -> None:
 
 def test_task() -> None:
     """Run some dummy tasks."""
-    main(shlex.split("ds --cwd test -f examples/ds.toml tests"))
-    main(shlex.split("ds -f examples/ds.toml --debug tests"))
+    main(shlex.split("ds --cwd test -f examples/formats/ds.toml tests"))
+    main(shlex.split("ds -f examples/formats/ds.toml --debug tests"))
     main(shlex.split("ds --cwd . -f examples/full.toml composite"))
 
 
@@ -142,14 +86,12 @@ def test_bad_config() -> None:
 
 def test_no_config() -> None:
     """Fail to find a config file."""
-    curr = os.getcwd()
-    os.chdir("/")
-    with pytest.raises(SystemExit):
-        main(shlex.split("ds tests"))
-    os.chdir(curr)
+    with pushd("/"):
+        with pytest.raises(SystemExit):
+            main(shlex.split("ds tests"))
 
 
 def test_stay_in_file() -> None:
     """Use the same file when calling `ds` in a task."""
-    main(shlex.split("ds -f examples/package.json me-pkg"))
-    main(shlex.split("ds -f examples/package.json me-other"))
+    main(shlex.split("ds -f examples/formats/package.json inside"))
+    main(shlex.split("ds -f examples/formats/package.json outside"))

@@ -10,9 +10,10 @@ from __future__ import annotations
 from contextlib import contextmanager
 from os import environ as ENV
 from pathlib import Path
+from typing import Iterator
 from typing import List
 from typing import Optional
-from typing import Iterator
+from typing import Union
 import os
 import sys
 
@@ -32,8 +33,11 @@ __pubdate__ = "unpublished"
 
 
 @contextmanager
-def pushd(dest: Path) -> Iterator[Path]:
+def pushd(dest: Union[str, Path]) -> Iterator[Path]:
     """Temporarily change the current working directory."""
+    if isinstance(dest, str):
+        dest = Path(dest)
+
     cwd = os.getcwd()
     os.chdir(dest)
     try:

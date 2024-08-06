@@ -3,8 +3,8 @@
     "foo": "touch foo.txt",
     "ls": "ls -la",
     "clean": "rm foo.txt",
-    "me-pkg": "echo $_DS_CURRENT_FILE",
-    "me-other": "ds -f pyproject.toml me-pyproject",
+    "inside": "echo $_DS_CURRENT_FILE",
+    "outside": "ds -f pyproject-ds.toml outside",
     "tests": "ds foo ls clean"
   }
 }

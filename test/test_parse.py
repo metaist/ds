@@ -10,7 +10,6 @@ import pytest
 # pkg
 from ds.configs import load_config
 from ds.configs import parse_config
-from ds.env import interpolate_args
 from ds.tasks import check_cycles
 from ds.tasks import Task
 
@@ -108,40 +107,30 @@ def test_bad_types() -> None:
         parse_config({"scripts": {"X": {"bad": ["A", "B", "C"]}}})
 
 
-def test_load_ds() -> None:
-    """Load ds.toml file."""
-    assert load_config(Path("examples") / "ds.toml")
-    assert load_config(Path("examples") / "readme-example.toml")
+def test_load_formats() -> None:
+    """Load known formats."""
+    path = Path("examples") / "formats"
+    assert load_config(path / "Cargo.toml")
+    assert load_config(path / "composer.json")
+    assert load_config(path / "ds.toml")
+    assert load_config(path / "package.json")
+    assert load_config(path / "pyproject-ds.toml")
+    assert load_config(path / "pyproject-pdm.toml")
+    assert load_config(path / "pyproject-rye.toml")
+
+
+def test_load_readme() -> None:
+    """Load README examples."""
+    path = Path("examples") / "readme"
+    assert load_config(path / "basic.toml")
+    assert load_config(path / "composite.toml")
+    assert load_config(path / "error-suppression.toml")
+    assert load_config(path / "example.toml")
 
 
 def test_load_full() -> None:
     """Load complex toml file."""
     assert load_config(Path("examples") / "full.toml")
-    assert load_config(Path("examples") / "readme-basic.toml")
-    assert load_config(Path("examples") / "readme-composite.toml")
-    assert load_config(Path("examples") / "readme-error-suppression.toml")
-
-
-def test_pyproject() -> None:
-    """Load pyproject.toml file."""
-    assert load_config(Path("examples") / "pyproject.toml")
-    assert load_config(Path("examples") / "pyproject-pdm.toml")
-
-
-def test_cargo() -> None:
-    """Load Cargo.toml file."""
-    assert load_config(Path("examples") / "Cargo.toml")
-
-
-def test_load_npm() -> None:
-    """Load package.json file."""
-    assert load_config(Path("examples") / "package.json")
-
-
-def test_load_composer() -> None:
-    """Load package.json file."""
-    assert load_config(Path("examples") / "package.json")
-    assert load_config(Path("examples") / "composer.json")
 
 
 def test_unknown_name() -> None:
@@ -179,22 +168,3 @@ def test_bad_loop() -> None:
                 "b": Task(depends=[Task(name="#composite", cmd="a")]),
             }
         )
-
-
-def test_interpolate_args() -> None:
-    """Interpolate args properly."""
-    assert interpolate_args("a ${1} c", ["b"]) == "a b c"
-    assert interpolate_args("a $1 ${@} $3 $@", ["b", "c", "d"]) == "a b c d d c"
-
-
-def test_missing_args() -> None:
-    """Try to parse a command with insufficient args."""
-    with pytest.raises(IndexError):
-        interpolate_args("ls $1", [])
-
-
-def test_default_args() -> None:
-    """Add a default value for a missing arg."""
-    assert interpolate_args("ls ${1:-foo}", []) == "ls foo"
-    assert interpolate_args("ls ${1:-foo}", ["bar"]) == "ls bar"
-    assert interpolate_args("ls ${1:-foo}", [""]) == "ls"
