@@ -147,3 +147,8 @@ def test_no_config() -> None:
     with pytest.raises(SystemExit):
         main(shlex.split("ds tests"))
     os.chdir(curr)
+
+
+def test_stay_in_file() -> None:
+    """Use the same file when calling `ds` in a task."""
+    main(shlex.split("ds -f examples/package.json tests"))
