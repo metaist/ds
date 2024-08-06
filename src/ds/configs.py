@@ -48,6 +48,7 @@ SEARCH_KEYS = [
     "scripts",  # ds.toml, .ds.toml, package.json, composer.json
     "tool.ds.scripts",  # pyproject.toml
     "tool.pdm.scripts",  # pyproject.toml
+    "tool.rye.scripts",  # pyproject.toml
     "package.metadata.scripts",  # Cargo.toml
     "workspace.metadata.scripts",  # Cargo.toml
 ]

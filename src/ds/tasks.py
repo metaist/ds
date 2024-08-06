@@ -25,6 +25,9 @@ else:  # pragma: no cover
 # pkg
 from .env import interpolate_args
 
+PREFIX_DISABLED = "#"
+"""Task name prefix which indicates the task is disabled."""
+
 PREFIX_KEEP_GOING = "+"
 """Error suppression prefix."""
 
@@ -74,6 +77,10 @@ class Task:
             if "composite" in config:
                 assert isinstance(config["composite"], list)
                 return Task.parse(config["composite"])
+
+            elif "chain" in config:
+                assert isinstance(config["chain"], list)
+                return Task.parse(config["chain"])
 
             elif "shell" in config:
                 return Task.parse(str(config["shell"]))

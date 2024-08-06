@@ -1,0 +1,4 @@
+[tool.rye.scripts]
+lint = { chain = ["lint:black", "lint:check"] }
+"lint:black" = "ruff format ."
+"lint:check" = "ruff check ."
