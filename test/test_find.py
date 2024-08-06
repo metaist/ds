@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 # pkg
-from ds import find_config
+from ds.configs import find_config
 
 
 def test_no_config() -> None:

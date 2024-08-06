@@ -4,8 +4,8 @@
 import pytest
 
 # pkg
-from ds import Task
-from ds import Tasks
+from ds.tasks import Task
+from ds.tasks import Tasks
 
 
 def test_missing() -> None:

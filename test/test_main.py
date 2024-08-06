@@ -10,11 +10,11 @@ import pytest
 
 # pkg
 from ds import __version__
-from ds import Args
-from ds import COMPOSITE_NAME
 from ds import main
-from ds import parse_args
-from ds import Task
+from ds.args import Args
+from ds.args import parse_args
+from ds.tasks import COMPOSITE_NAME
+from ds.tasks import Task
 
 
 def test_parse_args() -> None:

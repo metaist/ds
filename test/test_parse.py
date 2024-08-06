@@ -8,11 +8,11 @@ import sys
 import pytest
 
 # pkg
-from ds import check_cycles
-from ds import interpolate_args
-from ds import load_config
-from ds import parse_config
-from ds import Task
+from ds.configs import load_config
+from ds.configs import parse_config
+from ds.env import interpolate_args
+from ds.tasks import check_cycles
+from ds.tasks import Task
 
 
 # TODO 2024-10-31 [3.8 EOL]: remove conditional

@@ -1,7 +1,41 @@
-"""Work with shell environment variables."""
+"""Shell environment variables."""
 
 # std
 from os import environ as ENV
+from typing import List
+from typing import Optional
+import re
+
+
+RE_ARGS = re.compile(r"(?:\$(@|\d+)|\$\{(@|\d+)(?::-(.*?))?\})")
+"""Regex for matching an argument to be interpolated."""
+
+
+def interpolate_args(cmd: str, args: List[str]) -> str:
+    """Return `args` interpolated into `cmd`."""
+    not_done: List[Optional[str]] = [arg for arg in args]
+
+    # By default, we append all args to the end of the command.
+    if not RE_ARGS.search(cmd):
+        cmd = f"{cmd} $@"
+
+    def _replace_arg(match: re.Match[str]) -> str:
+        """Return the argument replacement."""
+        arg = (match[1] or "") + (match[2] or "")
+        if arg == "@":  # remaining args
+            return " ".join(arg for arg in not_done if arg is not None)
+
+        idx = int(arg) - 1
+        default = match[3]
+        if idx >= len(args):
+            if default is None:
+                raise IndexError(f"Not enough arguments provided: ${idx+1}")
+            return default
+
+        not_done[idx] = None
+        return args[idx]
+
+    return RE_ARGS.sub(_replace_arg, cmd).rstrip()
 
 
 class TempEnv:
