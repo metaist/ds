@@ -151,4 +151,5 @@ def test_no_config() -> None:
 
 def test_stay_in_file() -> None:
     """Use the same file when calling `ds` in a task."""
-    main(shlex.split("ds -f examples/package.json tests"))
+    main(shlex.split("ds -f examples/package.json me-pkg"))
+    main(shlex.split("ds -f examples/package.json me-other"))

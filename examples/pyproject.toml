@@ -2,3 +2,4 @@
 
 [tool.ds.scripts]
 ls = "ls -lah"
+me-pyproject = "echo $_DS_CURRENT_FILE" # Called from package.json

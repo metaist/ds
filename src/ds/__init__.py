@@ -7,8 +7,10 @@
 
 # std
 from __future__ import annotations
+from contextlib import contextmanager
 from dataclasses import dataclass
 from dataclasses import field
+from os import environ as ENV
 from os.path import relpath
 from pathlib import Path
 from subprocess import run
@@ -38,6 +40,9 @@ if sys.version_info >= (3, 11):  # pragma: no cover
     import tomllib as toml
 else:  # pragma: no cover
     import tomli as toml
+
+# pkg
+from .env import TempEnv
 
 __version__ = "0.1.3"
 __pubdate__ = "2024-07-25T06:20:18Z"
@@ -291,6 +296,17 @@ class Args:
     """A composite task for the tasks given on the command-line."""
 
 
+@contextmanager
+def pushd(dest: Path):
+    """Temporarily change the current working directory."""
+    cwd = os.getcwd()
+    os.chdir(dest)
+    try:
+        yield Path(dest).resolve()
+    finally:
+        os.chdir(cwd)
+
+
 def interpolate_args(cmd: str, args: List[str]) -> str:
     """Return `args` interpolated into `cmd`."""
     not_done: List[Optional[str]] = [arg for arg in args]
@@ -507,17 +523,15 @@ def main(argv: Optional[List[str]] = None) -> None:
         print_tasks(args.file_, tasks)
         sys.exit(0)
 
-    curr = os.getcwd()
-    os.chdir(args.cwd)
     try:
-        args.task.run(tasks)
+        with TempEnv(_DS_CURRENT_FILE=str(args.file_)):
+            with pushd(args.cwd):
+                args.task.run(tasks)
     except ValueError as e:
         print("ERROR:", e)
         sys.exit(1)
     except KeyboardInterrupt:  # pragma: no cover
         return
-    finally:
-        os.chdir(curr)
 
 
 if __name__ == "__main__":  # pragma: no cover
