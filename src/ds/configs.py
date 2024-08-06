@@ -112,10 +112,10 @@ def parse_config(config: Dict[str, Any], keys: Optional[List[str]] = None) -> Ta
     if not found:
         raise LookupError(f"Could not find one of: {', '.join(keys or SEARCH_KEYS)}")
     return result
+        # special case for rye
+        if key == "tool.rye.scripts" and isinstance(cmd, list):
+            cmd = {"cmd": cmd}
 
-
-def load_config(path: Path, keys: Optional[List[str]] = None) -> Tasks:
-    """Load and parse the configuration file."""
     if path.suffix not in LOADERS:
         raise LookupError(f"Not sure how to read a {path.suffix} file: {path}")
 
