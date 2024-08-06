@@ -85,7 +85,10 @@ Run one or more tasks:
 $ ds build
 $ ds clean build
 
-If a task fails, subsequent tasks are not run.
+If a task fails, subsequent tasks are not run unless errors are suppressed:
+$ ds +lint test
+
+will run `test` even if `lint` fails.
 
 Provide arguments to one or more tasks (the following are equivalent):
 $ ds clean --all -- build test --no-gpu
