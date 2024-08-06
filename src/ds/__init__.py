@@ -20,9 +20,7 @@ import sys
 # pkg
 from .args import parse_args
 from .configs import find_config
-from .configs import load_config
-from .configs import SEARCH_KEYS
-from .configs import SEARCH_KEYS_WORKSPACE
+from .configs import Config
 from .env import TempEnv
 from .tasks import check_cycles
 from .tasks import CycleError
@@ -54,19 +52,21 @@ def main(argv: Optional[List[str]] = None) -> None:
             if path := ENV.get("_DS_CURRENT_FILE"):
                 args.file_ = Path(path)
 
+        require_workspace = bool(args.workspace)
         if args.file_:
             if not args.file_.exists():
                 raise FileNotFoundError(f"Cannot find file: {args.file_}")
-            tasks = load_config(args.file_)
+            config = Config.load(args.file_).parse(require_workspace)
         else:
-            keys = SEARCH_KEYS if not args.workspace else SEARCH_KEYS_WORKSPACE
-            args.file_, tasks = find_config(Path.cwd(), keys, args.debug)
+            # search for a valid config
+            config = find_config(Path.cwd(), require_workspace, args.debug)
+            args.file_ = config.path
+        # config loaded
+        check_cycles(config.tasks)
 
-        args.cwd = args.cwd or args.file_.parent
+        args.cwd = args.cwd or config.path.parent
         if not args.cwd.exists():
             raise NotADirectoryError(f"Cannot find directory: {args.cwd}")
-
-        check_cycles(tasks)
     except CycleError as e:
         cycle = e.args[1]
         print("ERROR: Task cycle detected:", " => ".join(cycle))
@@ -76,13 +76,13 @@ def main(argv: Optional[List[str]] = None) -> None:
         sys.exit(1)
 
     if args.list_ or not args.task.depends:
-        print_tasks(args.file_, tasks)
+        print_tasks(args.file_, config.tasks)
         sys.exit(0)
 
     try:
         with TempEnv(_DS_CURRENT_FILE=str(args.file_)):
             with pushd(args.cwd):
-                args.task.run(tasks)
+                args.task.run(config.tasks)
     except ValueError as e:
         print("ERROR:", e)
         sys.exit(1)

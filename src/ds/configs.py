@@ -1,6 +1,7 @@
 """Find and parse configuration files."""
 
 # std
+from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
@@ -71,11 +72,35 @@ class Config:
     path: Path
     """Path to the configuration file."""
 
+    config: Dict[str, Any]
+    """Configuration data."""
+
     tasks: Dict[str, Task] = field(default_factory=dict)
     """Task definitions."""
 
     members: List[Path] = field(default_factory=list)
     """List of workspace members."""
+
+    @staticmethod
+    def load(path: Path) -> Config:
+        """Try to load a configuration file."""
+        if path.suffix not in LOADERS:
+            raise LookupError(f"Not sure how to read a {path.suffix} file: {path}")
+
+        config = LOADERS[path.suffix](path.read_text())
+        return Config(path, config)
+
+    def parse(self, require_workspace: bool = False) -> Config:
+        """Parse a configuration file."""
+        found, self.members = parse_workspace(self.config)
+        if require_workspace and not found:
+            raise LookupError("Could not find workspace configuration.")
+
+        found, self.tasks = parse_tasks(self.config)
+        if not require_workspace and not found:
+            raise LookupError("Could not find task configuration.")
+
+        return self
 
 
 def get_path(src: Dict[str, Any], name: str, default: Optional[Any] = None) -> Any:
@@ -92,50 +117,65 @@ def get_path(src: Dict[str, Any], name: str, default: Optional[Any] = None) -> A
     return result
 
 
-def parse_config(config: Dict[str, Any], keys: Optional[List[str]] = None) -> Tasks:
-    """Parse a configuration file."""
-    result = {}
+def parse_workspace(config: Dict[str, Any]) -> Tuple[bool, List[Path]]:
+    """Parse workspace configurations."""
     found = False
-    for key in keys or SEARCH_KEYS:
-        section = get_path(config, key)
-        if section is not None:
-            assert isinstance(section, Mapping)
+    members: List[Path] = []
+    for key in SEARCH_KEYS_WORKSPACE:
+        members = get_path(config, key)
+        if members is not None:
             found = True
-            for name, cmd in section.items():
-                name = name.strip()
-                if not name or name.startswith(PREFIX_DISABLED):
-                    continue
-                task = Task.parse(cmd)
-                task.name = name
-                result[name] = task
             break
     if not found:
-        raise LookupError(f"Could not find one of: {', '.join(keys or SEARCH_KEYS)}")
-    return result
+        return found, members
+
+    return found, members
+
+
+def parse_tasks(config: Dict[str, Any]) -> Tuple[bool, Tasks]:
+    """Parse task configurations."""
+    found = False
+    tasks: Tasks = {}
+    key, section = "", {}
+    for key in SEARCH_KEYS:
+        section = get_path(config, key)
+        if section is not None:
+            found = True
+            break
+
+    if not found:
+        return found, tasks
+
+    assert isinstance(section, Mapping)
+    for name, cmd in section.items():
+        name = name.strip()
+        if not name or name.startswith(PREFIX_DISABLED):
+            continue
+
         # special case for rye
         if key == "tool.rye.scripts" and isinstance(cmd, list):
             cmd = {"cmd": cmd}
 
-    if path.suffix not in LOADERS:
-        raise LookupError(f"Not sure how to read a {path.suffix} file: {path}")
+        task = Task.parse(cmd)
+        task.name = name
+        tasks[name] = task
 
-    config = LOADERS[path.suffix](path.read_text())
-    return parse_config(config, keys)
+    return found, tasks
 
 
 def find_config(
-    start: Path, keys: Optional[List[str]] = None, debug: bool = False
-) -> Tuple[Path, Tasks]:
+    start: Path, require_workspace: bool = False, debug: bool = False
+) -> Config:
     """Return the config file in `start` or its parents."""
     for path in (start / "x").resolve().parents:  # to include start
         for name in SEARCH_FILES:
             check = path / name
             if debug:
                 print("check", check.resolve())
-            if check.exists():
-                try:
-                    return check, load_config(check, keys)
-                except LookupError:  # pragma: no cover
-                    # No valid sections.
-                    continue
+            if not check.exists():
+                continue
+            try:
+                return Config.load(check).parse(require_workspace)
+            except LookupError:  # pragma: no cover
+                continue  # No valid sections.
     raise FileNotFoundError("No valid configuration file found.")

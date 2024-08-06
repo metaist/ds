@@ -90,7 +90,7 @@ class Task:
                 return Task.parse(" ".join(cmd) if isinstance(cmd, list) else str(cmd))
 
             elif "call" in config:
-                raise ValueError(f"pdm-style `call` commands not supported: {config}")
+                raise ValueError(f"`call` commands not supported: {config}")
             else:
                 raise TypeError(f"Unknown task type: {config}")
         else:

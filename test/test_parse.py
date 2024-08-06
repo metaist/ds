@@ -8,8 +8,8 @@ import sys
 import pytest
 
 # pkg
-from ds.configs import load_config
-from ds.configs import parse_config
+from ds.configs import Config
+from ds.configs import parse_tasks
 from ds.tasks import check_cycles
 from ds.tasks import Task
 
@@ -24,25 +24,25 @@ else:  # pragma: no cover
 def test_skipped() -> None:
     """Parse configs that are skipped."""
     # tasks that start with a hash (#) are disabled
-    assert parse_config({"scripts": {"#disabled": "ls -la"}}) == {}
+    assert parse_tasks({"scripts": {"#disabled": "ls -la"}})[1] == {}
 
     # tasks with empty or all-whitespace names are disabled
-    assert parse_config({"scripts": {"": "ls -la", "  ": "exit 1"}}) == {}
+    assert parse_tasks({"scripts": {"": "ls -la", "  ": "exit 1"}})[1] == {}
 
 
 def test_nop() -> None:
     """Parse an empty task."""
-    assert parse_config({"scripts": {"nop": ""}}) == {"nop": Task(name="nop")}
+    assert parse_tasks({"scripts": {"nop": ""}})[1] == {"nop": Task(name="nop")}
 
 
 def test_string() -> None:
     """Parse basic string command."""
-    assert parse_config({"scripts": {"ls": "ls -la"}}) == {
+    assert parse_tasks({"scripts": {"ls": "ls -la"}})[1] == {
         "ls": Task(name="ls", cmd="ls -la")
     }
 
     # Task commands that start with a hyphen suppress errors.
-    assert parse_config({"scripts": {"ls": "+ls -la"}}) == {
+    assert parse_tasks({"scripts": {"ls": "+ls -la"}})[1] == {
         "ls": Task(name="ls", cmd="ls -la", keep_going=True)
     }
 
@@ -50,7 +50,7 @@ def test_string() -> None:
 def test_composite() -> None:
     """Parse a `composite` command."""
     # ds-style
-    assert parse_config({"scripts": {"all": ["+clean", "build"]}}) == {
+    assert parse_tasks({"scripts": {"all": ["+clean", "build"]}})[1] == {
         "all": Task(
             name="all",
             depends=[
@@ -61,7 +61,7 @@ def test_composite() -> None:
     }
 
     # pdm-style
-    assert parse_config({"scripts": {"all": {"composite": ["clean", "build"]}}}) == {
+    assert parse_tasks({"scripts": {"all": {"composite": ["clean", "build"]}}})[1] == {
         "all": Task(
             name="all",
             depends=[
@@ -75,17 +75,17 @@ def test_composite() -> None:
 def test_shell_cmd() -> None:
     """Parse a `shell` or `cmd` command."""
     # shell
-    assert parse_config({"scripts": {"ls": {"shell": "+ls -la"}}}) == {
+    assert parse_tasks({"scripts": {"ls": {"shell": "+ls -la"}}})[1] == {
         "ls": Task(name="ls", cmd="ls -la", keep_going=True)
     }
 
     # cmd (str)
-    assert parse_config({"scripts": {"ls": {"cmd": "+ls -la"}}}) == {
+    assert parse_tasks({"scripts": {"ls": {"cmd": "+ls -la"}}})[1] == {
         "ls": Task(name="ls", cmd="ls -la", keep_going=True)
     }
 
     # cmd (list)
-    assert parse_config({"scripts": {"ls": {"cmd": ["+ls", "-la"]}}}) == {
+    assert parse_tasks({"scripts": {"ls": {"cmd": ["+ls", "-la"]}}})[1] == {
         "ls": Task(name="ls", cmd="ls -la", keep_going=True)
     }
 
@@ -93,70 +93,67 @@ def test_shell_cmd() -> None:
 def test_call() -> None:
     """Try to parse a `call` command."""
     with pytest.raises(ValueError):
-        parse_config({"scripts": {"ls": {"call": "ds:main"}}})
+        parse_tasks({"scripts": {"ls": {"call": "ds:main"}}})
 
 
 def test_bad_types() -> None:
     """Handle bad types."""
     # Basic unsupported command type.
     with pytest.raises(TypeError):
-        parse_config({"scripts": {"X": False}})
+        parse_tasks({"scripts": {"X": False}})
 
     # Unsupported mapping type.
     with pytest.raises(TypeError):
-        parse_config({"scripts": {"X": {"bad": ["A", "B", "C"]}}})
+        parse_tasks({"scripts": {"X": {"bad": ["A", "B", "C"]}}})
 
 
 def test_load_formats() -> None:
     """Load known formats."""
     path = Path("examples") / "formats"
-    assert load_config(path / "Cargo.toml")
-    assert load_config(path / "composer.json")
-    assert load_config(path / "ds.toml")
-    assert load_config(path / "package.json")
-    assert load_config(path / "pyproject-ds.toml")
-    assert load_config(path / "pyproject-pdm.toml")
-    assert load_config(path / "pyproject-rye.toml")
+    assert Config.load(path / "Cargo.toml").parse()
+    assert Config.load(path / "composer.json").parse()
+    assert Config.load(path / "ds.toml").parse()
+    assert Config.load(path / "package.json").parse()
+    assert Config.load(path / "pyproject-ds.toml").parse()
+    assert Config.load(path / "pyproject-pdm.toml").parse()
+    assert Config.load(path / "pyproject-rye.toml").parse()
 
 
 def test_load_readme() -> None:
     """Load README examples."""
     path = Path("examples") / "readme"
-    assert load_config(path / "basic.toml")
-    assert load_config(path / "composite.toml")
-    assert load_config(path / "error-suppression.toml")
-    assert load_config(path / "example.toml")
+    assert Config.load(path / "basic.toml").parse()
+    assert Config.load(path / "composite.toml").parse()
+    assert Config.load(path / "error-suppression.toml").parse()
+    assert Config.load(path / "example.toml").parse()
 
 
 def test_load_full() -> None:
     """Load complex toml file."""
-    assert load_config(Path("examples") / "full.toml")
+    assert Config.load(Path("examples") / "full.toml").parse()
 
 
 def test_unknown_name() -> None:
     """Try to parse a file with an unknown file name."""
-    assert load_config(Path("examples") / "unknown.json")
+    assert Config.load(Path("examples") / "unknown.json").parse()
 
 
 def test_unknown_suffix() -> None:
     """Try to read a file with an unknown suffix."""
     with pytest.raises(LookupError):
-        load_config(Path("foo.txt"))
+        Config.load(Path("unknown-suffix.txt"))
 
 
 def test_bad_key() -> None:
     """Try to parse a file with an unknown format."""
     with pytest.raises(LookupError):
-        assert parse_config({}) == {}
-
-    with pytest.raises(LookupError):
-        assert load_config(Path("examples") / "bad-key.toml") == {}
+        Config.load(Path("examples") / "bad-key.toml").parse()
 
 
 def test_bad_value() -> None:
     """Try to parse a file with an invalid type."""
     with pytest.raises(TypeError):
-        load_config(Path("examples") / "bad-value.toml")
+        Config.load(Path("examples") / "bad-value.toml").parse()
 
 
 def test_bad_loop() -> None:
