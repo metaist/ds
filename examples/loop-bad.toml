@@ -2,5 +2,5 @@
 
 [scripts]
 this = ["bad"]
-bad = ["-loop"] # Error suppression won't help.
+bad = ["+loop"] # Error suppression won't help.
 loop = ["this"]

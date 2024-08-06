@@ -2,7 +2,7 @@
 
 [scripts]
 ls = "ls -lah"
-no_error = "-exit 1" # See "Error Suppression"
+no_error = "+exit 1" # See "Error Suppression"
 
 # We also support `pdm`-style commands.
 # The following all produce the same command as `ls` above.

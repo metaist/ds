@@ -3,13 +3,13 @@
 [scripts]
 build = "touch build/$1"
 clean = "rm -rf build"
-all = ["clean", "-mkdir build", "build foo", "build bar", "echo 'Done'"]
+all = ["clean", "+mkdir build", "build foo", "build bar", "echo 'Done'"]
 
 # We also support pdm-style composite commands.
 # The following is equivalent to `all`.
 all2 = { composite = [
   "clean",
-  "-mkdir build",
+  "+mkdir build",
   "build foo",
   "build bar",
   "echo 'Done'",

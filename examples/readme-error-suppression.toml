@@ -3,5 +3,5 @@
 [scripts]
 cspell = "cspell --gitignore '**/*.{py,txt,md,markdown}'"
 format = "ruff format ."
-die = "-exit 1" # returns error code of 0
-lint = ["-cspell", "format"] # run format even if cspell finds some misspelled words
+die = "+exit 1" # returns error code of 0
+lint = ["+cspell", "format"] # run format even if cspell finds some misspelled words
