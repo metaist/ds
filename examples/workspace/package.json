@@ -1,0 +1,10 @@
+{
+  "workspaces": [
+    "members/*",
+    "!members/x"
+  ],
+  "scripts": {
+    "# Aliases": "Top-level aliases for all workspaces.",
+    "test": "ds -w '*' test"
+  }
+}

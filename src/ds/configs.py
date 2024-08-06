@@ -34,6 +34,12 @@ Loader = Callable[[str], Dict[str, Any]]
 LOADERS: Dict[str, Loader] = {".toml": toml.loads, ".json": json.loads}
 """Mapping of file extensions to string load functions."""
 
+KEY_DELIMITER = "."
+"""Separator between parts of keys."""
+
+PREFIX_EXCLUDE_GLOB = "!"
+"""Prefix to exclude a glob match."""
+
 # NOTE: Used by cog in README.md
 SEARCH_FILES = [
     "ds.toml",
@@ -92,7 +98,7 @@ class Config:
 
     def parse(self, require_workspace: bool = False) -> Config:
         """Parse a configuration file."""
-        found, self.members = parse_workspace(self.config)
+        found, self.members = parse_workspace(self.path.parent, self.config)
         if require_workspace and not found:
             raise LookupError("Could not find workspace configuration.")
 
@@ -105,7 +111,7 @@ class Config:
 
 def get_path(src: Dict[str, Any], name: str, default: Optional[Any] = None) -> Any:
     """Return value of `name` within `src` or `default` if it's missing."""
-    path = name.split(".")
+    path = name.split(KEY_DELIMITER)
     result: Any = default
     try:
         for key in path:
@@ -117,18 +123,47 @@ def get_path(src: Dict[str, Any], name: str, default: Optional[Any] = None) -> A
     return result
 
 
-def parse_workspace(config: Dict[str, Any]) -> Tuple[bool, List[Path]]:
+def match_glob(
+    path: Path, patterns: List[str], cache: Optional[Dict[Path, bool]] = None
+) -> Dict[Path, bool]:
+    """Return glob matches."""
+    cache = cache or {}
+    for pattern in patterns:
+        include = True
+        if pattern.startswith(PREFIX_EXCLUDE_GLOB):
+            include = False
+            pattern = pattern[len(PREFIX_EXCLUDE_GLOB) :]
+        for match in sorted(path.glob(pattern)):
+            cache[match] = include
+    return cache
+
+
+def parse_workspace(path: Path, config: Dict[str, Any]) -> Tuple[bool, List[Path]]:
     """Parse workspace configurations."""
     found = False
     members: List[Path] = []
+    key = ""
+    patterns: List[str] = []
     for key in SEARCH_KEYS_WORKSPACE:
-        members = get_path(config, key)
-        if members is not None:
+        patterns = get_path(config, key)
+        if patterns is not None:
             found = True
             break
     if not found:
         return found, members
 
+    member_map = match_glob(path, patterns)
+
+    # special case: Cargo.toml exclude patterns
+    if KEY_DELIMITER in key:
+        parts = key.split(KEY_DELIMITER)
+        parts[-1] = "exclude"
+        patterns = get_path(config, KEY_DELIMITER.join(parts))
+        if patterns:
+            patterns = [f"!{p}" for p in patterns]  # remove all these
+            member_map = match_glob(path, patterns, member_map)
+
+    members = [p for p, include in member_map.items() if include]
     return found, members
 
 
@@ -152,7 +187,7 @@ def parse_tasks(config: Dict[str, Any]) -> Tuple[bool, Tasks]:
         if not name or name.startswith(PREFIX_DISABLED):
             continue
 
-        # special case for rye
+        # special case: rye bare cmd as list
         if key == "tool.rye.scripts" and isinstance(cmd, list):
             cmd = {"cmd": cmd}
 
