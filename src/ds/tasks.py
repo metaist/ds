@@ -31,6 +31,9 @@ PREFIX_KEEP_GOING = "+"
 COMPOSITE_NAME = "#composite"
 """Name of a task that is part of a composite task."""
 
+CycleError = graphlib.CycleError
+"""Error thrown where there is a cycle in the tasks."""
+
 
 @dataclass
 class Task:

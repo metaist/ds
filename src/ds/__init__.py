@@ -12,6 +12,7 @@ from os import environ as ENV
 from pathlib import Path
 from typing import List
 from typing import Optional
+from typing import Iterator
 import os
 import sys
 
@@ -23,7 +24,7 @@ from .configs import SEARCH_KEYS
 from .configs import SEARCH_KEYS_WORKSPACE
 from .env import TempEnv
 from .tasks import check_cycles
-from .tasks import graphlib
+from .tasks import CycleError
 from .tasks import print_tasks
 
 __version__ = "0.1.3post"
@@ -31,7 +32,7 @@ __pubdate__ = "unpublished"
 
 
 @contextmanager
-def pushd(dest: Path):
+def pushd(dest: Path) -> Iterator[Path]:
     """Temporarily change the current working directory."""
     cwd = os.getcwd()
     os.chdir(dest)
@@ -62,7 +63,7 @@ def main(argv: Optional[List[str]] = None) -> None:
             raise NotADirectoryError(f"Cannot find directory: {args.cwd}")
 
         check_cycles(tasks)
-    except graphlib.CycleError as e:
+    except CycleError as e:
         cycle = e.args[1]
         print("ERROR: Task cycle detected:", " => ".join(cycle))
         sys.exit(1)

@@ -1,9 +1,13 @@
 """Shell environment variables."""
 
 # std
+from __future__ import annotations
 from os import environ as ENV
+from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Optional
+from typing import Any
 import re
 
 
@@ -41,7 +45,7 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
 class TempEnv:
     """Temporary environment variables."""
 
-    def __init__(self, **initial):
+    def __init__(self, **initial: str):
         """Construct a temporary environment object.
 
         Args:
@@ -56,18 +60,18 @@ class TempEnv:
         ...         env2["a"] is None and env2["c"] == "e"
         True
         """
-        self.saved = {}
+        self.saved: Dict[str, Optional[str]] = {}
         for key, value in initial.items():
             if value is None:
                 del self[key]
             else:
                 self[key] = value
 
-    def __enter__(self):
+    def __enter__(self) -> TempEnv:
         """Return self when entering a context."""
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, *_: Any) -> None:
         """Reset all keys back to their previous values/existence."""
         for key, old in self.saved.items():
             if old is None:
@@ -76,7 +80,7 @@ class TempEnv:
             else:
                 ENV[key] = old
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Return the iterator for ENV.
 
         >>> list(TempEnv()) != []
@@ -84,7 +88,7 @@ class TempEnv:
         """
         return ENV.__iter__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return len(ENV).
 
         >>> len(TempEnv()) > 0
@@ -101,11 +105,11 @@ class TempEnv:
         """
         return key in ENV
 
-    def __getitem__(self, key: str) -> str:
+    def __getitem__(self, key: str) -> Optional[str]:
         """Return the current value of `key` or `None` if it isn't set."""
         return ENV.get(key, None)
 
-    def __setitem__(self, key: str, value: str):
+    def __setitem__(self, key: str, value: str) -> None:
         """Set the value of an environment variable.
 
         >>> with TempEnv(a="b") as env1:
@@ -115,7 +119,7 @@ class TempEnv:
             self.saved[key] = ENV.get(key)
         ENV[key] = str(value)
 
-    def __delitem__(self, key: str):
+    def __delitem__(self, key: str) -> None:
         """Delete an environment variable.
 
         >>> with TempEnv(a=None) as env1:

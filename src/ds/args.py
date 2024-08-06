@@ -112,7 +112,9 @@ class Args:
     """A composite task for the tasks given on the command-line."""
 
 
-def parse_args(argv: List[str], version="0.1.0", pubdate="unpublished") -> Args:
+def parse_args(
+    argv: List[str], version: str = "0.1.0", pubdate: str = "unpublished"
+) -> Args:
     """Parse command-line arguments in a docopt-like way."""
     args = Args()
     tasks: List[str] = []
