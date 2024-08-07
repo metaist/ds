@@ -10,6 +10,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from os import environ as ENV
 from pathlib import Path
+from shlex import join
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -18,9 +19,12 @@ import os
 import sys
 
 # pkg
+from .args import Args
 from .args import parse_args
-from .configs import find_config
+from .args import usage
 from .configs import Config
+from .configs import find_config
+from .configs import glob_refine
 from .env import TempEnv
 from .tasks import check_cycles
 from .tasks import CycleError
@@ -44,12 +48,13 @@ def pushd(dest: Union[str, Path]) -> Iterator[Path]:
         os.chdir(cwd)
 
 
-def main(argv: Optional[List[str]] = None) -> None:
-    """Main entry point."""
+def load_config(args: Args) -> Config:
+    """Load configuration file."""
     try:
-        args = parse_args((argv or sys.argv)[1:], __version__, __pubdate__)
         if not args.file_:
             if path := ENV.get("_DS_CURRENT_FILE"):
+                if args.debug:
+                    print("ds:load_config", "setting args.file_ from ENV=", path)
                 args.file_ = Path(path)
 
         require_workspace = bool(args.workspace)
@@ -62,6 +67,7 @@ def main(argv: Optional[List[str]] = None) -> None:
             config = find_config(Path.cwd(), require_workspace, args.debug)
             args.file_ = config.path
         # config loaded
+
         check_cycles(config.tasks)
 
         args.cwd = args.cwd or config.path.parent
@@ -75,12 +81,66 @@ def main(argv: Optional[List[str]] = None) -> None:
         print("ERROR:", e)
         sys.exit(1)
 
-    if args.list_ or not args.task.depends:
-        print_tasks(args.file_, config.tasks)
-        sys.exit(0)
+    return config
+
+
+def run_workspace(args: Args, config: Config) -> None:
+    """Run tasks in the context of each member."""
+    members = {m: False for m, i in config.members.items() if i}  # reset
+    members = glob_refine(config.path.parent, args.workspace, members)
+    for member, include in members.items():
+        if not include:
+            continue
+
+        member_args = args.copy()
+        member_args.cwd = None  # remove cwd
+        member_args.workspace = []  # remove workspace
+
+        member_config = member / config.path.name
+        if member_config.exists():  # try config with same name
+            member_args.file_ = member_config
+        else:
+            member_args.file_ = None
+
+        try:
+            with TempEnv(_DS_CURRENT_FILE=None):
+                with pushd(member):
+                    cli_args = member_args.as_argv()
+                    print(f"$ pushd {member}")
+                    print(f"$ {join(cli_args)}")
+                    main(cli_args)
+                    print()
+        except SystemExit:  # pragma: no cover
+            pass
+
+
+def main(argv: Optional[List[str]] = None) -> None:
+    """Main entry point."""
+    args = parse_args((argv or sys.argv)[1:])
+    if args.debug:
+        print(args)
+
+    if args.help:
+        print(usage)
+        return
+
+    if args.version:
+        print(f"{__version__} ({__pubdate__})\n")
+        return
+
+    config = load_config(args)
+
+    if args.workspace:
+        run_workspace(args, config)
+        return
+
+    if args.list_:
+        print_tasks(config.path, config.tasks)
+        return
 
     try:
         with TempEnv(_DS_CURRENT_FILE=str(args.file_)):
+            assert args.cwd is not None
             with pushd(args.cwd):
                 args.task.run(config.tasks)
     except ValueError as e:

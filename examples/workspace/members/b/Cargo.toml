@@ -2,4 +2,4 @@
 name = "a"
 
 [package.metadata.scripts]
-test = "echo 'in a/Cargo.toml'"
+test = "echo 'in b/Cargo.toml'"

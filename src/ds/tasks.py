@@ -6,15 +6,14 @@ from dataclasses import dataclass
 from dataclasses import field
 from os.path import relpath
 from pathlib import Path
+from shlex import split
 from subprocess import run
 from typing import Any
+from typing import Dict
 from typing import List
-from typing import Mapping
 from typing import Optional
-import shlex
 import sys
 import textwrap
-
 
 # TODO 2024-10-31 [3.8 EOL]: remove conditional
 if sys.version_info >= (3, 9):  # pragma: no cover
@@ -30,6 +29,9 @@ from .symbols import TASK_KEEP_GOING
 
 CycleError = graphlib.CycleError
 """Error thrown where there is a cycle in the tasks."""
+
+ORIGINAL_CWD = Path.cwd()
+"""Save a reference to the original working directory."""
 
 
 @dataclass
@@ -58,16 +60,13 @@ class Task:
         if isinstance(config, list):
             for item in config:
                 parsed = Task.parse(item)
-                parsed.name = COMPOSITE_NAME
+                parsed.name = TASK_COMPOSITE
                 task.depends.append(parsed)
 
         elif isinstance(config, str):
-            task.cmd = config
-            if config.startswith(PREFIX_KEEP_GOING):  # suppress error
-                task.cmd = config[len(PREFIX_KEEP_GOING) :]
-                task.keep_going = True
+            task.keep_going, task.cmd = starts(config, TASK_KEEP_GOING)
 
-        elif isinstance(config, Mapping):
+        elif isinstance(config, Dict):
             if "composite" in config:
                 assert isinstance(config["composite"], list)
                 return Task.parse(config["composite"])
@@ -93,11 +92,11 @@ class Task:
 
     def pprint(self) -> None:
         """Pretty-print a representation of this task."""
-        cmd = f"{PREFIX_KEEP_GOING if self.keep_going else ''}{self.cmd}"
+        cmd = f"{TASK_KEEP_GOING if self.keep_going else ''}{self.cmd}"
         if self.depends:
             cmd = str(
                 [
-                    f"{PREFIX_KEEP_GOING if t.keep_going else ''}{t.cmd}"
+                    f"{TASK_KEEP_GOING if t.keep_going else ''}{t.cmd}"
                     for t in self.depends
                 ]
             )
@@ -135,8 +134,8 @@ class Task:
             return 0
 
         # 3. Check if a part of a composite command is calling another task.
-        if self.name == COMPOSITE_NAME:
-            cmd, *args = shlex.split(self.cmd)
+        if self.name == TASK_COMPOSITE:
+            cmd, *args = split(self.cmd)
             other = tasks.get(cmd)
             if other and other != self and self not in other.depends:
                 return other.run(tasks, args + extra, keep_going)
@@ -145,7 +144,7 @@ class Task:
             raise ValueError(f"Unknown task: {self.cmd}")
 
         # 4. Run our command.
-        prefix = PREFIX_KEEP_GOING if keep_going else ""
+        prefix = TASK_KEEP_GOING if keep_going else ""
         cmd = interpolate_args(self.cmd, [*extra])
         print(f"\n$ {prefix}{cmd}")
         proc = run(cmd, shell=True, text=True)
@@ -156,7 +155,7 @@ class Task:
         return 0  # either it was zero or we keep going
 
 
-Tasks = Mapping[str, Task]
+Tasks = Dict[str, Task]
 """Mapping of task names to `Task` objects."""
 
 
@@ -166,11 +165,7 @@ def check_cycles(tasks: Tasks) -> List[str]:
     for name, task in tasks.items():
         edges = set()
         for dep in task.depends:
-            other = shlex.split(dep.cmd)[0]
-
-            # In theory, this should have been stripped when parsing commands.
-            if other.startswith(PREFIX_KEEP_GOING):  # pragma: no cover
-                other = other[len(PREFIX_KEEP_GOING) :]
+            other = split(dep.cmd)[0]
             if other != name:
                 edges.add(other)
         graph[name] = edges
@@ -183,7 +178,7 @@ def print_tasks(path: Path, tasks: Tasks) -> None:
     plural = "s" if count != 1 else ""
 
     path_abs = str(path.resolve())
-    path_rel = relpath(path, Path.cwd())
+    path_rel = relpath(path, ORIGINAL_CWD)
     location = path_abs if len(path_abs) < len(path_rel) else path_rel
 
     print(f"# Found {count} task{plural} in {location}\n")

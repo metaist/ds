@@ -1,5 +1,5 @@
 {
   "scripts": {
-    "test": "echo 'test from x'"
+    "test": "echo 'in x/package.json'"
   }
 }

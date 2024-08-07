@@ -1,16 +1,18 @@
 """Parse arguments."""
 
 # std
+from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
+from shlex import split
 from typing import List
 from typing import Optional
-import sys
+import dataclasses
 
 # pkg
-from .symbols import ARG_END
 from .symbols import ARG_BEG
+from .symbols import ARG_END
 from .symbols import ARG_OPTION
 from .tasks import Task
 
@@ -51,6 +53,7 @@ Options:
 
   <task>[: <options>... --]
     One or more tasks to run with task-specific arguments.
+
     Use a colon (`:`) to indicate start of arguments and
     double-dash (`--`) to indicate the end.
 
@@ -105,10 +108,35 @@ class Args:
     task: Task = field(default_factory=Task)
     """A composite task for the tasks given on the command-line."""
 
+    def copy(self) -> Args:
+        """Return a copy of this object."""
+        return dataclasses.replace(self)
 
-def parse_args(
-    argv: List[str], version: str = "0.1.0", pubdate: str = "unpublished"
-) -> Args:
+    def as_argv(self) -> List[str]:
+        """Return args as a string."""
+        result = ["ds"]
+        if self.help:
+            result.append("--help")
+        if self.version:
+            result.append("--version")
+        if self.debug:
+            result.append("--debug")
+        if self.cwd:
+            result.extend(["--cwd", str(self.cwd)])
+        if self.file_:
+            result.extend(["--file", str(self.file_)])
+        if self.workspace:
+            for w in self.workspace:
+                result.extend(["--workspace", w])
+        if self.list_:
+            result.append("--list")
+        for t in self.task.depends:
+            parts = split(t.cmd)
+            result.extend([parts[0], ARG_BEG, *parts[1:], ARG_END])
+        return result
+
+
+def parse_args(argv: List[str]) -> Args:
     """Parse command-line arguments in a docopt-like way."""
     args = Args()
     tasks: List[str] = []
@@ -139,7 +167,7 @@ def parse_args(
             continue  # processed
         # our args processed
 
-        if task and arg == ARG_START:  # explicit arg start
+        if task and arg == ARG_BEG:  # explicit arg start
             is_task = True
             continue  # not an argument
 
@@ -147,15 +175,15 @@ def parse_args(
             task, is_task = "", False
             continue  # not an argument
 
-        if task and arg.startswith(PREFIX_ARG_START):  # implicit arg start
+        if task and arg.startswith(ARG_OPTION):  # implicit arg start
             is_task = True
 
         if is_task:  # append task args
             tasks[-1] += f" {arg}"
             continue  # processed
 
-        if arg.endswith(ARG_START):  # task name + explicit arg start
-            arg = arg[: -len(ARG_START)]
+        if arg.endswith(ARG_BEG):  # task name + explicit arg start
+            arg = arg[: -len(ARG_BEG)]
             is_task = True
 
         task = arg
@@ -166,16 +194,9 @@ def parse_args(
         # top-level tasks can't be shell commands
         dep.allow_shell = False
 
+    if not args.help and not args.version and not args.task.depends:
+        # default action
+        args.list_ = True
+
     # all args processed
-
-    if args.help:
-        print(usage)
-        return sys.exit(0)
-
-    if args.version:
-        print(f"{version} ({pubdate})\n")
-        return sys.exit(0)
-
-    if args.debug:
-        print(args)
     return args

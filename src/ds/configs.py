@@ -9,9 +9,9 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Mapping
 from typing import Optional
 from typing import Tuple
+from typing import Union
 import json
 import sys
 
@@ -22,16 +22,16 @@ else:  # pragma: no cover
     import tomli as toml
 
 # pkg
-from .symbols import KEY_DELIMITER
 from .symbols import GLOB_ALL
-from .symbols import TASK_DISABLED
 from .symbols import GLOB_EXCLUDE
+from .symbols import KEY_DELIMITER
 from .symbols import starts
+from .symbols import TASK_DISABLED
 from .tasks import Task
 from .tasks import Tasks
 
-Tasks = Dict[str, Task]
-"""Mapping a task name to a `Task`."""
+GlobMatches = Dict[Path, bool]
+"""Mapping a path to whether it should be included."""
 
 Loader = Callable[[str], Dict[str, Any]]
 """A loader takes text and returns a mapping of strings to values."""
@@ -80,11 +80,11 @@ class Config:
     config: Dict[str, Any]
     """Configuration data."""
 
-    tasks: Dict[str, Task] = field(default_factory=dict)
+    tasks: Tasks = field(default_factory=dict)
     """Task definitions."""
 
-    members: List[Path] = field(default_factory=list)
-    """List of workspace members."""
+    members: GlobMatches = field(default_factory=dict)
+    """Workspace members mapped to `True` for active members."""
 
     @staticmethod
     def load(path: Path) -> Config:
@@ -108,9 +108,24 @@ class Config:
         return self
 
 
-def get_path(src: Dict[str, Any], name: str, default: Optional[Any] = None) -> Any:
-    """Return value of `name` within `src` or `default` if it's missing."""
-    path = name.split(KEY_DELIMITER)
+def get_path(
+    src: Dict[str, Any], name: Union[str, List[str]], default: Optional[Any] = None
+) -> Any:
+    """Return value of `name` within `src` or `default` if it's missing.
+
+    >>> get_path({"a": {"b": {"c": 1}}}, "a.b.c") == 1
+    True
+    >>> get_path({"a": {"b": {"c": 1}}}, ["a", "b", "c"]) == 1
+    True
+    """
+    path: List[str] = []
+    if isinstance(name, str):
+        path = name.split(KEY_DELIMITER)
+    elif isinstance(name, list):
+        path = name
+    else:  # pragma: no cover
+        raise TypeError("Unknown type of key:", type(name))
+
     result: Any = default
     try:
         for key in path:
@@ -122,25 +137,40 @@ def get_path(src: Dict[str, Any], name: str, default: Optional[Any] = None) -> A
     return result
 
 
-def match_glob(
-    path: Path, patterns: List[str], cache: Optional[Dict[Path, bool]] = None
-) -> Dict[Path, bool]:
-    """Return glob matches."""
-    cache = cache or {}
+def glob_apply(
+    path: Path, patterns: List[str], matches: Optional[GlobMatches] = None
+) -> GlobMatches:
+    """Apply glob `patterns` to `path`."""
+    result = {} if not matches else matches.copy()
     for pattern in patterns:
-        include = True
-        if pattern.startswith(PREFIX_EXCLUDE_GLOB):
-            include = False
-            pattern = pattern[len(PREFIX_EXCLUDE_GLOB) :]
+        exclude, pattern = starts(pattern, GLOB_EXCLUDE)
         for match in sorted(path.glob(pattern)):
-            cache[match] = include
-    return cache
+            result[match] = not exclude
+    return result
 
 
-def parse_workspace(path: Path, config: Dict[str, Any]) -> Tuple[bool, List[Path]]:
+def glob_refine(path: Path, patterns: List[str], matches: GlobMatches) -> GlobMatches:
+    """Apply glob-like `patterns` to `path` to refine `matches`."""
+    result = matches.copy()
+    for pattern in patterns:
+        exclude, pattern = starts(pattern, GLOB_EXCLUDE)
+        if pattern == GLOB_ALL:
+            for match in result:
+                result[match] = not exclude
+            continue
+
+        for match in sorted(path.glob(pattern)):
+            if match in result:  # no new entries
+                result[match] = not exclude
+    return result
+
+
+def parse_workspace(
+    path: Path, config: Dict[str, Any]
+) -> Tuple[bool, Dict[Path, bool]]:
     """Parse workspace configurations."""
     found = False
-    members: List[Path] = []
+    members: Dict[Path, bool] = {}
     key = ""
     patterns: List[str] = []
     for key in SEARCH_KEYS_WORKSPACE:
@@ -151,18 +181,14 @@ def parse_workspace(path: Path, config: Dict[str, Any]) -> Tuple[bool, List[Path
     if not found:
         return found, members
 
-    member_map = match_glob(path, patterns)
+    members = glob_apply(path, patterns)
 
     # special case: Cargo.toml exclude patterns
     if KEY_DELIMITER in key:
-        parts = key.split(KEY_DELIMITER)
-        parts[-1] = "exclude"
-        patterns = get_path(config, KEY_DELIMITER.join(parts))
-        if patterns:
-            patterns = [f"!{p}" for p in patterns]  # remove all these
-            member_map = match_glob(path, patterns, member_map)
-
-    members = [p for p, include in member_map.items() if include]
+        patterns = get_path(config, key.split(KEY_DELIMITER)[:-1] + ["exclude"])
+        if patterns:  # remove all of these
+            patterns = [f"{GLOB_EXCLUDE}{p}" for p in patterns]
+            members = glob_apply(path, patterns, members)
     return found, members
 
 
@@ -180,10 +206,10 @@ def parse_tasks(config: Dict[str, Any]) -> Tuple[bool, Tasks]:
     if not found:
         return found, tasks
 
-    assert isinstance(section, Mapping)
+    assert isinstance(section, Dict)
     for name, cmd in section.items():
-        name = name.strip()
-        if not name or name.startswith(PREFIX_DISABLED):
+        name = str(name).strip()
+        if not name or name.startswith(TASK_DISABLED):
             continue
 
         # special case: rye bare cmd as list
@@ -201,6 +227,8 @@ def find_config(
     start: Path, require_workspace: bool = False, debug: bool = False
 ) -> Config:
     """Return the config file in `start` or its parents."""
+    if debug:
+        print(f"find_config: require_workspace={require_workspace}")
     for path in (start / "x").resolve().parents:  # to include start
         for name in SEARCH_FILES:
             check = path / name
