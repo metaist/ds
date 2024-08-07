@@ -9,6 +9,9 @@ from typing import Optional
 import sys
 
 # pkg
+from .symbols import ARG_END
+from .symbols import ARG_BEG
+from .symbols import ARG_OPTION
 from .tasks import Task
 
 # NOTE: Used by cog in README.md
@@ -72,15 +75,6 @@ Provide arguments to one or more tasks (the following are equivalent):
 $ ds clean --all -- build test --no-gpu
 $ ds clean --all && ds build && ds test --no-gpu
 """
-
-PREFIX_ARG_START = "-"
-"""Implicit start of command-line task arguments."""
-
-ARG_START = ":"
-"""Explicit command-line start of task arguments."""
-
-ARG_END = "--"
-"""Explicit command-line end of task arguments."""
 
 
 @dataclass

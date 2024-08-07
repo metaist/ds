@@ -24,15 +24,9 @@ else:  # pragma: no cover
 
 # pkg
 from .env import interpolate_args
-
-PREFIX_DISABLED = "#"
-"""Task name prefix which indicates the task is disabled."""
-
-PREFIX_KEEP_GOING = "+"
-"""Error suppression prefix."""
-
-COMPOSITE_NAME = "#composite"
-"""Name of a task that is part of a composite task."""
+from .symbols import starts
+from .symbols import TASK_COMPOSITE
+from .symbols import TASK_KEEP_GOING
 
 CycleError = graphlib.CycleError
 """Error thrown where there is a cycle in the tasks."""

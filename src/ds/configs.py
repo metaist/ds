@@ -22,8 +22,13 @@ else:  # pragma: no cover
     import tomli as toml
 
 # pkg
+from .symbols import KEY_DELIMITER
+from .symbols import GLOB_ALL
+from .symbols import TASK_DISABLED
+from .symbols import GLOB_EXCLUDE
+from .symbols import starts
 from .tasks import Task
-from .tasks import PREFIX_DISABLED
+from .tasks import Tasks
 
 Tasks = Dict[str, Task]
 """Mapping a task name to a `Task`."""
@@ -33,12 +38,6 @@ Loader = Callable[[str], Dict[str, Any]]
 
 LOADERS: Dict[str, Loader] = {".toml": toml.loads, ".json": json.loads}
 """Mapping of file extensions to string load functions."""
-
-KEY_DELIMITER = "."
-"""Separator between parts of keys."""
-
-PREFIX_EXCLUDE_GLOB = "!"
-"""Prefix to exclude a glob match."""
 
 # NOTE: Used by cog in README.md
 SEARCH_FILES = [

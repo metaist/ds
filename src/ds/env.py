@@ -3,13 +3,16 @@
 # std
 from __future__ import annotations
 from os import environ as ENV
+from typing import Any
 from typing import Dict
 from typing import Iterator
 from typing import List
 from typing import Optional
-from typing import Any
 import re
 
+# pkg
+from .symbols import ARG_PREFIX
+from .symbols import ARG_REST
 
 RE_ARGS = re.compile(r"(?:\$(@|\d+)|\$\{(@|\d+)(?::-(.*?))?\})")
 """Regex for matching an argument to be interpolated."""
@@ -21,12 +24,12 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
 
     # By default, we append all args to the end of the command.
     if not RE_ARGS.search(cmd):
-        cmd = f"{cmd} $@"
+        cmd = f"{cmd} {ARG_PREFIX}{ARG_REST}"
 
     def _replace_arg(match: re.Match[str]) -> str:
         """Return the argument replacement."""
         arg = (match[1] or "") + (match[2] or "")
-        if arg == "@":  # remaining args
+        if arg == ARG_REST:  # remaining args
             return " ".join(arg for arg in not_done if arg is not None)
 
         idx = int(arg) - 1
@@ -45,7 +48,7 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
 class TempEnv:
     """Temporary environment variables."""
 
-    def __init__(self, **initial: str):
+    def __init__(self, **initial: Optional[str]):
         """Construct a temporary environment object.
 
         Args:
