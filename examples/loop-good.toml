@@ -5,8 +5,8 @@
 ls = "ls" # => $ ls
 
 # Composite tasks can pass parameters to tasks that have a different
-# name than the parent. Otherwise, they're executed as a basic command.
-df = ["df"] # => $ df
+# name than the parent. Otherwise, they're executed as a basic tasks.
+df = ["df -h"] # => $ df -h
 
 # Calling the same task multiple times is not a loop.
 ls2 = ["ls", "ls"] # => $ ls && ls

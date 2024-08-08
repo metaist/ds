@@ -1,5 +1,5 @@
 # Example: Top-level key is correct, but there is an unknown type for
-# one of the commands.
+# one of the tasks.
 
 [scripts]
 ls = "ls -la"

@@ -1,0 +1,25 @@
+# Example: Composite tasks call other tasks or shell commands.
+
+[scripts]
+build = "touch build/$1"
+clean = "rm -rf build"
+
+# We also support `pdm`-style and `rye`-style composite commands.
+# The following are all equivalent.
+all = ["clean", "+mkdir build", "build foo", "build bar", "echo 'Done'"]
+
+pdm-style = { composite = [
+  "clean",
+  "+mkdir build", # See: Error Suppression
+  "build foo",
+  "build bar",
+  "echo 'Done'", # Composite tasks can call shell commands.
+] }
+
+rye-style = { chain = [
+  "clean",
+  "+mkdir build", # See: Error Suppression
+  "build foo",
+  "build bar",
+  "echo 'Done'", # Composite tasks can call shell commands.
+] }

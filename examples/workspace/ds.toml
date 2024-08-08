@@ -1,0 +1,4 @@
+# Example: workspace includes everything in `members` except `members/x`.
+
+[workspace]
+members = ["members/*", "!members/x"]

@@ -2,3 +2,4 @@
 
 [tool.ds.scripts]
 ls = "ls -lah"
+outside = "echo $_DS_CURRENT_FILE" # Called from package.json

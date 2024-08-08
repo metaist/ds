@@ -10,7 +10,7 @@ import cog  # type: ignore
 
 def fenced_block(text: str, lang: str = "") -> None:
     """Generate a fenced code block."""
-    cog.outl(f"\n```{lang}\n{text}```\n")
+    cog.outl(f"\n```{lang or 'text'}\n{text}```\n")
 
 
 def insert_file(location: str, lang: str = "") -> None:

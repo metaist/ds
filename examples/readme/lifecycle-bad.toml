@@ -1,0 +1,4 @@
+# Bad example: hidden assumption that `build` calls `prebuild` first.
+[scripts]
+prebuild = "echo 'prebuild'"
+build = "echo 'build'"

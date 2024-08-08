@@ -1,0 +1,4 @@
+# Example: `pyproject.toml` workspace configuration using `ds`.
+
+[tool.ds.workspace]
+members = ["members/*", "!members/x"]

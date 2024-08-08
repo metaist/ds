@@ -1,4 +1,4 @@
-# Example: Basic ds configuration.
+# Example: Basic `ds` configuration.
 
 [scripts]
 foo = "touch foo.txt"

@@ -1,0 +1,4 @@
+# Good example: clear relationship between tasks.
+[scripts]
+prebuild = "echo 'prebuild'"
+build = ["prebuild", "echo 'build'"]

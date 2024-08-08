@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "test": "echo 'in x/package.json'"
+  }
+}

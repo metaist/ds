@@ -1,0 +1,9 @@
+# Example: `Cargo.toml` workspace configuration.
+
+[workspace]
+members = ["members/*"]
+exclude = ["members/x"]
+
+[workspace.metadata.scripts]
+# Aliases for top-level scripts.
+test = "ds -w '*' test"

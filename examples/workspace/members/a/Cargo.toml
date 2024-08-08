@@ -1,0 +1,5 @@
+[package]
+name = "a"
+
+[package.metadata.scripts]
+test = "echo 'in a/Cargo.toml'"

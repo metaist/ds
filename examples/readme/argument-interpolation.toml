@@ -1,0 +1,21 @@
+# Example: Argument interpolation lets you pass arguments to tasks.
+
+[scripts]
+# pass arguments, but supply defaults
+test = "pytest ${@:-src test}"
+
+
+# interpolate the first argument (required)
+# and then interpolate the remaining arguments, if any
+lint = "ruff check $1 ${@:-}"
+
+# pass an argument and re-use it
+release = """\
+  git commit -am "release: $1";\
+  git tag $1;\
+  git push;\
+  git push --tags;\
+  git checkout main;\
+  git merge --no-ff --no-edit prod;\
+  git push
+"""
