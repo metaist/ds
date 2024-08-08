@@ -39,19 +39,19 @@ def test_nop() -> None:
 
 
 def test_string() -> None:
-    """Parse basic string command."""
+    """Parse basic string task."""
     assert parse_tasks({"scripts": {"ls": "ls -la"}})[1] == {
         "ls": Task(name="ls", cmd="ls -la")
     }
 
-    # Task commands can suppress errors.
+    # Tasks can suppress errors.
     assert parse_tasks({"scripts": {"ls": f"{TASK_KEEP_GOING}ls -la"}})[1] == {
         "ls": Task(name="ls", cmd="ls -la", keep_going=True)
     }
 
 
 def test_composite() -> None:
-    """Parse a `composite` command."""
+    """Parse a `composite` task."""
     cmd = [f"{TASK_KEEP_GOING}clean", "build"]
     expected = {
         "all": Task(
@@ -75,7 +75,7 @@ def test_composite() -> None:
 
 
 def test_shell_cmd() -> None:
-    """Parse a `shell` or `cmd` command."""
+    """Parse a `shell` or `cmd` task."""
     cmd = f"{TASK_KEEP_GOING}ls -la"
     expected = {"ls": Task(name="ls", cmd="ls -la", keep_going=True)}
     expected["ls"].pprint()  # test printing
@@ -96,14 +96,14 @@ def test_shell_cmd() -> None:
 
 
 def test_call() -> None:
-    """Fail to parse `call` command."""
+    """Fail to parse `call` task."""
     with pytest.raises(ValueError):
         parse_tasks({"scripts": {"ls": {"call": "ds:main"}}})
 
 
 def test_bad_types() -> None:
     """Handle bad types."""
-    # Unsupported command type.
+    # Unsupported task type.
     with pytest.raises(TypeError):
         parse_tasks({"scripts": {"X": False}})
 

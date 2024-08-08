@@ -17,7 +17,7 @@ from .symbols import ARG_OPTION
 from .tasks import Task
 
 # NOTE: Used by cog in README.md
-usage = """ds: Run dev scripts.
+USAGE = """ds: Run dev scripts.
 
 Usage: ds [--help | --version] [--debug]
           [--file PATH]
@@ -38,6 +38,9 @@ Options:
   -f PATH, --file PATH
     File with task and workspace definitions (default: search in parents).
 
+    Read more about the configuration file:
+    https://github.com/metaist/ds#configuration-file
+
   --cwd PATH
     Set the starting working directory (default: --file parent).
     PATH is resolved relative to the current working directory.
@@ -47,6 +50,9 @@ Options:
 
     GLOB filters the list of workspaces defined in `--file`.
     The special pattern '*' matches all of the workspaces.
+
+    Read more about configuring workspaces:
+    https://github.com/metaist/ds#workspaces
 
   -l, --list
     List available tasks and exit.
@@ -60,6 +66,13 @@ Options:
     If the first <option> starts with a hyphen (`-`), you may omit the
     colon (`:`). If there are no more tasks after the last option, you
     may omit the double-dash (`--`).
+
+    Tasks are executed in order across any relevant workspaces. If any
+    task returns a non-zero code, task execution stops unless the
+    <task> was prefixed with a (`+`) in which case execution continues.
+
+    Read more about error suppression:
+    https://github.com/metaist/ds#error-suppression
 
 Examples:
 List the available tasks:

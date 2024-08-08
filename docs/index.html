@@ -26,40 +26,61 @@ hljs.highlightAll();
 </header>
 <section id="section-intro">
 <p>Run dev scripts.</p>
-<p align="center">
-<a href="https://metaist.github.io/ds/"><img alt="ds" width="200" src="https://raw.githubusercontent.com/metaist/ds/main/dash-the-rabbit.png" /></a><br />
-<em>Dash the Sprinter</em>
-</p>
-<p align="center">
-<a href="https://github.com/metaist/ds/actions/workflows/ci.yaml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/metaist/ds/.github/workflows/ci.yaml?branch=main&logo=github"/></a>
-<a href="https://pypi.org/project/ds"><img alt="PyPI" src="https://img.shields.io/pypi/v/ds.svg?color=blue" /></a>
-<a href="https://pypi.org/project/ds"><img alt="Supported Python Versions" src="https://img.shields.io/pypi/pyversions/ds" /></a>
-</p>
 <!--
 [[[cog from cog_helpers import * ]]]
 [[[end]]]
 -->
-<h2 id="why">Why?</h2>
-<p>I often need to run scripts to build my code, run my server, lint my files, etc. Every project seems to use a different tool (e.g., [<code>make</code>], [<code>ant</code>], [<code>npm</code>], [<code>pnpm</code>], [<code>pdm</code>]), yet the basic commands I use in each project are largely the same. So I <a href="#inspirations">was inspired</a> to build a very simple task runner.</p>
+<!-- <p align="center">
+<a href="https://metaist.github.io/ds/"><img alt="ds" width="200" src="https://raw.githubusercontent.com/metaist/ds/main/dash-the-rabbit.png" /></a><br />
+<em>Dash the Sprinter</em>
+</p> -->
+<p align="center">
+<a href="https://github.com/metaist/ds/actions/workflows/ci.yaml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/metaist/ds/.github/workflows/ci.yaml?branch=main&logo=github"/></a>
+<a href="https://pypi.org/project/ds-run"><img alt="PyPI" src="https://img.shields.io/pypi/v/ds-run.svg?color=blue" /></a>
+<a href="https://pypi.org/project/ds-run"><img alt="Supported Python Versions" src="https://img.shields.io/pypi/pyversions/ds-run" /></a>
+</p>
+<p>A very simple task runner to run dev scripts (e.g., lint, build, test, start server) that works across multiple projects and is language-agnostic (see <a href="#inspirations">Inspirations</a>).</p>
+<h2 id="benefits">Benefits</h2>
+<p>♻️ <strong>Works with existing projects</strong><br />
+<a href="#limitations">Almost</a> a drop-in replacement for:</p>
 <ul>
-<li><strong>Minimal magic</strong>: Designed to use a familiar syntax and a few clear rules where possible. Not trying to recreate [<code>make</code>].</li>
-<li><strong>Low surprise</strong>: checks for cycles and raises helpful error messages when things are wrong.</li>
-<li><strong>Works with existing files</strong>: including <code>package.json</code>, <code>pyproject.toml</code>, and <code>Cargo.toml</code> files.</li>
-<li><strong>Run multiple tasks</strong>: <code>[npm|yarn|pnpm|bun|pdm] run</code> can only run one task at a time.</li>
-<li><strong>Minimal dependencies</strong>: working on removing all of these (see <a href="https://github.com/metaist/ds/issues/31">#31</a>)</li>
+<li><strong>Node</strong> (<code>package.json</code>): <a href="https://docs.npmjs.com/cli/v10/commands/npm-run-script"><code>npm run</code></a>, <a href="https://yarnpkg.com/cli/run"><code>yarn run</code></a>, <a href="https://pnpm.io/cli/run"><code>pnpm run</code></a>, <a href="https://bun.sh/docs/cli/run"><code>bun run</code></a></li>
+<li><strong>Python</strong> (<code>pyproject.toml</code>): <a href="https://pdm-project.org/latest/usage/scripts/#user-scripts"><code>pdm run</code></a>, <a href="https://rye.astral.sh/guide/commands/run/"><code>rye run</code></a></li>
+<li><strong>PHP</strong> (<code>composer.json</code>): <a href="https://getcomposer.org/doc/articles/scripts.md#running-scripts-manually"><code>composer run-script</code></a></li>
+<li><strong>Rust</strong> (<code>Cargo.toml</code>): <a href="https://github.com/JoshMcguigan/cargo-run-script/"><code>cargo run-script</code></a></li>
+</ul>
+<p>🗂️ <strong>Add monorepo/workspace support anywhere</strong><br />
+Easily <a href="#workspaces">manage monorepos and sub-projects</a>, even if they use different tooling.</p>
+<p>🏃 <strong>Run multiple tasks with custom arguments for each task</strong><br />
+Provide <a href="#command-line-arguments">command-line arguments</a> for multiple tasks as well as simple <a href="#argument-interpolation">argument interpolation</a>.</p>
+<p>🪄 <strong>Minimal magic</strong><br/>
+Tries to use familiar syntax and a few clear rules. Checks for basic cycles and raises helpful error messages if things go wrong.</p>
+<p>🚀 <strong>Minimal dependencies</strong><br />
+Currently working on removing all of these (see <a href="https://github.com/metaist/ds/issues/46">#46</a>):</p>
+<ul>
 <li>python (3.8+)</li>
 <li><code>tomli</code> (for python &lt; 3.11)</li>
 <li><code>graphlib_backport</code> (for python &lt; 3.9)</li>
 </ul>
+<h2 id="limitations">Limitations</h2>
+<p><code><a title="ds" href="#ds">ds</a></code> <strong>does not</strong> strive to be an all-in-one tool for every project and is not a replacement for package management tools or <code>make</code>. Here are some things that are not supported or not yet implemented.</p>
+<ul>
+<li>Not Supported: <a href="#not-supported-lifecycle-events">Lifecycle Events</a></li>
+<li>Not Supported: <a href="#not-supported-call-tasks"><code>call</code> Tasks</a></li>
+<li>In Progress: <a href="https://github.com/metaist/ds/issues/44">Shell Completions</a> (see <a href="https://github.com/metaist/ds/issues/44">#44</a>)</li>
+<li>In Progress: <a href="https://github.com/metaist/ds/issues/51">Task-Specific Env Vars</a> (see <a href="https://github.com/metaist/ds/issues/51">#51</a>)</li>
+<li>In Progress: <a href="https://github.com/metaist/ds/issues/46">Remove Python Dependency</a> (see <a href="https://github.com/metaist/ds/issues/46">#46</a>)</li>
+</ul>
 <h2 id="install">Install</h2>
+<p><code><a title="ds" href="#ds">ds</a></code> is typically installed at the system-level to make it available across all your projects.</p>
 <pre><code class="language-bash">python -m pip install ds-run
 
 # or, if you use uv:
-uv pip install ds-run
+uv pip install --system ds-run
 </code></pre>
 <h2 id="example">Example</h2>
-<p>Create a <code>ds.toml</code> file in the top-level of your project or you can also put this configuration in <a href="#where-should-i-put-my-config"><code>package.json</code>, <code>pyproject.toml</code>, or <code>Cargo.toml</code></a> to reduce cruft.</p>
-<!--[[[cog insert_file("examples/readme-example.toml")]]]-->
+<p>Create a <code>ds.toml</code> file in the top-level of your project or you can also put this configuration in an existing <a href="#where-should-i-put-my-config">project configuration file</a> to reduce file-cruft.</p>
+<!--[[[cog insert_file("examples/readme/example.toml")]]]-->
 <pre><code class="language-toml"># Example: Basic `ds` configuration.
 
 [scripts]
@@ -72,13 +93,13 @@ all = [&quot;clean&quot;, &quot;build -p build&quot;] # a composite task
 <pre><code># Found 3 tasks in ds.toml
 
 clean:
-rm -rf build/
+    rm -rf build/
 
 build:
-mkdir $@
+    mkdir $@
 
 all:
-['-clean', 'build -p build']
+    ['clean', 'build -p build']
 </code></pre>
 <p>Run the tasks.</p>
 <pre><code class="language-bash">ds clean
@@ -97,15 +118,27 @@ ds all
 <li><a href="#argument-interpolation">Argument Interpolation</a></li>
 <li><a href="#error-suppression">Error Suppression</a></li>
 </ul>
+<h2 id="where-should-i-put-my-config">Where should I put my config?</h2>
+<p>To avoid making lots of top-level files, <code><a title="ds" href="#ds">ds</a></code> tries to use common project configuration files.</p>
+<ul>
+<li><strong>Node</strong>: <code>package.json</code> under <code>scripts</code></li>
+<li><strong>Python</strong>: <code>pyproject.toml</code> under <code>[tool.ds.scripts]</code></li>
+<li><strong>PHP</strong>: <code>composer.json</code> under <code>scripts</code></li>
+<li><strong>Rust</strong>: <code>Cargo.toml</code> under <code>[package.metadata.scripts]</code> or <code>[workspace.metadata.scripts]</code></li>
+<li><strong>Other</strong>: <code>ds.toml</code> under <code>[scripts]</code></li>
+</ul>
+<p>Read more:</p>
+<ul>
+<li><a href="https://github.com/metaist/ds/tree/main/examples/formats">Example configuration files</a></li>
+<li><a href="#configuration-file">Configuration File</a></li>
+<li><a href="#workspaces">Workspaces</a></li>
+</ul>
 <h2 id="usage">Usage</h2>
-<!--[[[cog
-text = Path("src/ds/__init__.py").read_text()
-beg = text.find("Usage:")
-end = text.find("Examples:", beg)
-cog.outl(f"\n```\n{text[beg:end].strip()}\n```\n")
-]]]-->
-<pre><code>Usage: ds [--help | --version] [--debug]
-          [--cwd PATH] [--file PATH]
+<!--[[[cog fenced_block(snip_file("src/ds/args.py", beg="Usage:", end="Examples:")) ]]]-->
+<pre><code class="language-text">Usage: ds [--help | --version] [--debug]
+          [--file PATH]
+          [--cwd PATH]
+          [--workspace GLOB]...
           [--list | (&lt;task&gt;[: &lt;options&gt;... --])...]
 
 Options:
@@ -118,142 +151,181 @@ Options:
   --debug
     Show debug messages.
 
-  --cwd PATH
-    Set the working directory (default: task file parent).
-
   -f PATH, --file PATH
-    File with task definitions (default: search in parents).
+    File with task and workspace definitions (default: search in parents).
+
+    Read more about the configuration file:
+    https://github.com/metaist/ds#configuration-file
+
+  --cwd PATH
+    Set the starting working directory (default: --file parent).
+    PATH is resolved relative to the current working directory.
+
+  -w GLOB, --workspace GLOB
+    Patterns which indicate in which workspaces to run tasks.
+
+    GLOB filters the list of workspaces defined in `--file`.
+    The special pattern '*' matches all of the workspaces.
+
+    Read more about configuring workspaces:
+    https://github.com/metaist/ds#workspaces
 
   -l, --list
     List available tasks and exit.
 
   &lt;task&gt;[: &lt;options&gt;... --]
     One or more tasks to run with task-specific arguments.
+
     Use a colon (`:`) to indicate start of arguments and
     double-dash (`--`) to indicate the end.
 
     If the first &lt;option&gt; starts with a hyphen (`-`), you may omit the
     colon (`:`). If there are no more tasks after the last option, you
     may omit the double-dash (`--`).
+
+    Tasks are executed in order across any relevant workspaces. If any
+    task returns a non-zero code, task execution stops unless the
+    &lt;task&gt; was prefixed with a (`+`) in which case execution continues.
+
+    Read more about error suppression:
+    https://github.com/metaist/ds#error-suppression
+
 </code></pre>
 <!--[[[end]]]-->
 <h2 id="configuration-file">Configuration File</h2>
-<p>If you don't provide a config file using the <code>--file</code> flag, <code><a title="ds" href="#ds">ds</a></code> will search the current directory and all of its parents for files with these names in the following order:</p>
+<p><code><a title="ds" href="#ds">ds</a></code> supports <code>.json</code> and <code>.toml</code> configuration files (see <a href="https://github.com/metaist/ds/tree/main/examples/formats">examples</a>).</p>
+<p>If you don't provide a config file using the <code>--file</code> option, <code><a title="ds" href="#ds">ds</a></code> will search the current directory and all of its parents for files with these names in the following order:</p>
 <!--[[[cog
-text = snip_file("src/ds/__init__.py", skip_beg=True, beg="SEARCH_FILES = [", end="]")
-text = replace_many(text, {
-'
-"': "- `",
-# make into a list
-'",': "`",
-# convert quotes to backticks
-}).strip()
-cog.outl(f"\n{text}\n")
+from ds.configs import SEARCH_FILES
+cog.outl()
+for key in SEARCH_FILES:
+cog.outl(f"- `{key}`")
+cog.outl()
 ]]] -->
 <ul>
 <li><code>ds.toml</code></li>
 <li><code>.ds.toml</code></li>
+<li><code>Cargo.toml</code></li>
+<li><code>composer.json</code></li>
 <li><code>package.json</code></li>
 <li><code>pyproject.toml</code></li>
-<li><code>Cargo.toml</code></li>
 </ul>
 <!--[[[end]]]-->
-<p>The first file found will be used.</p>
-<p><code><a title="ds" href="#ds">ds</a></code> currently supports <code>json</code> and <code>toml</code> files. It searches for the following keys in the following order:</p>
+<p>If you provide one or more <code>--workspace</code> options, the file must contain a <a href="#workspaces">workspace key</a>. Otherwise, then the file must contain a <a href="#task-keys">task key</a>.</p>
+<p>If the appropriate key cannot be found, searching continues up the directory tree. The first file that has the appropriate key is used.</p>
+<h2 id="task-keys">Task Keys</h2>
+<p><code><a title="ds" href="#ds">ds</a></code> searches configuration files for the following keys, in the following order, to find task definitions. The first key that's found is used and should contain a mapping from <a href="#task-names">task names</a> to <a href="#basic-task">basic tasks</a> or <a href="#composite-task">composite tasks</a>.</p>
 <!--[[[cog
-text = snip_file("src/ds/__init__.py", skip_beg=True, beg="SEARCH_KEYS = [", end="]")[1:]
-text = replace_many(text, {
-'
-"': "- `",
-# make into a list
-'",': "`",
-# backticks for key name
-"
-# ": " for `",
-# comment into "for" with first backtick
-", ": "<code>, </code>",
-# start backtick for middle items
-"\n": "`\n",
-# last backtick
-}).strip()
-cog.outl(f"\n{text}\n")
+from ds.configs import SEARCH_KEYS_TASKS
+cog.outl()
+for key in SEARCH_KEYS_TASKS:
+cog.outl(f"- `{key}`")
+cog.outl()
 ]]]-->
 <ul>
-<li><code>scripts</code> for <code>ds.toml</code>, <code>.ds.toml</code>, <code>package.json</code></li>
-<li><code>tool.ds.scripts</code> for <code>pyproject.toml</code></li>
-<li><code>tool.pdm.scripts</code> for <code>pyproject.toml</code></li>
-<li><code>package.metadata.scripts</code> for <code>Cargo.toml</code></li>
+<li><code>scripts</code></li>
+<li><code>tool.ds.scripts</code></li>
+<li><code>tool.pdm.scripts</code></li>
+<li><code>tool.rye.scripts</code></li>
+<li><code>package.metadata.scripts</code></li>
+<li><code>workspace.metadata.scripts</code></li>
 </ul>
 <!--[[[end]]]-->
-<p>The first key that is found is used and should be a mapping of <a href="#task-names">task names</a> to <a href="#commands">commands</a>.</p>
-<h2 id="where-should-i-put-my-config">Where should I put my config?</h2>
-<p>To avoid making lots of top-level files, <code><a title="ds" href="#ds">ds</a></code> tries to use common project configuration files.</p>
-<ul>
-<li><strong>Node</strong>: <code>package.json</code> under <code>scripts</code> (see <a href="#lifecycle-events-not-supported">Lifecycle Events Not Supported</a>)</li>
-<li><strong>Python</strong>: <code>pyproject.toml</code> under <code>[tool.ds.scripts]</code></li>
-<li><strong>Rust</strong>: <code>Cargo.toml</code> under <code>[package.metadata.scripts]</code></li>
-<li><strong>Other</strong>: <code>ds.toml</code> under <code>[scripts]</code></li>
-</ul>
 <h2 id="task-names">Task Names</h2>
 <ul>
 <li>Task names are strings, that are usually short and all lowercase.</li>
 <li>They can have a colon (<code>:</code>) in them, like <code>py:build</code>, or other punctuation, like <code>py.build</code>.</li>
-<li>If the name starts with a hash (<code>#</code>) it is ignored. This comes from <code>package.json</code> in which its comment to add "comments" as JSON keys.</li>
-<li>Don't start a task name with a hyphen (<code>-</code>); it usually indicates <a href="#error-suppression">Error Suppression</a>.</li>
-<li>Don't end a task name with a colon (<code>:</code>); we use this to indicate <a href="#command-line-arguments">Command-line Arguments</a></li>
+<li>All leading and trailing whitespace in a task name is trimmed.</li>
+<li>If the name is empty or starts with a hash (<code>#</code>) it is ignored. This allows formats like <code>package.json</code> to "comment out" tasks.</li>
+<li>Don't start a name with a plus (<code>+</code>) because that indicates <a href="#error-suppression">error suppression</a>.</li>
+<li>Don't start a name with a hyphen (<code>-</code>) because that can make the task look like a <a href="#command-line-arguments">command-line argument</a>.</li>
+<li>Don't end a task name with a colon (<code>:</code>) because we use that to pass <a href="#command-line-arguments">command-line arguments</a></li>
 </ul>
-<h2 id="commands">Commands</h2>
-<p><code><a title="ds" href="#ds">ds</a></code> ultimately converts all commands into strings to be executed with <code>subprocess.run</code>.</p>
-<h3 id="basic-command">Basic Command</h3>
-<!--[[[cog insert_file("examples/readme-basic.toml")]]]-->
-<pre><code class="language-toml"># Example: Basic commands become strings.
+<h2 id="basic-task">Basic Task</h2>
+<p>A basic task is just a string of what should be executed in a shell using <code>subprocess.run</code>.</p>
+<ul>
+<li>Supports most <a href="https://pdm-project.org"><code>pdm</code>-style</a> and <a href="https://rye.astral.sh"><code>rye</code>-style</a> commands (<a href="#not-supported-call-tasks">except <code>call</code></a>)</li>
+<li>Supports <a href="#argument-interpolation">argument interpolation</a></li>
+<li>Supports <a href="#error-suppression">error suppression</a></li>
+</ul>
+<!--[[[cog insert_file("examples/readme/basic.toml")]]]-->
+<pre><code class="language-toml"># Example: Basic tasks become strings.
 
 [scripts]
 ls = &quot;ls -lah&quot;
-no_error = &quot;-exit 1&quot; # See &quot;Error Suppression&quot;
+no_error = &quot;+exit 1&quot; # See &quot;Error Suppression&quot;
 
-# We also support `pdm`-style commands.
-# The following all produce the same command as `ls` above.
+# We also support `pdm`-style and `rye`-style commands.
+# The following are all equivalent to `ls` above.
 ls2 = { cmd = &quot;ls -lah&quot; }
 ls3 = { cmd = [&quot;ls&quot;, &quot;-lah&quot;] }
 ls4 = { shell = &quot;ls -lah&quot; }
 </code></pre>
 <!--[[[end]]]-->
-<p>A basic command is just a string of what should be executed in a shell.</p>
+<h2 id="composite-task">Composite Task</h2>
+<p>A composite task consists of a series of steps where each step is the name of another task or a shell command.</p>
 <ul>
-<li>Supports most [<code>pdm</code>-style commands][<code>pdm</code>] (except <code>call</code>, see <a href="https://github.com/metaist/ds/issues/32">#32</a>)</li>
+<li>Supports <a href="https://pdm-project.org"><code>pdm</code>-style</a> <code>composite</code> and <a href="https://rye.astral.sh"><code>rye</code>-style</a> <code>chain</code></li>
 <li>Supports <a href="#argument-interpolation">argument interpolation</a></li>
 <li>Supports <a href="#error-suppression">error suppression</a></li>
 </ul>
-<h3 id="composite-command">Composite Command</h3>
-<!--[[[cog insert_file("examples/readme-composite.toml")]]]-->
-<pre><code class="language-toml"># Example: Composite commands call other tasks or shell commands.
+<!--[[[cog insert_file("examples/readme/composite.toml")]]]-->
+<pre><code class="language-toml"># Example: Composite tasks call other tasks or shell commands.
 
 [scripts]
 build = &quot;touch build/$1&quot;
 clean = &quot;rm -rf build&quot;
-all = [&quot;clean&quot;, &quot;-mkdir build&quot;, &quot;build foo&quot;, &quot;build bar&quot;, &quot;echo 'Done'&quot;]
 
-# We also support pdm-style composite commands.
-# The following is equivalent to `all`.
-all2 = { composite = [
+# We also support `pdm`-style and `rye`-style composite commands.
+# The following are all equivalent.
+all = [&quot;clean&quot;, &quot;+mkdir build&quot;, &quot;build foo&quot;, &quot;build bar&quot;, &quot;echo 'Done'&quot;]
+
+pdm-style = { composite = [
   &quot;clean&quot;,
-  &quot;-mkdir build&quot;,
+  &quot;+mkdir build&quot;, # See: Error Suppression
   &quot;build foo&quot;,
   &quot;build bar&quot;,
-  &quot;echo 'Done'&quot;,
+  &quot;echo 'Done'&quot;, # Composite tasks can call shell commands.
+] }
+
+rye-style = { chain = [
+  &quot;clean&quot;,
+  &quot;+mkdir build&quot;, # See: Error Suppression
+  &quot;build foo&quot;,
+  &quot;build bar&quot;,
+  &quot;echo 'Done'&quot;, # Composite tasks can call shell commands.
 ] }
 </code></pre>
 <!--[[[end]]]-->
-<p>A composite command consists of a series of steps where each step is the name of another task or a shell command.</p>
-<ul>
-<li>Supports <a href="#argument-interpolation">argument interpolation</a></li>
-<li>Supports <a href="#error-suppression">error suppression</a></li>
-</ul>
 <h2 id="argument-interpolation">Argument Interpolation</h2>
-<p>Commands can include parameters like <code>$1</code> and <code>$2</code> to indicate that the command accepts arguments.
-You can also use <code>$@</code> for the "remaining" arguments (i.e. those you haven't yet interpolated yet).</p>
-<p>Arguments from a <a href="#composite-command">composite command</a> precede those <a href="#command-line-arguments">from the command-line</a>.</p>
+<p>Tasks can include parameters like <code>$1</code> and <code>$2</code> to indicate that the task accepts arguments.</p>
+<p>You can also use <code>$@</code> for the "remaining" arguments (i.e. those you haven't yet interpolated yet).</p>
+<p>You can also specify a default value for any argument using a <code>bash</code>-like syntax: <code>${1:-default value}</code>.</p>
+<p>Arguments from a <a href="#composite-task">composite task</a> precede those <a href="#command-line-arguments">from the command-line</a>.</p>
+<!--[[[cog insert_file("examples/readme/argument-interpolation.toml")]]]-->
+<pre><code class="language-toml"># Example: Argument interpolation lets you pass arguments to tasks.
+
+[scripts]
+# pass arguments, but supply defaults
+test = &quot;pytest ${@:-src test}&quot;
+
+
+# interpolate the first argument (required)
+# and then interpolate the remaining arguments, if any
+lint = &quot;ruff check $1 ${@:-}&quot;
+
+# pass an argument and re-use it
+release = &quot;&quot;&quot;\
+  git commit -am &quot;release: $1&quot;;\
+  git tag $1;\
+  git push;\
+  git push --tags;\
+  git checkout main;\
+  git merge --no-ff --no-edit prod;\
+  git push
+&quot;&quot;&quot;
+</code></pre>
+<!--[[[end]]]-->
 <h3 id="command-line-arguments">Command-line Arguments</h3>
 <p>When calling <code><a title="ds" href="#ds">ds</a></code> you can specify additional arguments to pass to commands.</p>
 <pre><code class="language-bash">ds build: foo -- build: bar
@@ -266,160 +338,200 @@ You can also use <code>$@</code> for the "remaining" arguments (i.e. those you h
 </ul>
 <p>If the first argument to the task starts with a hyphen, the colon can be omitted.
 If there are no more arguments, you can omit the double dash.</p>
+<pre><code class="language-bash">ds test -v
+</code></pre>
 <p>If you're not passing arguments, you can put tasks names next to each other:</p>
 <pre><code class="language-bash">ds clean test
 </code></pre>
 <h2 id="error-suppression">Error Suppression</h2>
-<p>If a <a href="#commands">command</a> starts with a hyphen (<code>-</code>), the leading hyphen is removed before the command is executed and the command will always produce an error code of <code>0</code> (i.e. it will always be considered to have completed successfully).</p>
+<p>If a task starts with a plus sign (<code>+</code>), the plus sign is removed before the command is executed and the command will always produce an return code of <code>0</code> (i.e. it will always be considered to have completed successfully).</p>
 <p>This is particularly useful in <a href="#composite-command">composite commands</a> where you want subsequent steps to continue even if a particular step fails. For example:</p>
-<!--[[[cog insert_file("examples/readme-error-suppression.toml")]]]-->
-<pre><code class="language-toml"># Example: Error suppression lets a command continue even if it fails.
+<!--[[[cog insert_file("examples/readme/error-suppression.toml")]]]-->
+<pre><code class="language-toml"># Example: Error suppression lets subsequent tasks continue after failure.
 
 [scripts]
 cspell = &quot;cspell --gitignore '**/*.{py,txt,md,markdown}'&quot;
 format = &quot;ruff format .&quot;
-die = &quot;-exit 1&quot; # returns error code of 0
-lint = [&quot;-cspell&quot;, &quot;format&quot;] # run format even if cspell finds some misspelled words
+die = &quot;+exit 1&quot; # returns error code of 0
+die_hard = &quot;exit 2&quot; # returns an error code of 2 unless suppressed elsewhere
+lint = [&quot;+cspell&quot;, &quot;format&quot;] # format runs even if cspell finds misspellings
 </code></pre>
 <!--[[[end]]]-->
-<p>Error suppression is currently only available in configuration files and not on the command-line API (see <a href="https://github.com/metaist/ds/issues/22">#22</a>).</p>
-<h2 id="lifecycle-events-not-supported">Lifecycle Events Not Supported</h2>
-<p>Some task runners support running additional pre- and post- tasks. However, this is currently not supported (see <a href="https://github.com/metaist/ds/issues/24">#24</a>). Part of the reason is that it obscures the relationship between tasks and creates surprise if you have to have two tasks with unfortunate names.</p>
+<p>Error suppression works both in configuration files and on the command-line:</p>
+<pre><code class="language-bash">ds die_hard format
+# =&gt; error after `die_hard`
+
+ds +die_hard format
+# =&gt; no error
+</code></pre>
+<h2 id="workspaces">Workspaces</h2>
+<p>Workspaces are a way of managing multiple sub-projects from a top-level. <code><a title="ds" href="#ds">ds</a></code> supports <code>npm</code>, <code>rye</code>, and <code>Cargo</code> style workspaces (see <a href="https://github.com/metaist/ds/tree/main/examples/workspace">examples</a>).</p>
+<p>When <code><a title="ds" href="#ds">ds</a></code> is called with the <code>--workspace</code> option, the configuration file must have one of the following keys:</p>
+<!--[[[cog
+from ds.configs import SEARCH_KEYS_WORKSPACE
+cog.outl()
+for key in SEARCH_KEYS_WORKSPACE:
+cog.outl(f"- `{key}`")
+cog.outl()
+]]]-->
+<ul>
+<li><code>workspace.members</code></li>
+<li><code>tool.ds.workspace.members</code></li>
+<li><code>tool.rye.workspace.members</code></li>
+<li><code>workspaces</code></li>
+</ul>
+<!--[[[end]]]-->
+<p>If no configuration file was provided with the <code>--file</code> option, search continues up the directory tree.</p>
+<p><strong>NOTE</strong>: <code>pnpm</code> has its own <a href="https://pnpm.io/pnpm-workspace_yaml"><code>pnpm-workspace.yaml</code></a> format which is not currently supported.</p>
+<h3 id="workspace-members">Workspace Members</h3>
+<p>The value corresponding to the workspace key should be a list of patterns that indicate which directories (relative to the configuration file) should be included as members. The following <code>glob</code>-like patterns are supported:</p>
+<ul>
+<li><code>?</code>: matches a single character (e.g., <code>ca?</code> matches <code>car</code>, <code>cab</code>, and <code>cat</code>)</li>
+<li><code>[]</code>: matches specific characters (e.g., <code>ca[rb]</code> matches <code>car</code> and <code>cab</code>)</li>
+<li><code>*</code>: matches multiple characters, but not <code>/</code> (e.g., <code>members/*</code> matches all the files in <code>members</code>, but not further down the tree)</li>
+<li><code>**</code>: matches multiple characters, including <code>/</code> (e.g., <code>members/**</code> matches all files in <code>members</code> and all sub-directories and all of their contents)</li>
+</ul>
+<p>If you prefix any pattern with an exclamation point (<code>!</code>) then the rest of the pattern describes which files should <em>not</em> be matched.</p>
+<p>Patterns are applied in order so subsequent patterns can include or exclude sub-directories as needed. For compatibility with <code>Cargo</code>, <a href="https://github.com/metaist/ds/tree/main/examples/workspace/Cargo.toml">we also support the <code>excludes</code> key</a> which is applied <em>after</em> all the members.</p>
+<!--[[[cog insert_file("examples/workspace/ds.toml")]]]-->
+<pre><code class="language-toml"># Example: workspace includes everything in `members` except `members/x`.
+
+[workspace]
+members = [&quot;members/*&quot;, &quot;!members/x&quot;]
+</code></pre>
+<!--[[[end]]]-->
+<h3 id="workspace-tasks">Workspace Tasks</h3>
+<p>To run a task across multiple workspaces, use the <code>--workspace</code> or <code>-w</code> options one or more times with a pattern that indicates where the tasks should run.</p>
+<p>For example, consider a workspace with directories <code>members/a</code>, <code>members/b</code>, and <code>members/x</code>. The configuration above would match the first two directories and exclude the third.</p>
+<p>The following are all equivalent and run <code>test</code> in both <code>member/a</code> and <code>member/b</code>:</p>
+<pre><code class="language-bash">ds --workspace '*' test   # special match that means &quot;all workspaces&quot;
+ds -w '*' test            # short option
+ds -w* test               # even shorter option
+ds -w '*/a' -w '*/b' test # enumerate each workspace
+</code></pre>
+<h2 id="not-supported-lifecycle-events">Not Supported: Lifecycle Events</h2>
+<p>Some task runners (all the <code>node</code> ones, <code>pdm</code>, <code>composer</code>) support running additional pre- and post- tasks when you run a task. However, this obscures the relationship between tasks and can create surprises if you happen to have two tasks with unfortunate names (e.g., <code>pend</code> and <code>prepend</code>). <code><a title="ds" href="#ds">ds</a></code> does not plan to support this behavior (see <a href="https://github.com/metaist/ds/issues/24">#24</a>).</p>
 <p>As more explicit alternative is to use <a href="#composite-command">composite commands</a> to clearly describe the relationship between a task and its pre- and post- tasks.</p>
+<!--[[[cog insert_file("examples/readme/lifecycle-bad.toml")]]]-->
+<pre><code class="language-toml"># Bad example: hidden assumption that `build` calls `prebuild` first.
+[scripts]
+prebuild = &quot;echo 'prebuild'&quot;
+build = &quot;echo 'build'&quot;
+</code></pre>
+<!--[[[end]]]-->
+<!--[[[cog insert_file("examples/readme/lifecycle-good.toml")]]]-->
+<pre><code class="language-toml"># Good example: clear relationship between tasks.
+[scripts]
+prebuild = &quot;echo 'prebuild'&quot;
+build = [&quot;prebuild&quot;, &quot;echo 'build'&quot;]
+</code></pre>
+<!--[[[end]]]-->
+<h2 id="not-supported-call-tasks">Not Supported: <code>call</code> Tasks</h2>
+<p>Some task runners support special <code>call</code> tasks which get converted into language-specific calls. For example, both <code>pdm</code> and <code>rye</code> can <code>call</code> into python packages and <code>composer</code> can <code>call</code> into a PHP module call.</p>
+<p>These types of tasks introduces a significant difference between what you write in the configuration file and what gets executed, so in the interest of reducing magic, <code><a title="ds" href="#ds">ds</a></code> does not currently support this behavior (see <a href="https://github.com/metaist/ds/issues/32">#32</a>).</p>
+<p>A more explicit alternative is to write out the call you intend:</p>
+<pre><code class="language-bash"># {&quot;call&quot;: &quot;pkg&quot;} becomes:
+python -m pkg
+
+# {&quot;call&quot;: &quot;pkg:main('test')&quot;} becomes:
+python -c &quot;import sys; from pkg import main as _1; sys.exit(main('test'))&quot;
+</code></pre>
 <h2 id="inspirations">Inspirations</h2>
 <p>I've used several task runners, usually as part of build tools. Below is a list of tools used or read about when building <code><a title="ds" href="#ds">ds</a></code>.</p>
 <ul>
 <li>
-<p>1976: [<code>make</code>] (C) - Together with its descendants, <code>make</code> is one of the most popular build &amp; task running tools. It is fairly easy to make syntax errors and the tab-based indent drives me up the wall.</p>
+<p>1976: <a href="https://en.wikipedia.org/wiki/Make_(software)"><code>make</code></a> (C) - Together with its descendants, <code>make</code> is one of the most popular build &amp; task running tools. It is fairly easy to make syntax errors and the tab-based indent drives me up the wall.</p>
 </li>
 <li>
-<p>2000: [<code>ant</code>] (Java) - an XML-based replacement for <code>make</code>. I actually liked using <code>ant</code> quite a bit until I stopped writing Java and didn't want to have <code>java</code> as a dependency for my <code>python</code> projects.</p>
+<p>2000: <a href="https://en.wikipedia.org/wiki/Apache_Ant"><code>ant</code></a> (Java) - an XML-based replacement for <code>make</code>. I actually liked using <code>ant</code> quite a bit until I stopped writing Java and didn't want to have <code>java</code> as a dependency for my <code>python</code> projects.</p>
 </li>
 <li>
-<p>2008: [<code>gradle</code>] (Groovy/Kotlin) - Written for the <code>jvm</code>, I pretty much only use this for Android development. Can't say I love it.</p>
+<p>2008: <a href="https://en.wikipedia.org/wiki/Gradle"><code>gradle</code></a> (Groovy/Kotlin) - Written for the <code>jvm</code>, I pretty much only use this for Android development. Can't say I love it.</p>
 </li>
 <li>
-<p>2010: [<code>npm</code>] (JavaScript) - Being able to add a simple <code>scripts</code> field to <code>package.json</code> made it very easy to run dev scripts. Supports <code>pre</code> and <code>post</code> lifecycle tasks.</p>
+<p>2010: <a href="https://en.wikipedia.org/wiki/Npm"><code>npm</code></a> (JavaScript) - Being able to add a simple <code>scripts</code> field to <code>package.json</code> made it very easy to run dev scripts. Supports <code>pre</code> and <code>post</code> lifecycle tasks.</p>
 </li>
 <li>
-<p>2010: [<code>pdm</code>] (Python) - Supports 4 different types of tasks including <code>cmd</code>, <code>shell</code>, <code>call</code>, and <code>composite</code>.</p>
+<p>2010: <a href="https://pdm-project.org"><code>pdm</code></a> (Python) - Supports 4 different types of tasks including <code>cmd</code>, <code>shell</code>, <code>call</code>, and <code>composite</code>.</p>
 </li>
 <li>
-<p>2016: [<code>yarn</code>] (JavaScript) - An alternative to <code>npm</code> which also supports command-line arguments.</p>
+<p>2012: <a href="https://getcomposer.org"><code>composer</code></a> (PHP) - Uses <code>composer.json</code>, similar to <code>package.json</code>. Supports pre- and post- task lifecycle for special tasks, command-line arguments, composite tasks, and other options.</p>
 </li>
 <li>
-<p>2016: [<code>pnpm</code>] (JavaScript) - Another alternative to <code>npm</code> which supports many more options including running tasks in parallel.</p>
+<p>2016: <a href="https://yarnpkg.com"><code>yarn</code></a> (JavaScript) - An alternative to <code>npm</code> which also supports command-line arguments.</p>
 </li>
 <li>
-<p>2016: [<code>just</code>] (Rust) - Defines tasks in a <code>justfile</code>, similar to <code>make</code>. Supports detecting cycles, running parallel, and many other options.</p>
+<p>2016: <a href="https://pnpm.io"><code>pnpm</code></a> (JavaScript) - Another alternative to <code>npm</code> which supports many more options including running tasks in parallel.</p>
 </li>
 <li>
-<p>2016: [<code>cargo-run-script</code>] (Rust) - Uses <code>Cargo.toml</code> to configure scripts and supports argument substitution (<code>$1</code>, <code>$2</code>, etc.).</p>
+<p>2016: <a href="https://github.com/casey/just"><code>just</code></a> (Rust) - Defines tasks in a <code>justfile</code>, similar to <code>make</code>. Supports detecting cycles, running parallel, and many other options.</p>
 </li>
 <li>
-<p>2017: [<code>cargo-make</code>] (Rust) - Very extensive port of <code>make</code> to Rust defining tasks in <code>Makefile.toml</code>.</p>
+<p>2016: <a href="https://github.com/JoshMcguigan/cargo-run-script/"><code>cargo-run-script</code></a> (Rust) - Uses <code>Cargo.toml</code> to configure scripts and supports argument substitution (<code>$1</code>, <code>$2</code>, etc.).</p>
 </li>
 <li>
-<p>2022: [<code>hatch</code>] (Python) - Defines environment-specific scripts with the ability to suppress errors, like <code>make</code>.</p>
+<p>2017: <a href="https://github.com/sagiegurari/cargo-make"><code>cargo-make</code></a> (Rust) - Very extensive port of <code>make</code> to Rust defining tasks in <code>Makefile.toml</code>.</p>
 </li>
 <li>
-<p>2023: [<code>bun</code>] (Zig) - An alternative to <code>node</code> and <code>npm</code>.</p>
+<p>2022: <a href="https://hatch.pypa.io/1.12/config/environment/overview/#scripts"><code>hatch</code></a> (Python) - Defines environment-specific scripts with the ability to suppress errors, like <code>make</code>.</p>
+</li>
+<li>
+<p>2023: <a href="https://en.wikipedia.org/wiki/Bun_(software)"><code>bun</code></a> (Zig) - An alternative to <code>node</code> and <code>npm</code>.</p>
+</li>
+<li>
+<p>2023: <a href="https://rye.astral.sh"><code>rye</code></a> (Rust) - Up-and-coming replacement for managing python projects.</p>
 </li>
 </ul>
 <h2 id="license">License</h2>
 <p><a href="https://github.com/metaist/ds/blob/main/LICENSE.md">MIT License</a></p>
 </section>
 <section>
-</section>
-<section>
-<h2 class="section-title" id="header-variables">Global variables</h2>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt id="ds.Loader"><code class="name">var <span class="ident">Loader</span></code></dt>
+<dt><code class="name"><a title="ds.args" href="args.html">ds.args</a></code></dt>
 <dd>
-<div class="desc"><p>A loader takes text and returns a mapping of strings to values.</p></div>
+<div class="desc"><p>Parse arguments.</p></div>
 </dd>
-<dt id="ds.LOADERS"><code class="name">var <span class="ident">LOADERS</span> : Dict[str, Callable[[str], Dict[str, Any]]]</code></dt>
+<dt><code class="name"><a title="ds.configs" href="configs.html">ds.configs</a></code></dt>
 <dd>
-<div class="desc"><p>Mapping of file extensions to string load functions.</p></div>
+<div class="desc"><p>Find and parse configuration files.</p></div>
 </dd>
-<dt id="ds.SEARCH_FILES"><code class="name">var <span class="ident">SEARCH_FILES</span></code></dt>
+<dt><code class="name"><a title="ds.env" href="env.html">ds.env</a></code></dt>
 <dd>
-<div class="desc"><p>Search order for configuration file names.</p></div>
+<div class="desc"><p>Shell environment variables.</p></div>
 </dd>
-<dt id="ds.SEARCH_KEYS"><code class="name">var <span class="ident">SEARCH_KEYS</span></code></dt>
+<dt><code class="name"><a title="ds.symbols" href="symbols.html">ds.symbols</a></code></dt>
 <dd>
-<div class="desc"><p>Search order for configuration keys.</p></div>
+<div class="desc"><p>Special symbols and their meanings.</p></div>
 </dd>
-<dt id="ds.PYTHON_CALL"><code class="name">var <span class="ident">PYTHON_CALL</span></code></dt>
+<dt><code class="name"><a title="ds.tasks" href="tasks.html">ds.tasks</a></code></dt>
 <dd>
-<div class="desc"><p>Template for a python call.</p></div>
-</dd>
-<dt id="ds.RE_ARGS"><code class="name">var <span class="ident">RE_ARGS</span></code></dt>
-<dd>
-<div class="desc"><p>Regex for matching an argument to be interpolated.</p></div>
-</dd>
-<dt id="ds.Tasks"><code class="name">var <span class="ident">Tasks</span></code></dt>
-<dd>
-<div class="desc"><p>Mapping a task name to a <code><a title="ds.Task" href="#ds.Task">Task</a></code>.</p></div>
+<div class="desc"><p>Parse and run tasks.</p></div>
 </dd>
 </dl>
 </section>
 <section>
+</section>
+<section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="ds.interpolate_args"><code class="name flex">
-<span>def <span class="ident">interpolate_args</span></span>(<span>cmd: str, args: List[str]) ‑> str</span>
+<dt id="ds.pushd"><code class="name flex">
+<span>def <span class="ident">pushd</span></span>(<span>dest: Union[str, Path]) ‑> Iterator[pathlib.Path]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Return <code>args</code> interpolated into <code>cmd</code>.</p></div>
-</dd>
-<dt id="ds.get_path"><code class="name flex">
-<span>def <span class="ident">get_path</span></span>(<span>src: Dict[str, Any], name: str, default: Optional[Any] = None) ‑> Any</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Return</p></div>
-</dd>
-<dt id="ds.check_cycles"><code class="name flex">
-<span>def <span class="ident">check_cycles</span></span>(<span>tasks: <a title="ds.Tasks" href="#ds.Tasks">Tasks</a>) ‑> List[str]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Raise a <code>CycleError</code> if there is a cycle in the task graph.</p></div>
-</dd>
-<dt id="ds.run_task"><code class="name flex">
-<span>def <span class="ident">run_task</span></span>(<span>tasks: <a title="ds.Tasks" href="#ds.Tasks">Tasks</a>, name: str, extra: Optional[List[str]] = None) ‑> None</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Run a task.</p></div>
-</dd>
-<dt id="ds.print_tasks"><code class="name flex">
-<span>def <span class="ident">print_tasks</span></span>(<span>path: Path, tasks: <a title="ds.Tasks" href="#ds.Tasks">Tasks</a>) ‑> None</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Pretty print task names.</p></div>
-</dd>
-<dt id="ds.parse_config"><code class="name flex">
-<span>def <span class="ident">parse_config</span></span>(<span>config: Dict[str, Any], keys: Optional[List[str]] = None) ‑> Dict[str, <a title="ds.Task" href="#ds.Task">Task</a>]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Parse a configuration file.</p></div>
+<div class="desc"><p>Temporarily change the current working directory.</p></div>
 </dd>
 <dt id="ds.load_config"><code class="name flex">
-<span>def <span class="ident">load_config</span></span>(<span>path: Path) ‑> Dict[str, <a title="ds.Task" href="#ds.Task">Task</a>]</span>
+<span>def <span class="ident">load_config</span></span>(<span>args: Args) ‑> <a title="ds.configs.Config" href="configs.html#ds.configs.Config">Config</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Load and parse the configuration file.</p></div>
+<div class="desc"><p>Load configuration file.</p></div>
 </dd>
-<dt id="ds.find_config"><code class="name flex">
-<span>def <span class="ident">find_config</span></span>(<span>start: Path, debug: bool = False) ‑> Optional[pathlib.Path]</span>
+<dt id="ds.run_workspace"><code class="name flex">
+<span>def <span class="ident">run_workspace</span></span>(<span>args: Args, config: Config) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Return the config file in <code>start</code> or its parents.</p></div>
-</dd>
-<dt id="ds.parse_args"><code class="name flex">
-<span>def <span class="ident">parse_args</span></span>(<span>argv: List[str]) ‑> <a title="ds.Args" href="#ds.Args">Args</a></span>
-</code></dt>
-<dd>
-<div class="desc"><p>Parse command-line arguments in a docopt-like way.</p></div>
+<div class="desc"><p>Run tasks in the context of each member.</p></div>
 </dd>
 <dt id="ds.main"><code class="name flex">
 <span>def <span class="ident">main</span></span>(<span>argv: Optional[List[str]] = None) ‑> None</span>
@@ -430,318 +542,54 @@ lint = [&quot;-cspell&quot;, &quot;format&quot;] # run format even if cspell fin
 </dl>
 </section>
 <section>
-<h2 class="section-title" id="header-classes">Classes</h2>
-<dl>
-<dt id="ds.Args"><code class="flex name class">
-<span>class <span class="ident">Args</span></span>
-<span>(</span><span>help: bool = False, version: bool = False, debug: bool = False, cwd: Optional[Path] = None, file_: Optional[Path] = None, list_: bool = False, task: Dict[str, List[str]] = &lt;factory&gt;)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Type-checked arguments.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@dataclass
-class Args:
-    &#34;&#34;&#34;Type-checked arguments.&#34;&#34;&#34;
-
-    help: bool = False
-    &#34;&#34;&#34;Whether to show the usage.&#34;&#34;&#34;
-
-    version: bool = False
-    &#34;&#34;&#34;Whether to show the version.&#34;&#34;&#34;
-
-    debug: bool = False
-    &#34;&#34;&#34;Whether to show debug messages&#34;&#34;&#34;
-
-    cwd: Optional[Path] = None
-    &#34;&#34;&#34;Path to run tasks in.&#34;&#34;&#34;
-
-    file_: Optional[Path] = None
-    &#34;&#34;&#34;Path to task definitions.&#34;&#34;&#34;
-
-    list_: bool = False
-    &#34;&#34;&#34;Whether to show available tasks&#34;&#34;&#34;
-
-    task: Dict[str, List[str]] = field(default_factory=dict)
-    &#34;&#34;&#34;Mapping of task names to extra arguments.&#34;&#34;&#34;</code></pre>
-</details>
-<h3>Class variables</h3>
-<dl>
-<dt id="ds.Args.task"><code class="name">var <span class="ident">task</span> : Dict[str, List[str]]</code></dt>
-<dd>
-<div class="desc"><p>Mapping of task names to extra arguments.</p></div>
-</dd>
-<dt id="ds.Args.help"><code class="name">var <span class="ident">help</span> : bool</code></dt>
-<dd>
-<div class="desc"><p>Whether to show the usage.</p></div>
-</dd>
-<dt id="ds.Args.version"><code class="name">var <span class="ident">version</span> : bool</code></dt>
-<dd>
-<div class="desc"><p>Whether to show the version.</p></div>
-</dd>
-<dt id="ds.Args.debug"><code class="name">var <span class="ident">debug</span> : bool</code></dt>
-<dd>
-<div class="desc"><p>Whether to show debug messages</p></div>
-</dd>
-<dt id="ds.Args.cwd"><code class="name">var <span class="ident">cwd</span> : Optional[pathlib.Path]</code></dt>
-<dd>
-<div class="desc"><p>Path to run tasks in.</p></div>
-</dd>
-<dt id="ds.Args.file_"><code class="name">var <span class="ident">file_</span> : Optional[pathlib.Path]</code></dt>
-<dd>
-<div class="desc"><p>Path to task definitions.</p></div>
-</dd>
-<dt id="ds.Args.list_"><code class="name">var <span class="ident">list_</span> : bool</code></dt>
-<dd>
-<div class="desc"><p>Whether to show available tasks</p></div>
-</dd>
-</dl>
-</dd>
-<dt id="ds.Task"><code class="flex name class">
-<span>class <span class="ident">Task</span></span>
-<span>(</span><span>name: str = '', cmd: str = '', depends: List[<a title="ds.Task" href="#ds.Task">Task</a>] = &lt;factory&gt;, keep_going: bool = False)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Represents a thing to be done.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@dataclass
-class Task:
-    &#34;&#34;&#34;Represents a thing to be done.&#34;&#34;&#34;
-
-    name: str = &#34;&#34;
-    &#34;&#34;&#34;Name of the task.&#34;&#34;&#34;
-
-    cmd: str = &#34;&#34;
-    &#34;&#34;&#34;Shell command to execute after `depends`.&#34;&#34;&#34;
-
-    depends: List[Task] = field(default_factory=list)
-    &#34;&#34;&#34;Tasks to execute before this one.&#34;&#34;&#34;
-
-    keep_going: bool = False
-    &#34;&#34;&#34;Ignore a non-zero return code.&#34;&#34;&#34;
-
-    @staticmethod
-    def parse(config: Any) -&gt; Task:
-        &#34;&#34;&#34;Parse a config into a `Task`.&#34;&#34;&#34;
-        task = Task()
-        if isinstance(config, list):
-            for item in config:
-                parsed = Task.parse(item)
-                parsed.name = &#34;#composite&#34;
-                task.depends.append(parsed)
-            # task.depends.extend(Task.parse(x) for x in config)
-
-        elif isinstance(config, str):
-            task.cmd = config
-            if config.startswith(&#34;-&#34;):  # suppress error
-                task.cmd = config[1:]
-                task.keep_going = True
-
-        elif isinstance(config, Mapping):
-            if &#34;composite&#34; in config:
-                assert isinstance(config[&#34;composite&#34;], list)
-                return Task.parse(config[&#34;composite&#34;])
-
-            elif &#34;shell&#34; in config:
-                return Task.parse(str(config[&#34;shell&#34;]))
-
-            elif &#34;cmd&#34; in config:
-                cmd = config[&#34;cmd&#34;]
-                return Task.parse(&#34; &#34;.join(cmd) if isinstance(cmd, list) else str(cmd))
-
-            elif &#34;call&#34; in config:
-                raise ValueError(f&#34;pdm-style `call` commands not supported: {config}&#34;)
-            else:
-                raise TypeError(f&#34;Unknown task type: {config}&#34;)
-        else:
-            raise TypeError(f&#34;Unknown task type: {config}&#34;)
-        return task
-
-    def pprint(self) -&gt; None:
-        &#34;&#34;&#34;Pretty-print a representation of this task.&#34;&#34;&#34;
-        cmd = f&#34;{&#39;-&#39; if self.keep_going else &#39;&#39;}{self.cmd}&#34;
-        if self.depends:
-            cmd = str([f&#34;{&#39;-&#39; if t.keep_going else &#39;&#39;}{t.cmd}&#34; for t in self.depends])
-
-        indent = &#34; &#34; * 4
-        print(f&#34;{self.name}:&#34;)
-        if len(cmd) &lt; 80 - len(indent):
-            print(f&#34;{indent}{cmd.strip()}\n&#34;)
-        else:
-            print(
-                textwrap.fill(
-                    cmd.strip(),
-                    78,
-                    initial_indent=indent,
-                    subsequent_indent=indent,
-                    break_on_hyphens=False,
-                    tabsize=len(indent),
-                ).replace(&#34;\n&#34;, &#34; \\\n&#34;)
-                + &#34;\n&#34;
-            )
-
-    def run(
-        self, tasks: Tasks, extra: Optional[List[str]] = None, keep_going: bool = False
-    ) -&gt; int:
-        &#34;&#34;&#34;Run this task.&#34;&#34;&#34;
-        extra = extra or []
-        keep_going = keep_going or self.keep_going
-
-        # 1. Run all the dependencies.
-        for dep in self.depends:
-            dep.run(tasks, extra, keep_going)
-
-        # 2. Check if we have anything to do.
-        if not self.cmd.strip():  # nothing to do
-            return 0
-
-        # 3. Check if a part of a composite command is calling another task.
-        if self.name == &#34;#composite&#34;:
-            cmd, *args = shlex.split(self.cmd)
-            other = tasks.get(cmd)
-            if other and other != self and self not in other.depends:
-                return other.run(tasks, args + extra, keep_going)
-
-        # 4. Run our command.
-        dash = &#34;-&#34; if keep_going else &#34;&#34;
-        cmd = interpolate_args(self.cmd, [*extra])
-        print(f&#34;\n$ {dash}{cmd}&#34;)
-        proc = run(cmd, shell=True, text=True)
-        code = proc.returncode
-
-        if code != 0 and not keep_going:
-            sys.exit(code)
-        return 0  # either it was zero or we keep going</code></pre>
-</details>
-<h3>Class variables</h3>
-<dl>
-<dt id="ds.Task.depends"><code class="name">var <span class="ident">depends</span> : List[<a title="ds.Task" href="#ds.Task">Task</a>]</code></dt>
-<dd>
-<div class="desc"><p>Tasks to execute before this one.</p></div>
-</dd>
-<dt id="ds.Task.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
-<dd>
-<div class="desc"><p>Name of the task.</p></div>
-</dd>
-<dt id="ds.Task.cmd"><code class="name">var <span class="ident">cmd</span> : str</code></dt>
-<dd>
-<div class="desc"><p>Shell command to execute after <code>depends</code>.</p></div>
-</dd>
-<dt id="ds.Task.keep_going"><code class="name">var <span class="ident">keep_going</span> : bool</code></dt>
-<dd>
-<div class="desc"><p>Ignore a non-zero return code.</p></div>
-</dd>
-</dl>
-<h3>Static methods</h3>
-<dl>
-<dt id="ds.Task.parse"><code class="name flex">
-<span>def <span class="ident">parse</span></span>(<span>config: Any) ‑> <a title="ds.Task" href="#ds.Task">Task</a></span>
-</code></dt>
-<dd>
-<div class="desc"><p>Parse a config into a <code><a title="ds.Task" href="#ds.Task">Task</a></code>.</p></div>
-</dd>
-</dl>
-<h3>Methods</h3>
-<dl>
-<dt id="ds.Task.pprint"><code class="name flex">
-<span>def <span class="ident">pprint</span></span>(<span>self) ‑> None</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Pretty-print a representation of this task.</p></div>
-</dd>
-<dt id="ds.Task.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self, tasks: <a title="ds.Tasks" href="#ds.Tasks">Tasks</a>, extra: Optional[List[str]] = None, keep_going: bool = False) ‑> int</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Run this task.</p></div>
-</dd>
-</dl>
-</dd>
-</dl>
 </section>
 </article>
 <nav id="sidebar">
 <div class="toc">
 <ul>
-<li><a href="#why">Why?</a></li>
+<li><a href="#benefits">Benefits</a></li>
+<li><a href="#limitations">Limitations</a></li>
 <li><a href="#install">Install</a></li>
 <li><a href="#example">Example</a></li>
+<li><a href="#where-should-i-put-my-config">Where should I put my config?</a></li>
 <li><a href="#usage">Usage</a></li>
 <li><a href="#configuration-file">Configuration File</a></li>
-<li><a href="#where-should-i-put-my-config">Where should I put my config?</a></li>
+<li><a href="#task-keys">Task Keys</a></li>
 <li><a href="#task-names">Task Names</a></li>
-<li><a href="#commands">Commands</a><ul>
-<li><a href="#basic-command">Basic Command</a></li>
-<li><a href="#composite-command">Composite Command</a></li>
-</ul>
-</li>
+<li><a href="#basic-task">Basic Task</a></li>
+<li><a href="#composite-task">Composite Task</a></li>
 <li><a href="#argument-interpolation">Argument Interpolation</a><ul>
 <li><a href="#command-line-arguments">Command-line Arguments</a></li>
 </ul>
 </li>
 <li><a href="#error-suppression">Error Suppression</a></li>
-<li><a href="#lifecycle-events-not-supported">Lifecycle Events Not Supported</a></li>
+<li><a href="#workspaces">Workspaces</a><ul>
+<li><a href="#workspace-members">Workspace Members</a></li>
+<li><a href="#workspace-tasks">Workspace Tasks</a></li>
+</ul>
+</li>
+<li><a href="#not-supported-lifecycle-events">Not Supported: Lifecycle Events</a></li>
+<li><a href="#not-supported-call-tasks">Not Supported: call Tasks</a></li>
 <li><a href="#inspirations">Inspirations</a></li>
 <li><a href="#license">License</a></li>
 </ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-variables">Global variables</a></h3>
-<ul class="two-column">
-<li><code><a title="ds.Loader" href="#ds.Loader">Loader</a></code></li>
-<li><code><a title="ds.LOADERS" href="#ds.LOADERS">LOADERS</a></code></li>
-<li><code><a title="ds.SEARCH_FILES" href="#ds.SEARCH_FILES">SEARCH_FILES</a></code></li>
-<li><code><a title="ds.SEARCH_KEYS" href="#ds.SEARCH_KEYS">SEARCH_KEYS</a></code></li>
-<li><code><a title="ds.PYTHON_CALL" href="#ds.PYTHON_CALL">PYTHON_CALL</a></code></li>
-<li><code><a title="ds.RE_ARGS" href="#ds.RE_ARGS">RE_ARGS</a></code></li>
-<li><code><a title="ds.Tasks" href="#ds.Tasks">Tasks</a></code></li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="ds.args" href="args.html">ds.args</a></code></li>
+<li><code><a title="ds.configs" href="configs.html">ds.configs</a></code></li>
+<li><code><a title="ds.env" href="env.html">ds.env</a></code></li>
+<li><code><a title="ds.symbols" href="symbols.html">ds.symbols</a></code></li>
+<li><code><a title="ds.tasks" href="tasks.html">ds.tasks</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="two-column">
-<li><code><a title="ds.interpolate_args" href="#ds.interpolate_args">interpolate_args</a></code></li>
-<li><code><a title="ds.get_path" href="#ds.get_path">get_path</a></code></li>
-<li><code><a title="ds.check_cycles" href="#ds.check_cycles">check_cycles</a></code></li>
-<li><code><a title="ds.run_task" href="#ds.run_task">run_task</a></code></li>
-<li><code><a title="ds.print_tasks" href="#ds.print_tasks">print_tasks</a></code></li>
-<li><code><a title="ds.parse_config" href="#ds.parse_config">parse_config</a></code></li>
+<ul class="">
+<li><code><a title="ds.pushd" href="#ds.pushd">pushd</a></code></li>
 <li><code><a title="ds.load_config" href="#ds.load_config">load_config</a></code></li>
-<li><code><a title="ds.find_config" href="#ds.find_config">find_config</a></code></li>
-<li><code><a title="ds.parse_args" href="#ds.parse_args">parse_args</a></code></li>
+<li><code><a title="ds.run_workspace" href="#ds.run_workspace">run_workspace</a></code></li>
 <li><code><a title="ds.main" href="#ds.main">main</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-classes">Classes</a></h3>
-<ul>
-<li>
-<h4><code><a title="ds.Args" href="#ds.Args">Args</a></code></h4>
-<ul class="two-column">
-<li><code><a title="ds.Args.task" href="#ds.Args.task">task</a></code></li>
-<li><code><a title="ds.Args.help" href="#ds.Args.help">help</a></code></li>
-<li><code><a title="ds.Args.version" href="#ds.Args.version">version</a></code></li>
-<li><code><a title="ds.Args.debug" href="#ds.Args.debug">debug</a></code></li>
-<li><code><a title="ds.Args.cwd" href="#ds.Args.cwd">cwd</a></code></li>
-<li><code><a title="ds.Args.file_" href="#ds.Args.file_">file_</a></code></li>
-<li><code><a title="ds.Args.list_" href="#ds.Args.list_">list_</a></code></li>
-</ul>
-</li>
-<li>
-<h4><code><a title="ds.Task" href="#ds.Task">Task</a></code></h4>
-<ul class="two-column">
-<li><code><a title="ds.Task.parse" href="#ds.Task.parse">parse</a></code></li>
-<li><code><a title="ds.Task.pprint" href="#ds.Task.pprint">pprint</a></code></li>
-<li><code><a title="ds.Task.run" href="#ds.Task.run">run</a></code></li>
-<li><code><a title="ds.Task.depends" href="#ds.Task.depends">depends</a></code></li>
-<li><code><a title="ds.Task.name" href="#ds.Task.name">name</a></code></li>
-<li><code><a title="ds.Task.cmd" href="#ds.Task.cmd">cmd</a></code></li>
-<li><code><a title="ds.Task.keep_going" href="#ds.Task.keep_going">keep_going</a></code></li>
-</ul>
-</li>
 </ul>
 </li>
 </ul>

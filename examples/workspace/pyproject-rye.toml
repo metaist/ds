@@ -1,2 +1,4 @@
+# Example: `pyproject.toml` workspace configuration using `rye`.
+
 [tool.rye.workspace]
 members = ["members/*", "!members/x"]

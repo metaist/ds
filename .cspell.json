@@ -12,6 +12,7 @@
     "outl",
     "pathlib",
     "pdoc3",
+    "prebuild",
     "pushd",
     "pypa",
     "pypi",

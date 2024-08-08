@@ -1,3 +1,5 @@
+# Example: minimal `pyproject.toml` configuration using `rye`.
+
 [tool.rye.scripts]
 lint = { chain = ["lint:black", "lint:check"] }
 "lint:black" = "ruff format ."

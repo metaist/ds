@@ -31,10 +31,10 @@ TASK_COMPOSITE = "#composite"
 """Composite task name."""
 
 TASK_DISABLED = "#"
-"""Prefix of a disabled task name."""
+"""Prefix of a disabled task."""
 
 TASK_KEEP_GOING = "+"
-"""Prefix of an error-suppressed task command."""
+"""Prefix of an error-suppressed task."""
 
 
 def starts(haystack: str, needle: str) -> Tuple[bool, str]:

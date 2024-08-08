@@ -21,7 +21,7 @@ import sys
 # pkg
 from .args import Args
 from .args import parse_args
-from .args import usage
+from .args import USAGE
 from .configs import Config
 from .configs import find_config
 from .configs import glob_refine
@@ -121,7 +121,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         print(args)
 
     if args.help:
-        print(usage)
+        print(USAGE)
         return
 
     if args.version:

@@ -54,7 +54,7 @@ def test_interpolate_args() -> None:
 
 
 def test_missing_args() -> None:
-    """Try to parse a command with insufficient args."""
+    """Try to interpolate with insufficient args."""
     with pytest.raises(IndexError):
         interpolate_args(f"ls {arg(1)}", [])
 

@@ -22,7 +22,7 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
     """Return `args` interpolated into `cmd`."""
     not_done: List[Optional[str]] = [arg for arg in args]
 
-    # By default, we append all args to the end of the command.
+    # By default, we append all args to the end.
     if not RE_ARGS.search(cmd):
         cmd = f"{cmd} {ARG_PREFIX}{ARG_REST}"
 

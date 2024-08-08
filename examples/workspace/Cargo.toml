@@ -1,3 +1,5 @@
+# Example: `Cargo.toml` workspace configuration.
+
 [workspace]
 members = ["members/*"]
 exclude = ["members/x"]

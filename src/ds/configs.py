@@ -51,7 +51,7 @@ SEARCH_FILES = [
 """Search order for configuration file names."""
 
 # NOTE: Used by cog in README.md
-SEARCH_KEYS = [
+SEARCH_KEYS_TASKS = [
     "scripts",  # ds.toml, .ds.toml, package.json, composer.json
     "tool.ds.scripts",  # pyproject.toml
     "tool.pdm.scripts",  # pyproject.toml
@@ -61,11 +61,12 @@ SEARCH_KEYS = [
 ]
 """Search order for configuration keys."""
 
+# NOTE: Used by cog in README.md
 SEARCH_KEYS_WORKSPACE = [
-    "workspaces",  # ds.toml, .ds.toml, package.json
+    "workspace.members",  # ds.toml, .ds.toml, Cargo.toml
     "tool.ds.workspace.members",  # project.toml
     "tool.rye.workspace.members",  # pyproject.toml
-    "workspace.members",  # Cargo.toml
+    "workspaces",  # package.json
 ]
 """Search for workspace configuration keys."""
 
@@ -197,7 +198,7 @@ def parse_tasks(config: Dict[str, Any]) -> Tuple[bool, Tasks]:
     found = False
     tasks: Tasks = {}
     key, section = "", {}
-    for key in SEARCH_KEYS:
+    for key in SEARCH_KEYS_TASKS:
         section = get_path(config, key)
         if section is not None:
             found = True

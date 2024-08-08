@@ -8,7 +8,12 @@ no_error = "+exit $1"
 with_arg = ["basic -h test"]
 composite = ["no_error 1", "with_arg", "echo 'something else'"]
 
-# We support many of the `pdm` conventions.
-pdm1 = { cmd = "ls -la" } # basic command
+# We support most `pdm` commands.
+pdm1 = { cmd = "ls -la" } # basic task
 pdm2 = { shell = "ls -la >/dev/null" } # supports redirection
 pdm3 = { composite = ["pdm1", "pdm2"] } # call other actions
+
+# We support most `rye` commands.
+rye1 = { cmd = "ls -la" } # basic task
+rye2 = { shell = "ls -la >/dev/null" } # supports redirection
+rye3 = { chain = ["pdm1", "pdm2"] } # call other actions

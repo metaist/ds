@@ -126,7 +126,13 @@ def test_load_workspace() -> None:
     config = Config.load(PATH_WK / "Cargo.toml").parse(True)
     assert config.members == expected
 
+    config = Config.load(PATH_WK / "ds.toml").parse(True)
+    assert config.members == expected
+
     config = Config.load(PATH_WK / "package.json").parse(True)
+    assert config.members == expected
+
+    config = Config.load(PATH_WK / "pyproject-ds.toml").parse(True)
     assert config.members == expected
 
     config = Config.load(PATH_WK / "pyproject-rye.toml").parse(True)

@@ -1,7 +1,8 @@
-# Example: Error suppression lets a command continue even if it fails.
+# Example: Error suppression lets subsequent tasks continue after failure.
 
 [scripts]
 cspell = "cspell --gitignore '**/*.{py,txt,md,markdown}'"
 format = "ruff format ."
 die = "+exit 1" # returns error code of 0
-lint = ["+cspell", "format"] # run format even if cspell finds some misspelled words
+die_hard = "exit 2" # returns an error code of 2 unless suppressed elsewhere
+lint = ["+cspell", "format"] # format runs even if cspell finds misspellings

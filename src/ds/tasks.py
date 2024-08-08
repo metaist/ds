@@ -133,7 +133,7 @@ class Task:
         if not self.cmd.strip():  # nothing to do
             return 0
 
-        # 3. Check if a part of a composite command is calling another task.
+        # 3. Check if a part of a composite task is calling another task.
         if self.name == TASK_COMPOSITE:
             cmd, *args = split(self.cmd)
             other = tasks.get(cmd)
@@ -143,7 +143,7 @@ class Task:
         if not self.allow_shell:
             raise ValueError(f"Unknown task: {self.cmd}")
 
-        # 4. Run our command.
+        # 4. Run in the shell.
         prefix = TASK_KEEP_GOING if keep_going else ""
         cmd = interpolate_args(self.cmd, [*extra])
         print(f"\n$ {prefix}{cmd}")

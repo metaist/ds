@@ -1,11 +1,11 @@
-# Example: Basic commands become strings.
+# Example: Basic tasks become strings.
 
 [scripts]
 ls = "ls -lah"
 no_error = "+exit 1" # See "Error Suppression"
 
-# We also support `pdm`-style commands.
-# The following all produce the same command as `ls` above.
+# We also support `pdm`-style and `rye`-style commands.
+# The following are all equivalent to `ls` above.
 ls2 = { cmd = "ls -lah" }
 ls3 = { cmd = ["ls", "-lah"] }
 ls4 = { shell = "ls -lah" }
