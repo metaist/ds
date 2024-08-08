@@ -61,7 +61,21 @@ Currently working on removing all of these (see [#46]):
 python -m pip install ds-run
 
 # or, if you use uv:
-uv pip install --system ds-run
+uv tool install ds-run
+```
+
+Confirm that you can run `ds`:
+
+```bash
+ds --version
+```
+
+If you just want to try `ds`:
+
+```bash
+uvx --from ds-run ds --version
+# or
+pipx run ds-run --version
 ```
 
 ## Example
