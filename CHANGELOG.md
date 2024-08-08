@@ -19,6 +19,51 @@ These are changes that are on `main` that are not yet in `prod`.
 
 ---
 
+[#17]: https://github.com/metaist/ds/issues/17
+[#22]: https://github.com/metaist/ds/issues/22
+[#28]: https://github.com/metaist/ds/issues/28
+[#30]: https://github.com/metaist/ds/issues/30
+[#32]: https://github.com/metaist/ds/issues/32
+[#38]: https://github.com/metaist/ds/issues/38
+[#41]: https://github.com/metaist/ds/issues/41
+[#41]: https://github.com/metaist/ds/issues/41
+[#42]: https://github.com/metaist/ds/issues/42
+[#45]: https://github.com/metaist/ds/issues/45
+[#47]: https://github.com/metaist/ds/issues/47
+[#48]: https://github.com/metaist/ds/issues/48
+[#49]: https://github.com/metaist/ds/issues/49
+[#50]: https://github.com/metaist/ds/issues/50
+[1.0.0]: https://github.com/metaist/ds/compare/0.1.3...1.0.0
+
+## [1.0.0] - 2024-08-08T16:25:40Z
+
+**Fixed**
+
+- [#38]: `CHANGELOG` typo
+- [#42]: pypi badges
+- [#48]: missing docstring
+
+**Changed**
+
+- [#17]: config loading now looks for specific keys and tries more files if the key is not found
+- [#47]: error suppression prefix string changed from hyphen (`-`) to plus (`+`).
+
+**Added**
+
+- [#22]: error suppression from the command-line
+- [#28]: argument interpolation now accepts defaults
+- [#30]: `__main__.py` to make `ds` executable as a package
+- [#41]: `composer.json` support
+- [#45]: support for workspaces
+- [#49]: tasks that call `ds` have an implied default to use the same configuration file they were called from (via `_DS_CURRENT_CONFIG` environment variable).
+- [#50]: support for `rye`
+
+**Removed**
+
+- [#32]: unused python `call` format string
+
+---
+
 [#40]: https://github.com/metaist/ds/issues/40
 [0.1.3]: https://github.com/metaist/ds/compare/0.1.2...0.1.3
 
