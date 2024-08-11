@@ -119,7 +119,11 @@ class Task:
             )
 
     def run(
-        self, tasks: Tasks, extra: Optional[List[str]] = None, keep_going: bool = False
+        self,
+        tasks: Tasks,
+        extra: Optional[List[str]] = None,
+        keep_going: bool = False,
+        dry_run: bool = False,
     ) -> int:
         """Run this task."""
         extra = extra or []
@@ -127,7 +131,7 @@ class Task:
 
         # 1. Run all the dependencies.
         for dep in self.depends:
-            dep.run(tasks, extra, keep_going)
+            dep.run(tasks, extra, keep_going, dry_run)
 
         # 2. Check if we have anything to do.
         if not self.cmd.strip():  # nothing to do
@@ -138,7 +142,7 @@ class Task:
             cmd, *args = split(self.cmd)
             other = tasks.get(cmd)
             if other and other != self and self not in other.depends:
-                return other.run(tasks, args + extra, keep_going)
+                return other.run(tasks, args + extra, keep_going, dry_run)
 
         if not self.allow_shell:
             raise ValueError(f"Unknown task: {self.cmd}")
@@ -146,7 +150,10 @@ class Task:
         # 4. Run in the shell.
         prefix = TASK_KEEP_GOING if keep_going else ""
         cmd = interpolate_args(self.cmd, [*extra])
-        print(f"\n$ {prefix}{cmd}")
+        print(f"\n{'[DRY RUN] ' if dry_run else ''}$ {prefix}{cmd}")
+        if dry_run:  # do not actually run the command
+            return 0
+
         proc = run(cmd, shell=True, text=True)
         code = proc.returncode
 

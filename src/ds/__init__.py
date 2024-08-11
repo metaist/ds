@@ -142,7 +142,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         with TempEnv(_DS_CURRENT_FILE=str(args.file_)):
             assert args.cwd is not None
             with pushd(args.cwd):
-                args.task.run(config.tasks)
+                args.task.run(config.tasks, dry_run=args.dry_run)
     except ValueError as e:
         print("ERROR:", e)
         sys.exit(1)

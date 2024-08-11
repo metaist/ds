@@ -27,6 +27,7 @@ def test_parse_options() -> None:
     assert parse_args(split("--version")) == Args(version=True)
 
     assert parse_args(split("--debug")) == Args(debug=True, list_=True)
+    assert parse_args(split("--dry-run")) == Args(dry_run=True, list_=True)
 
     assert parse_args(split("-l")) == Args(list_=True)
     assert parse_args(split("--list")) == Args(list_=True)
@@ -108,6 +109,7 @@ def test_as_argv() -> None:
     assert Args(help=True).as_argv() == ["ds", "--help"]
     assert Args(version=True).as_argv() == ["ds", "--version"]
     assert Args(debug=True).as_argv() == ["ds", "--debug"]
+    assert Args(dry_run=True).as_argv() == ["ds", "--dry-run"]
     assert Args(cwd=Path()).as_argv() == ["ds", "--cwd", str(Path())]
     assert Args(file_=Path()).as_argv() == ["ds", "--file", str(Path())]
     assert Args(workspace=["*"]).as_argv() == ["ds", "--workspace", "*"]

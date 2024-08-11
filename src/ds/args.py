@@ -23,6 +23,7 @@ Usage: ds [--help | --version] [--debug]
           [--file PATH]
           [--cwd PATH]
           [--workspace GLOB]...
+          [--dry-run]
           [--list | (<task>[: <options>... --])...]
 
 Options:
@@ -44,6 +45,9 @@ Options:
   --cwd PATH
     Set the starting working directory (default: --file parent).
     PATH is resolved relative to the current working directory.
+
+  --dry-run
+    Show which tasks would be run, but don't actually run them.
 
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.
@@ -112,6 +116,9 @@ class Args:
     file_: Optional[Path] = None
     """Path to task definitions."""
 
+    dry_run: bool = False
+    """Whether to skip actually running tasks."""
+
     workspace: List[str] = field(default_factory=list)
     """List of workspace patterns to run tasks in."""
 
@@ -134,6 +141,8 @@ class Args:
             result.append("--version")
         if self.debug:
             result.append("--debug")
+        if self.dry_run:
+            result.append("--dry-run")
         if self.cwd:
             result.extend(["--cwd", str(self.cwd)])
         if self.file_:
@@ -159,8 +168,9 @@ def parse_args(argv: List[str]) -> Args:
     while argv:
         arg = argv.pop(0)
         if is_ours:
-            if arg in ["--help", "--version", "--debug"]:
-                setattr(args, arg[2:], True)
+            if arg in ["--help", "--version", "--debug", "--dry-run"]:
+                attr = arg[2:].replace("-", "_")
+                setattr(args, attr, True)
             elif arg == "-h":
                 args.help = True
             elif arg in ["-l", "--list"]:

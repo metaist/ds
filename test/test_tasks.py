@@ -152,7 +152,7 @@ def test_single() -> None:
     tasks: Tasks = {"ls": Task.parse("ls -la")}
     tasks["ls"].run(tasks)
     tasks["ls"].run(tasks, ["-h"])
-    tasks["ls"].run(tasks, ["test"])
+    tasks["ls"].run(tasks, ["test"], dry_run=True)
 
 
 def test_multiple() -> None:
