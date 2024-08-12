@@ -22,6 +22,10 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
     """Return `args` interpolated into `cmd`."""
     not_done: List[Optional[str]] = [arg for arg in args]
 
+    # Replace `pdm`-style args.
+    cmd = cmd.replace("{args}", "${@}")
+    cmd = cmd.replace("{args:", "${@:-")
+
     # By default, we append all args to the end.
     if not RE_ARGS.search(cmd):
         cmd = f"{cmd} {ARG_PREFIX}{ARG_REST}"
@@ -29,11 +33,13 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
     def _replace_arg(match: re.Match[str]) -> str:
         """Return the argument replacement."""
         arg = (match[1] or "") + (match[2] or "")
+        default = match[3]
         if arg == ARG_REST:  # remaining args
-            return " ".join(arg for arg in not_done if arg is not None)
+            default = default or ""
+            unused = [arg for arg in not_done if arg is not None]
+            return " ".join(unused) if unused else default
 
         idx = int(arg) - 1
-        default = match[3]
         if idx >= len(args):
             if default is None:
                 raise IndexError(f"Not enough arguments provided: ${idx+1}")

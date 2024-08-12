@@ -65,3 +65,17 @@ def test_default_args() -> None:
     assert interpolate_args(cmd, []) == "ls foo"
     assert interpolate_args(cmd, ["bar"]) == "ls bar"
     assert interpolate_args(cmd, [""]) == "ls"
+
+
+def test_pdm_args() -> None:
+    """Test `pdm`-style arg interpolation."""
+    cmd = "echo '--before {args} --after'"
+    assert (
+        interpolate_args(cmd, ["--something"]) == "echo '--before --something --after'"
+    )
+
+    cmd = "echo '--before {args:--default --value} --after'"
+    assert (
+        interpolate_args(cmd, ["--something"]) == "echo '--before --something --after'"
+    )
+    assert interpolate_args(cmd, []) == "echo '--before --default --value --after'"

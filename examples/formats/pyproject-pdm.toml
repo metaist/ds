@@ -55,11 +55,11 @@ mytask.composite = ["echo 'Hello'", "echo 'World'"]
 # start = "flask run -p 54321"
 # migrate_db = "flask db upgrade"
 
-# Arguments Placeholder: In Progress - https://github.com/metaist/ds/issues/59
-# cmd = "echo '--before {args} --after'"
-# shell = { shell = "echo '--before {args} --after'" }
-# composite = { composite = ["cmd --something", "shell {args}"] }
-# test2 = "echo '--before {args:--default --value} --after'"
+# Arguments Placeholder
+cmd = "echo '--before {args} --after'"
+shell = { shell = "echo '--before {args} --after'" }
+composite = { composite = ["cmd --something", "shell {args}"] }
+test2 = "echo '--before {args:--default --value} --after'"
 
 # `pdm` Placeholder: Not Supported
 # whoami = { shell = "echo `{pdm} -V` was called as '{pdm} -V'" }
