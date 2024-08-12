@@ -39,7 +39,10 @@ class Task:
     """Represents a thing to be done."""
 
     name: str = ""
-    """Name of the task."""
+    """Task name."""
+
+    help: str = ""
+    """Task description."""
 
     cmd: str = ""
     """Shell command to execute after `depends`."""
@@ -67,20 +70,35 @@ class Task:
             task.keep_going, task.cmd = starts(config, TASK_KEEP_GOING)
 
         elif isinstance(config, Dict):
+            if "help" in config:
+                task.help = config["help"]
+            if "keep_going" in config:
+                task.keep_going = config["keep_going"]
+
             if "composite" in config:
                 assert isinstance(config["composite"], list)
-                return Task.parse(config["composite"])
+                parsed = Task.parse(config["composite"])
+                task.name = parsed.name
+                task.depends = parsed.depends
 
-            elif "chain" in config:
+            elif "chain" in config:  # `composite` alias
                 assert isinstance(config["chain"], list)
-                return Task.parse(config["chain"])
+                parsed = Task.parse(config["chain"])
+                task.name = parsed.name
+                task.depends = parsed.depends
 
             elif "shell" in config:
-                return Task.parse(str(config["shell"]))
+                parsed = Task.parse(str(config["shell"]))
+                task.cmd = parsed.cmd
+                task.keep_going = parsed.keep_going
 
             elif "cmd" in config:
                 cmd = config["cmd"]
-                return Task.parse(" ".join(cmd) if isinstance(cmd, list) else str(cmd))
+                parsed = Task.parse(
+                    " ".join(cmd) if isinstance(cmd, list) else str(cmd)
+                )
+                task.cmd = parsed.cmd
+                task.keep_going = parsed.keep_going
 
             elif "call" in config:
                 raise ValueError(f"`call` commands not supported: {config}")
@@ -102,7 +120,7 @@ class Task:
             )
 
         indent = " " * 4
-        print(f"{self.name}:")
+        print(f"{self.name}:{' ' + self.help if self.help else ''}")
         if len(cmd) < 80 - len(indent):
             print(f"{indent}{cmd.strip()}\n")
         else:

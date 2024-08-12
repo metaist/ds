@@ -1,4 +1,80 @@
-# Example: minimal `pyproject.toml` configuration using `pdm`.
+# Example: `pyproject.toml` using `pdm`.
+# See: https://pdm-project.org/latest/usage/scripts/#user-scripts
 
 [tool.pdm.scripts]
-ls = "ls -lah"
+
+# `cmd` (treated the same as `shell`)
+start1 = "flask run -p 54321"
+start2 = { cmd = "flask run -p 54321" }
+start3 = { cmd = [
+  "flask",
+  "run",
+  # Important comment here about always using port 54321
+  "-p",
+  "54321",
+] }
+
+# `shell` (treated the same as `cmd`)
+filter_error = { shell = "cat error.log|grep CRITICAL > critical.log" }
+
+# `call`: Not supported
+# See: https://github.com/metaist/ds#not-supported-call-tasks
+# call1 = { call = "ds:main" }
+# call2 = { call = "ds:main(['ds', '--version'])" }
+
+# `composite`
+lint = "flake8"
+test = "pytest"
+all = { composite = ["lint", "test"] }
+all2.composite = ["lint", "test"]
+all2.keep_going = true # run `test` even if `lint` fails
+all3 = { composite = ["lint mypackage/", "test -v tests/"] } # pass args
+mytask.composite = ["echo 'Hello'", "echo 'World'"]
+
+# `env`: In Progress - https://github.com/metaist/ds/issues/51
+# start4.cmd = "flask run -p 54321"
+# start4.env = { FOO = "bar", FLASK_DEBUG = "1" }
+
+# `env_file`: In Progress -  https://github.com/metaist/ds/issues/51
+# start5.cmd = "flask run -p 54321"
+# start5.env_file = ".env"
+
+# `env_file.override`: Not supported
+# start6.cmd = "flask run -p 54321"
+# start6.env_file.override = ".env"
+
+# `working_dir`: Not Implemented
+# start7.cmd = "flask run -p 54321"
+# start7.working_dir = "subdir"
+
+# `site_packages`: Not Supported
+# (no example)
+
+# Shared Options: Not Supported
+# _.env_file = ".env"
+# start = "flask run -p 54321"
+# migrate_db = "flask db upgrade"
+
+# Arguments Placeholder: In Progress - https://github.com/metaist/ds/issues/59
+# cmd = "echo '--before {args} --after'"
+# shell = { shell = "echo '--before {args} --after'" }
+# composite = { composite = ["cmd --something", "shell {args}"] }
+# test2 = "echo '--before {args:--default --value} --after'"
+
+# `pdm` Placeholder: Not Supported
+# whoami = { shell = "echo `{pdm} -V` was called as '{pdm} -V'" }
+
+# `help`
+test_cmd = { cmd = "pytest", help = "flask db upgrade" }
+
+# Pre & Post Scripts: Not Supported
+# See: https://github.com/metaist/ds#not-supported-lifecycle-events
+# pre_compress = "echo 'Run BEFORE the `compress` script'"
+# compress = "tar czvf compressed.tar.gz data/"
+# post_compress = "echo 'Run AFTER the `compress` script'"
+
+# NOTE: You can accomplish approximately the same result:
+pre_compress = "echo 'Run BEFORE the `compress` script'"
+compress_ = "tar czvf compressed.tar.gz data/"
+post_compress = "echo 'Run AFTER the `compress` script'"
+compress = { composite = ["pre_compress", "compress_", "post_compress"] }
