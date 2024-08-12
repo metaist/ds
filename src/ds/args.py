@@ -40,7 +40,7 @@ Options:
     File with task and workspace definitions (default: search in parents).
 
     Read more about the configuration file:
-    https://github.com/metaist/ds#configuration-file
+    https://github.com/metaist/ds
 
   --cwd PATH
     Set the starting working directory (default: --file parent).
