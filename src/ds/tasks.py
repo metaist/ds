@@ -4,16 +4,19 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
+from fnmatch import fnmatch
 from os.path import relpath
 from pathlib import Path
 from shlex import split
 from subprocess import run
 from typing import Any
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Optional
 import sys
 import textwrap
+
 
 # TODO 2024-10-31 [3.8 EOL]: remove conditional
 if sys.version_info >= (3, 9):  # pragma: no cover
@@ -23,6 +26,8 @@ else:  # pragma: no cover
 
 # pkg
 from .env import interpolate_args
+from .symbols import GLOB_DELIMITER
+from .symbols import GLOB_EXCLUDE
 from .symbols import starts
 from .symbols import TASK_COMPOSITE
 from .symbols import TASK_KEEP_GOING
@@ -172,21 +177,28 @@ class Task:
         # 3. Check if a part of a composite task is calling another task.
         if self.name == TASK_COMPOSITE:
             cmd, *args = split(self.cmd)
-            other = tasks.get(cmd)
-            if other and other != self and self not in other.depends:
-                return other.run(tasks, args + extra, cwd, keep_going, dry_run)
+            others = glob_names(tasks.keys(), cmd.split(GLOB_DELIMITER))
+            ran, code = False, 0
+            for other_name in others:
+                other = tasks.get(other_name)
+                if other and other != self and self not in other.depends:
+                    ran = True
+                    code = other.run(tasks, args + extra, cwd, keep_going, dry_run)
+            if ran:
+                return code
 
         if not self.allow_shell:
             raise ValueError(f"Unknown task: {self.cmd}")
 
         # 4. Run in the shell.
-        dry_prefix = "[DRY RUN] " if dry_run else ""
+        dry_prefix = "[DRY RUN]" if dry_run else ""
         prefix = TASK_KEEP_GOING if keep_going else ""
         cmd = interpolate_args(self.cmd, [*extra])
+        print(f"\n{dry_prefix}> {prefix}{self.name}")
         if cwd:
-            print(f"\n{dry_prefix}$ pushd '{cwd}'; {prefix}{cmd}; popd")
+            print(f"$ pushd '{cwd}'; {cmd}; popd")
         else:
-            print(f"\n{dry_prefix}$ {prefix}{cmd}")
+            print(f"$ {cmd}")
         if dry_run:  # do not actually run the command
             return 0
 
@@ -227,3 +239,25 @@ def print_tasks(path: Path, tasks: Tasks) -> None:
     print(f"# Found {count} task{plural} in {location}\n")
     for task in tasks.values():
         task.pprint()
+
+
+def glob_names(names: Iterable[str], patterns: List[str]) -> List[str]:
+    """Return the names of `tasks` that match `patterns`.
+
+    Prefixing a pattern with `!` will remove that matched pattern
+    from the result.
+
+    >>> names = ['cab', 'car', 'cat', 'crab']
+    >>> glob_names(names, ['c?r', 'c*b'])
+    ['cab', 'car', 'crab']
+
+    >>> glob_names(names, ['*', '!crab'])
+    ['cab', 'car', 'cat']
+    """
+    result: Dict[str, bool] = {name: False for name in names}
+    for pattern in patterns:
+        exclude, pattern = starts(pattern, GLOB_EXCLUDE)
+        for name in result:
+            if fnmatch(name, pattern):
+                result[name] = not exclude
+    return [name for name, include in result.items() if include]

@@ -24,6 +24,9 @@ GLOB_ALL = "*"
 GLOB_EXCLUDE = "!"
 """Prefix to exclude a glob match."""
 
+GLOB_DELIMITER = ";"
+"""Separator between globs."""
+
 KEY_DELIMITER = "."
 """Separator between key parts."""
 
