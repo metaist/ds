@@ -101,6 +101,14 @@ def test_call() -> None:
         parse_tasks({"scripts": {"ls": {"call": "ds:main"}}})
 
 
+def test_cwd() -> None:
+    """Parse `cwd` and `working_dir` options."""
+    cmd = "ls -la"
+    expected = {"ls": Task(name="ls", cmd=cmd, cwd=Path("test"))}
+    expected["ls"].pprint()  # test printing
+    assert parse_tasks({"scripts": {"ls": {"cmd": cmd, "cwd": "test"}}})[1] == expected
+
+
 def test_bad_types() -> None:
     """Handle bad types."""
     # Unsupported task type.

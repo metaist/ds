@@ -213,6 +213,7 @@ def parse_args(argv: List[str]) -> Args:
         tasks.append(task)
 
     args.task = Task.parse(tasks)
+    args.task.cwd = args.cwd
     for dep in args.task.depends:
         # top-level tasks can't be shell commands
         dep.allow_shell = False

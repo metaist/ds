@@ -32,7 +32,9 @@ def test_parse_options() -> None:
     assert parse_args(split("-l")) == Args(list_=True)
     assert parse_args(split("--list")) == Args(list_=True)
 
-    assert parse_args(split("--cwd foo")) == Args(list_=True, cwd=Path("foo").resolve())
+    assert parse_args(split("--cwd foo")) == Args(
+        list_=True, cwd=Path("foo").resolve(), task=Task(cwd=Path("foo").resolve())
+    )
     assert parse_args(split("-f foo")) == Args(list_=True, file_=Path("foo").resolve())
     assert parse_args(split("--file foo")) == Args(
         list_=True, file_=Path("foo").resolve()

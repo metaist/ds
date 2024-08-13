@@ -47,6 +47,9 @@ class Task:
     cmd: str = ""
     """Shell command to execute after `depends`."""
 
+    cwd: Optional[Path] = None
+    """Task working directory."""
+
     depends: List[Task] = field(default_factory=list)
     """Tasks to execute before this one."""
 
@@ -72,10 +75,16 @@ class Task:
         elif isinstance(config, Dict):
             if "help" in config:
                 task.help = config["help"]
+
             if "keep_going" in config:
                 task.keep_going = config["keep_going"]
 
-            if "composite" in config:
+            if "cwd" in config:  # `working_dir` alias
+                task.cwd = Path(config["cwd"])
+            if "working_dir" in config:  # `cwd` alias
+                task.cwd = Path(config["working_dir"])
+
+            if "composite" in config:  # `chain` alias
                 assert isinstance(config["composite"], list)
                 parsed = Task.parse(config["composite"])
                 task.name = parsed.name
@@ -119,6 +128,9 @@ class Task:
                 ]
             )
 
+        if self.cwd:
+            cmd = f"pushd '{self.cwd}'; {cmd}; popd"
+
         indent = " " * 4
         print(f"{self.name}:{' ' + self.help if self.help else ''}")
         if len(cmd) < 80 - len(indent):
@@ -140,16 +152,18 @@ class Task:
         self,
         tasks: Tasks,
         extra: Optional[List[str]] = None,
+        cwd: Optional[Path] = None,
         keep_going: bool = False,
         dry_run: bool = False,
     ) -> int:
         """Run this task."""
         extra = extra or []
+        cwd = cwd or self.cwd
         keep_going = keep_going or self.keep_going
 
         # 1. Run all the dependencies.
         for dep in self.depends:
-            dep.run(tasks, extra, keep_going, dry_run)
+            dep.run(tasks, extra, cwd, keep_going, dry_run)
 
         # 2. Check if we have anything to do.
         if not self.cmd.strip():  # nothing to do
@@ -160,19 +174,23 @@ class Task:
             cmd, *args = split(self.cmd)
             other = tasks.get(cmd)
             if other and other != self and self not in other.depends:
-                return other.run(tasks, args + extra, keep_going, dry_run)
+                return other.run(tasks, args + extra, cwd, keep_going, dry_run)
 
         if not self.allow_shell:
             raise ValueError(f"Unknown task: {self.cmd}")
 
         # 4. Run in the shell.
+        dry_prefix = "[DRY RUN] " if dry_run else ""
         prefix = TASK_KEEP_GOING if keep_going else ""
         cmd = interpolate_args(self.cmd, [*extra])
-        print(f"\n{'[DRY RUN] ' if dry_run else ''}$ {prefix}{cmd}")
+        if cwd:
+            print(f"\n{dry_prefix}$ pushd '{cwd}'; {prefix}{cmd}; popd")
+        else:
+            print(f"\n{dry_prefix}$ {prefix}{cmd}")
         if dry_run:  # do not actually run the command
             return 0
 
-        proc = run(cmd, shell=True, text=True)
+        proc = run(cmd, shell=True, text=True, cwd=cwd)
         code = proc.returncode
 
         if code != 0 and not keep_going:

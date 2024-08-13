@@ -43,9 +43,9 @@ mytask.composite = ["echo 'Hello'", "echo 'World'"]
 # start6.cmd = "flask run -p 54321"
 # start6.env_file.override = ".env"
 
-# `working_dir`: Not Implemented
-# start7.cmd = "flask run -p 54321"
-# start7.working_dir = "subdir"
+# `working_dir`
+start7.cmd = "flask run -p 54321"
+start7.working_dir = "subdir"
 
 # `site_packages`: Not Supported
 # (no example)
