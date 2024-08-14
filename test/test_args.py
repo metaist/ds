@@ -40,6 +40,10 @@ def test_parse_options() -> None:
         list_=True, file_=Path("foo").resolve()
     )
 
+    assert parse_args(split("-e VAR=VAL")) == Args(
+        list_=True, env={"VAR": "VAL"}, task=Task(env={"VAR": "VAL"})
+    )
+
     assert parse_args(split(f"-w '{GLOB_ALL}'")) == Args(
         list_=True, workspace=[GLOB_ALL]
     )
@@ -116,6 +120,7 @@ def test_as_argv() -> None:
     assert Args(file_=Path()).as_argv() == ["ds", "--file", str(Path())]
     assert Args(workspace=["*"]).as_argv() == ["ds", "--workspace", "*"]
     assert Args(list_=True).as_argv() == ["ds", "--list"]
+    assert Args(env={"NAME": "VALUE"}).as_argv() == ["ds", "--env", "'NAME=VALUE'"]
     assert Args(
         task=Task(
             depends=[

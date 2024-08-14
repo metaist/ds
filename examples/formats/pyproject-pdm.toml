@@ -31,9 +31,9 @@ all2.keep_going = true # run `test` even if `lint` fails
 all3 = { composite = ["lint mypackage/", "test -v tests/"] } # pass args
 mytask.composite = ["echo 'Hello'", "echo 'World'"]
 
-# `env`: In Progress - https://github.com/metaist/ds/issues/51
-# start4.cmd = "flask run -p 54321"
-# start4.env = { FOO = "bar", FLASK_DEBUG = "1" }
+# `env`
+start4.cmd = "flask run -p 54321"
+start4.env = { FOO = "bar", FLASK_DEBUG = "1" }
 
 # `env_file`: In Progress -  https://github.com/metaist/ds/issues/51
 # start5.cmd = "flask run -p 54321"

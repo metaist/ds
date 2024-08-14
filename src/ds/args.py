@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 from shlex import split
+from typing import Dict
 from typing import List
 from typing import Optional
 import dataclasses
@@ -20,11 +21,13 @@ from .tasks import Task
 USAGE = """ds: Run dev scripts.
 
 Usage: ds [--help | --version] [--debug]
-          [--file PATH]
-          [--cwd PATH]
-          [--workspace GLOB]...
           [--dry-run]
-          [--list | (<task>[: <options>... --])...]
+          [--list]
+          [--cwd PATH]
+          [--file PATH]
+          [--workspace GLOB]...
+          [(--env NAME=VALUE)...]
+          [<task>[: <options>... --]...]
 
 Options:
   -h, --help
@@ -36,18 +39,24 @@ Options:
   --debug
     Show debug messages.
 
-  -f PATH, --file PATH
-    File with task and workspace definitions (default: search in parents).
-
-    Read more about the configuration file:
-    https://github.com/metaist/ds
-
   --cwd PATH
     Set the starting working directory (default: --file parent).
     PATH is resolved relative to the current working directory.
 
   --dry-run
     Show which tasks would be run, but don't actually run them.
+
+  -e NAME=VALUE, --env NAME=VALUE
+    Set one or more environment variables.
+
+  -f PATH, --file PATH
+    File with task and workspace definitions (default: search in parents).
+
+    Read more about the configuration file:
+    https://github.com/metaist/ds
+
+  -l, --list
+    List available tasks and exit.
 
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.
@@ -57,9 +66,6 @@ Options:
 
     Read more about configuring workspaces:
     https://github.com/metaist/ds#workspaces
-
-  -l, --list
-    List available tasks and exit.
 
   <task>[: <options>... --]
     One or more tasks to run with task-specific arguments.
@@ -110,20 +116,23 @@ class Args:
     debug: bool = False
     """Whether to show debug messages"""
 
+    dry_run: bool = False
+    """Whether to skip actually running tasks."""
+
+    list_: bool = False
+    """Whether to show available tasks"""
+
     cwd: Optional[Path] = None
     """Path to run tasks in."""
+
+    env: Dict[str, str] = field(default_factory=dict)
+    """Environment variable overrides."""
 
     file_: Optional[Path] = None
     """Path to task definitions."""
 
-    dry_run: bool = False
-    """Whether to skip actually running tasks."""
-
     workspace: List[str] = field(default_factory=list)
     """List of workspace patterns to run tasks in."""
-
-    list_: bool = False
-    """Whether to show available tasks"""
 
     task: Task = field(default_factory=Task)
     """A composite task for the tasks given on the command-line."""
@@ -143,6 +152,8 @@ class Args:
             result.append("--debug")
         if self.dry_run:
             result.append("--dry-run")
+        if self.list_:
+            result.append("--list")
         if self.cwd:
             result.extend(["--cwd", str(self.cwd)])
         if self.file_:
@@ -150,8 +161,10 @@ class Args:
         if self.workspace:
             for w in self.workspace:
                 result.extend(["--workspace", w])
-        if self.list_:
-            result.append("--list")
+
+        for key, val in self.env.items():
+            result.extend(["--env", f"'{key}={val}'"])
+
         for t in self.task.depends:
             parts = split(t.cmd)
             result.extend([parts[0], ARG_BEG, *parts[1:], ARG_END])
@@ -177,6 +190,9 @@ def parse_args(argv: List[str]) -> Args:
                 args.list_ = True
             elif arg == "--cwd":
                 args.cwd = Path(argv.pop(0)).resolve()
+            elif arg in ["-e", "--env"]:
+                key, val = argv.pop(0).split("=")
+                args.env[key] = val
             elif arg in ["-f", "--file"]:
                 args.file_ = Path(argv.pop(0)).resolve()
             elif arg in ["-w", "--workspace"]:
@@ -214,6 +230,7 @@ def parse_args(argv: List[str]) -> Args:
 
     args.task = Task.parse(tasks)
     args.task.cwd = args.cwd
+    args.task.env = args.env
     for dep in args.task.depends:
         # top-level tasks can't be shell commands
         dep.allow_shell = False

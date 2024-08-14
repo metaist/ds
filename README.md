@@ -16,8 +16,9 @@
 pip install ds-run  # or: uv tool install ds-run
 ds --list           # list the tasks
 ds clean lint test  # run multiple tasks
-ds format:*         # run all the `format:` tasks
+ds format:*         # run tasks that match a glob
 ds test -vv         # pass arguments to tasks
+ds -e PORT=8080 run # set environment variables
 ds +cspell test     # suppress errors
 ds -w* build        # supports monorepo/workspaces
 ```

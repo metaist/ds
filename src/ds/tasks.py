@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 from fnmatch import fnmatch
+from os import environ as ENV
 from os.path import relpath
 from pathlib import Path
 from shlex import split
@@ -55,6 +56,9 @@ class Task:
     cwd: Optional[Path] = None
     """Task working directory."""
 
+    env: Dict[str, str] = field(default_factory=dict)
+    """Task environment variables."""
+
     depends: List[Task] = field(default_factory=list)
     """Tasks to execute before this one."""
 
@@ -88,6 +92,9 @@ class Task:
                 task.cwd = Path(config["cwd"])
             if "working_dir" in config:  # `cwd` alias
                 task.cwd = Path(config["working_dir"])
+
+            if "env" in config:
+                task.env = config["env"]
 
             if "composite" in config:  # `chain` alias
                 assert isinstance(config["composite"], list)
@@ -158,17 +165,19 @@ class Task:
         tasks: Tasks,
         extra: Optional[List[str]] = None,
         cwd: Optional[Path] = None,
+        env: Optional[Dict[str, str]] = None,
         keep_going: bool = False,
         dry_run: bool = False,
     ) -> int:
         """Run this task."""
         extra = extra or []
         cwd = cwd or self.cwd
+        env = env or self.env
         keep_going = keep_going or self.keep_going
 
         # 1. Run all the dependencies.
         for dep in self.depends:
-            dep.run(tasks, extra, cwd, keep_going, dry_run)
+            dep.run(tasks, extra, cwd, env, keep_going, dry_run)
 
         # 2. Check if we have anything to do.
         if not self.cmd.strip():  # nothing to do
@@ -183,7 +192,7 @@ class Task:
                 other = tasks.get(other_name)
                 if other and other != self and self not in other.depends:
                     ran = True
-                    code = other.run(tasks, args + extra, cwd, keep_going, dry_run)
+                    code = other.run(tasks, args + extra, cwd, env, keep_going, dry_run)
             if ran:
                 return code
 
@@ -202,7 +211,7 @@ class Task:
         if dry_run:  # do not actually run the command
             return 0
 
-        proc = run(cmd, shell=True, text=True, cwd=cwd)
+        proc = run(cmd, shell=True, text=True, cwd=cwd, env={**ENV, **env})
         code = proc.returncode
 
         if code != 0 and not keep_going:

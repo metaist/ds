@@ -11,8 +11,8 @@ devserver-explicit = { cmd = "flask run --app ./hello.py --debug" }
 devserver2 = { cmd = "flask run --app ./hello.py --debug" }
 http = { cmd = ["python", "-mhttp.server", "8000"] }
 
-# `env`: In Progress - https://github.com/metaist/ds/issues/51
-# devserver3 = { cmd = "flask run --debug", env = { FLASK_APP = "./hello.py" } }
+# `env`
+devserver3 = { cmd = "flask run --debug", env = { FLASK_APP = "./hello.py" } }
 
 # `env-file`: In Progress - https://github.com/metaist/ds/issues/51
 # devserver4 = { cmd = "flask run --debug", env-file = ".dev.env" }
