@@ -8,6 +8,7 @@ from fnmatch import fnmatch
 from os import environ as ENV
 from os.path import relpath
 from pathlib import Path
+from shlex import join
 from shlex import split
 from subprocess import run
 from typing import Any
@@ -27,6 +28,7 @@ else:  # pragma: no cover
 
 # pkg
 from .env import interpolate_args
+from .env import read_env
 from .symbols import GLOB_DELIMITER
 from .symbols import GLOB_EXCLUDE
 from .symbols import starts
@@ -43,6 +45,12 @@ ORIGINAL_CWD = Path.cwd()
 @dataclass
 class Task:
     """Represents a thing to be done."""
+
+    origin: Optional[Path] = None
+    """File from which this configuration came."""
+
+    origin_key: str = ""
+    """Key from which this task came."""
 
     name: str = ""
     """Task name."""
@@ -69,12 +77,12 @@ class Task:
     """Whether this task is allowed to run on the shell."""
 
     @staticmethod
-    def parse(config: Any) -> Task:
+    def parse(config: Any, origin: Optional[Path] = None, key: str = "") -> Task:
         """Parse a config into a `Task`."""
-        task = Task()
+        task = Task(origin=origin, origin_key=key)
         if isinstance(config, list):
             for item in config:
-                parsed = Task.parse(item)
+                parsed = Task.parse(item, origin, key)
                 parsed.name = TASK_COMPOSITE
                 task.depends.append(parsed)
 
@@ -88,35 +96,50 @@ class Task:
             if "keep_going" in config:
                 task.keep_going = config["keep_going"]
 
-            if "cwd" in config:  # `working_dir` alias
-                task.cwd = Path(config["cwd"])
-            if "working_dir" in config:  # `cwd` alias
-                task.cwd = Path(config["working_dir"])
+            if "cwd" in config:  # `working_dir` alias (ds)
+                assert origin is not None
+                task.cwd = origin.parent / config["cwd"]
+            if "working_dir" in config:  # `cwd` alias (pdm)
+                assert origin is not None
+                task.cwd = origin.parent / config["working_dir"]
 
+            if "env_file" in config:  # `env-file` alias (pdm)
+                assert origin is not None
+                task.env.update(
+                    read_env((origin.parent / config["env_file"]).read_text())
+                )
+            if "env-file" in config:  # `env_file` alias (rye)
+                assert origin is not None
+                task.env.update(
+                    read_env((origin.parent / config["env-file"]).read_text())
+                )
             if "env" in config:
-                task.env = config["env"]
+                assert isinstance(config["env"], dict)
+                task.env.update(config["env"])
 
             if "composite" in config:  # `chain` alias
                 assert isinstance(config["composite"], list)
-                parsed = Task.parse(config["composite"])
+                parsed = Task.parse(config["composite"], origin, key)
                 task.name = parsed.name
                 task.depends = parsed.depends
 
             elif "chain" in config:  # `composite` alias
                 assert isinstance(config["chain"], list)
-                parsed = Task.parse(config["chain"])
+                parsed = Task.parse(config["chain"], origin, key)
                 task.name = parsed.name
                 task.depends = parsed.depends
 
             elif "shell" in config:
-                parsed = Task.parse(str(config["shell"]))
+                parsed = Task.parse(str(config["shell"]), origin, key)
                 task.cmd = parsed.cmd
                 task.keep_going = parsed.keep_going
 
             elif "cmd" in config:
                 cmd = config["cmd"]
                 parsed = Task.parse(
-                    " ".join(cmd) if isinstance(cmd, list) else str(cmd)
+                    " ".join(cmd) if isinstance(cmd, list) else str(cmd),
+                    origin,
+                    key,
                 )
                 task.cmd = parsed.cmd
                 task.keep_going = parsed.keep_going

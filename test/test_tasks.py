@@ -1,6 +1,7 @@
 """Test running tasks."""
 
 # std
+from dataclasses import replace
 from pathlib import Path
 from shlex import split
 
@@ -35,18 +36,25 @@ def test_skipped() -> None:
 
 def test_nop() -> None:
     """Parse an empty task."""
-    assert parse_tasks({"scripts": {"nop": ""}})[1] == {"nop": Task(name="nop")}
+    assert parse_tasks({"scripts": {"nop": ""}})[1] == {
+        "nop": Task(origin_key="scripts", name="nop")
+    }
 
 
 def test_string() -> None:
     """Parse basic string task."""
     assert parse_tasks({"scripts": {"ls": "ls -la"}})[1] == {
-        "ls": Task(name="ls", cmd="ls -la")
+        "ls": Task(origin_key="scripts", name="ls", cmd="ls -la")
     }
 
     # Tasks can suppress errors.
     assert parse_tasks({"scripts": {"ls": f"{TASK_KEEP_GOING}ls -la"}})[1] == {
-        "ls": Task(name="ls", cmd="ls -la", keep_going=True)
+        "ls": Task(
+            origin_key="scripts",
+            name="ls",
+            cmd="ls -la",
+            keep_going=True,
+        )
     }
 
 
@@ -55,10 +63,20 @@ def test_composite() -> None:
     cmd = [f"{TASK_KEEP_GOING}clean", "build"]
     expected = {
         "all": Task(
+            origin_key="scripts",
             name="all",
             depends=[
-                Task(name=TASK_COMPOSITE, cmd="clean", keep_going=True),
-                Task(name=TASK_COMPOSITE, cmd="build"),
+                Task(
+                    origin_key="scripts",
+                    name=TASK_COMPOSITE,
+                    cmd="clean",
+                    keep_going=True,
+                ),
+                Task(
+                    origin_key="scripts",
+                    name=TASK_COMPOSITE,
+                    cmd="build",
+                ),
             ],
         )
     }
@@ -77,7 +95,14 @@ def test_composite() -> None:
 def test_shell_cmd() -> None:
     """Parse a `shell` or `cmd` task."""
     cmd = f"{TASK_KEEP_GOING}ls -la"
-    expected = {"ls": Task(name="ls", cmd="ls -la", keep_going=True)}
+    expected = {
+        "ls": Task(
+            origin_key="scripts",
+            name="ls",
+            cmd="ls -la",
+            keep_going=True,
+        )
+    }
     expected["ls"].pprint()  # test printing
 
     # shell
@@ -90,9 +115,10 @@ def test_shell_cmd() -> None:
     assert parse_tasks({"scripts": {"ls": {"cmd": split(cmd)}}})[1] == expected
 
     # rye-style
-    assert (
-        parse_tasks({"tool": {"rye": {"scripts": {"ls": split(cmd)}}}})[1] == expected
-    )
+    task2 = replace(expected["ls"], origin_key="tool.rye.scripts")
+    assert parse_tasks({"tool": {"rye": {"scripts": {"ls": split(cmd)}}}})[1] == {
+        "ls": task2
+    }
 
 
 def test_call() -> None:
@@ -104,9 +130,16 @@ def test_call() -> None:
 def test_cwd() -> None:
     """Parse `cwd` and `working_dir` options."""
     cmd = "ls -la"
-    expected = {"ls": Task(name="ls", cmd=cmd, cwd=Path("test"))}
+    expected = {
+        "ls": Task(
+            origin=Path(), origin_key="scripts", name="ls", cmd=cmd, cwd=Path("test")
+        )
+    }
     expected["ls"].pprint()  # test printing
-    assert parse_tasks({"scripts": {"ls": {"cmd": cmd, "cwd": "test"}}})[1] == expected
+    assert (
+        parse_tasks({"scripts": {"ls": {"cmd": cmd, "cwd": "test"}}}, Path())[1]
+        == expected
+    )
 
 
 def test_bad_types() -> None:

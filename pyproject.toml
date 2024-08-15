@@ -71,8 +71,8 @@ classifiers = [
 ]
 
 [tool.ds.scripts] # dev scripts <https://github.com/metaist/ds>
-"ruff:format" = "ruff format ."
-"ruff:check" = "ruff check . --fix"
+"ruff:format" = "ruff format ${@:-.}"
+"ruff:lint" = "ruff check --fix ${@:-.}"
 ruff = ["ruff:*"]
 cspell = "cspell --gitignore '**/*.{py,txt,md,markdown}'"
 pyright = "pyright src test"
@@ -85,8 +85,9 @@ mypy = """\
     src test
 """
 
-test = """\
-  PYTHONPATH=src \
+test.help = "run unit tests"
+test.env = { PYTHONPATH = "src" }
+test.shell = """\
   coverage run --branch --source=src -m \
     pytest \
       --doctest-modules \
@@ -97,7 +98,7 @@ test = """\
 
 cog = "cog -r README.md"
 
-docs = """\
+docs = """
   rm -rf docs; \
   mkdir -p docs; \
   pdoc \
@@ -116,19 +117,19 @@ all = ["lint", "test", "cog", "docs"]
 
 build = ["pip install -e .", "python -m build"]
 clean = """\
-  rm -rf .mypy_cache;\
-  rm -rf .pytest_cache;\
-  rm -rf .ruff_cache;\
-  rm -rf dist;\
-  rm -rf .coverage;
+  rm -rf .mypy_cache; \
+  rm -rf .pytest_cache; \
+  rm -rf .ruff_cache; \
+  rm -rf dist; \
+  rm -rf .coverage; \
 """
 
 release = """\
-  git commit -am "release: $1";\
-  git tag $1;\
-  git push;\
-  git push --tags;\
-  git checkout main;\
-  git merge --no-ff --no-edit prod;\
-  git push
+  git commit -am "release: $1"; \
+  git tag $1; \
+  git push; \
+  git push --tags; \
+  git checkout main; \
+  git merge --no-ff --no-edit prod; \
+  git push \
 """

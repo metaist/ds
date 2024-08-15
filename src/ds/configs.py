@@ -102,7 +102,7 @@ class Config:
         if require_workspace and not found:
             raise LookupError("Could not find workspace configuration.")
 
-        found, self.tasks = parse_tasks(self.config)
+        found, self.tasks = parse_tasks(self.config, self.path)
         if not require_workspace and not found:
             raise LookupError("Could not find task configuration.")
 
@@ -193,7 +193,9 @@ def parse_workspace(
     return found, members
 
 
-def parse_tasks(config: Dict[str, Any]) -> Tuple[bool, Tasks]:
+def parse_tasks(
+    config: Dict[str, Any], origin: Optional[Path] = None
+) -> Tuple[bool, Tasks]:
     """Parse task configurations."""
     found = False
     tasks: Tasks = {}
@@ -217,7 +219,7 @@ def parse_tasks(config: Dict[str, Any]) -> Tuple[bool, Tasks]:
         if key == "tool.rye.scripts" and isinstance(cmd, list):
             cmd = {"cmd": cmd}
 
-        task = Task.parse(cmd)
+        task = Task.parse(cmd, origin, key)
         task.name = name
         tasks[name] = task
 

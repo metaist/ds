@@ -35,9 +35,9 @@ mytask.composite = ["echo 'Hello'", "echo 'World'"]
 start4.cmd = "flask run -p 54321"
 start4.env = { FOO = "bar", FLASK_DEBUG = "1" }
 
-# `env_file`: In Progress -  https://github.com/metaist/ds/issues/51
-# start5.cmd = "flask run -p 54321"
-# start5.env_file = ".env"
+# `env_file`
+start5.cmd = "flask run -p 54321"
+start5.env_file = ".env"
 
 # `env_file.override`: Not supported
 # start6.cmd = "flask run -p 54321"

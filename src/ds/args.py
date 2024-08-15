@@ -12,6 +12,7 @@ from typing import Optional
 import dataclasses
 
 # pkg
+from .env import read_env
 from .symbols import ARG_BEG
 from .symbols import ARG_END
 from .symbols import ARG_OPTION
@@ -25,8 +26,9 @@ Usage: ds [--help | --version] [--debug]
           [--list]
           [--cwd PATH]
           [--file PATH]
-          [--workspace GLOB]...
+          [--env-file PATH]
           [(--env NAME=VALUE)...]
+          [--workspace GLOB]...
           [<task>[: <options>... --]...]
 
 Options:
@@ -46,8 +48,13 @@ Options:
   --dry-run
     Show which tasks would be run, but don't actually run them.
 
+  --env-file PATH
+    File with environment variables. This file is read before --env
+    values are applied.
+
   -e NAME=VALUE, --env NAME=VALUE
-    Set one or more environment variables.
+    Set one or more environment variables. Supersedes any values set in
+    an `--env-file`.
 
   -f PATH, --file PATH
     File with task and workspace definitions (default: search in parents).
@@ -128,6 +135,9 @@ class Args:
     env: Dict[str, str] = field(default_factory=dict)
     """Environment variable overrides."""
 
+    env_file: Optional[Path] = None
+    """Path to environment variables."""
+
     file_: Optional[Path] = None
     """Path to task definitions."""
 
@@ -156,6 +166,8 @@ class Args:
             result.append("--list")
         if self.cwd:
             result.extend(["--cwd", str(self.cwd)])
+        if self.env_file:
+            result.extend(["--env-file", str(self.env_file)])
         if self.file_:
             result.extend(["--file", str(self.file_)])
         if self.workspace:
@@ -190,6 +202,8 @@ def parse_args(argv: List[str]) -> Args:
                 args.list_ = True
             elif arg == "--cwd":
                 args.cwd = Path(argv.pop(0)).resolve()
+            elif arg == "--env-file":
+                args.env_file = Path(argv.pop(0)).resolve()
             elif arg in ["-e", "--env"]:
                 key, val = argv.pop(0).split("=")
                 args.env[key] = val
@@ -230,7 +244,12 @@ def parse_args(argv: List[str]) -> Args:
 
     args.task = Task.parse(tasks)
     args.task.cwd = args.cwd
-    args.task.env = args.env
+
+    env = args.env
+    if args.env_file:
+        env = {**read_env(args.env_file.read_text()), **args.env}
+    args.task.env = env
+
     for dep in args.task.depends:
         # top-level tasks can't be shell commands
         dep.allow_shell = False

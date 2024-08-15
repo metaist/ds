@@ -14,8 +14,8 @@ http = { cmd = ["python", "-mhttp.server", "8000"] }
 # `env`
 devserver3 = { cmd = "flask run --debug", env = { FLASK_APP = "./hello.py" } }
 
-# `env-file`: In Progress - https://github.com/metaist/ds/issues/51
-# devserver4 = { cmd = "flask run --debug", env-file = ".dev.env" }
+# `env-file`
+devserver4 = { cmd = "flask run --debug", env-file = ".env" }
 
 # `chain`
 lint = { chain = ["lint:black", "lint:flake8"] }

@@ -5,17 +5,23 @@ from __future__ import annotations
 from os import environ as ENV
 from typing import Any
 from typing import Dict
+from typing import Mapping
 from typing import Iterator
 from typing import List
+from typing import Match
 from typing import Optional
 import re
 
 # pkg
 from .symbols import ARG_PREFIX
 from .symbols import ARG_REST
+from .symbols import starts
 
 RE_ARGS = re.compile(r"(?:\$(@|\d+)|\$\{(@|\d+)(?::-(.*?))?\})")
 """Regex for matching an argument to be interpolated."""
+
+RE_EXPAND = re.compile(r"\$(\w+|\{[^}]*\})", re.ASCII)
+"""Regex for finding variable expansions."""
 
 
 def interpolate_args(cmd: str, args: List[str]) -> str:
@@ -138,3 +144,72 @@ class TempEnv:
             self.saved[key] = ENV.get(key)
         if key in ENV:
             del ENV[key]
+
+
+def expand(value: str, store: Optional[Mapping[str, str]] = None) -> str:
+    """Expand variables of the form `$var` and `${var}`.
+
+    Regular expansion works as expected:
+    >>> with TempEnv(a='hello', b='world'):
+    ...     expand("$a ${b}")
+    'hello world'
+
+    >>> expand("nothing")
+    'nothing'
+
+    Unknown variables are left unchanged:
+    >>> with TempEnv(a='this'):
+    ...     expand("$a is $b")
+    'this is $b'
+    """
+    if "$" not in value:
+        return value
+
+    values = store or ENV
+
+    def _repl(match: Match[str]) -> str:
+        value = match.group(0)
+        name = match.group(1)
+        if name.startswith("{") and name.endswith("}"):
+            name = name[1:-1]  # remove braces
+        if name in values:  # can't use .get()
+            value = values[name]
+        return value
+
+    return RE_EXPAND.sub(_repl, value)
+
+
+def read_env(text: str) -> Dict[str, str]:
+    """Read an environment file.
+
+    >>> read_env('''# IGNORE=line
+    ... export INCLUDE=value
+    ... 'key name'="value with space"
+    ... ''')
+    {'INCLUDE': 'value', 'key name': 'value with space'}
+    """
+    result: Dict[str, str] = {}
+    for line in text.replace("\r\n", "\n").split("\n"):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue  # skip blank lines and comments
+
+        _, line = starts(line, "export ")  # remove any export prefix
+        key, value = line.split("=", 1)
+
+        key = key.strip()
+        if len(key) >= 2 and key.startswith("'") and key.endswith("'"):
+            key = key[1:-1]  # unquote key
+
+        # expand with the current values and then all ENV values
+        value = expand(value, result)
+        value = expand(value)
+
+        value = value.strip()
+        if len(value) >= 2 and (
+            (value.startswith("'") and value.endswith("'"))
+            or (value.startswith('"') and value.endswith('"'))
+        ):
+            value = value[1:-1]  # unquote value
+        result[key] = value
+    return result
