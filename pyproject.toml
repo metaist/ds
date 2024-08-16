@@ -77,7 +77,7 @@ ruff = ["ruff:*"]
 cspell = "cspell --gitignore '**/*.{py,txt,md,markdown}'"
 pyright = "pyright src test"
 
-mypy = """\
+mypy = """
   mypy \
     --strict \
     --install-types \
@@ -87,27 +87,32 @@ mypy = """\
 
 test.help = "run unit tests"
 test.env = { PYTHONPATH = "src" }
-test.shell = """\
+test.shell = """
   coverage run --branch --source=src -m \
     pytest \
       --doctest-modules \
       --doctest-ignore-import-errors \
-      $@ src test; \
+      $@ src test;
   coverage report --omit=src/cog_helpers.py -m
 """
+
+"coverage:report" = "coverage html"
+"coverage:serve".shell = "python -m http.server 8080"
+"coverage:serve".cwd = "htmlcov"
+coverage = ["coverage:*"]
 
 cog = "cog -r README.md"
 
 docs = """
-  rm -rf docs; \
-  mkdir -p docs; \
+  rm -rf docs;
+  mkdir -p docs;
   pdoc \
     --html \
     --output-dir docs \
     --config sort_identifiers=False \
     --config show_inherited_members=True \
-    --force src/$(basename $(pwd)); \
-  mv docs/**/* docs/; \
+    --force src/$(basename $(pwd));
+  mv docs/**/* docs/;
   touch docs/.nojekyll
 """
 
@@ -116,20 +121,20 @@ dev = ["lint", "test"]
 all = ["lint", "test", "cog", "docs"]
 
 build = ["pip install -e .", "python -m build"]
-clean = """\
-  rm -rf .mypy_cache; \
-  rm -rf .pytest_cache; \
-  rm -rf .ruff_cache; \
-  rm -rf dist; \
-  rm -rf .coverage; \
+clean = """
+  rm -rf .mypy_cache;
+  rm -rf .pytest_cache;
+  rm -rf .ruff_cache;
+  rm -rf dist;
+  rm -rf .coverage;
 """
 
-release = """\
-  git commit -am "release: $1"; \
-  git tag $1; \
-  git push; \
-  git push --tags; \
-  git checkout main; \
-  git merge --no-ff --no-edit prod; \
-  git push \
+release = """
+  git commit -am "release: $1";
+  git tag $1;
+  git push;
+  git push --tags;
+  git checkout main;
+  git merge --no-ff --no-edit prod;
+  git push
 """

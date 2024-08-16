@@ -2,7 +2,6 @@
 
 # std
 from __future__ import annotations
-from itertools import chain
 from os import environ as ENV
 from os import get_terminal_size
 from typing import Any
@@ -28,6 +27,18 @@ RE_ARGS = re.compile(r"(?:\$(@|\d+)|\$\{(@|\d+)(?::-(.*?))?\})")
 
 RE_EXPAND = re.compile(r"\$(\w+|\{[^}]*\})", re.ASCII)
 """Regex for finding variable expansions."""
+
+RE_SPLIT = re.compile(
+    r"""(
+    (?<!\\)             # not preceded by backslash
+    (?:
+        (?:'[^']*')     # single quoted
+        |(?:\"[^\"]*\") # double quoted
+        |[\s;&]+        # one or more space, semicolon or ampersand
+    ))""",
+    flags=re.VERBOSE,
+)
+"""Regex for splitting commands."""
 
 DEFAULT_WIDTH = 80
 """Default width for warping commands."""
@@ -229,36 +240,38 @@ def read_env(text: str) -> Dict[str, str]:
     return result
 
 
-def wrap_cmd(cmd: str, width: int = DEFAULT_WIDTH, indent: int = 2) -> str:
+def wrap_cmd(cmd: str, width: int = DEFAULT_WIDTH) -> str:
     """Return a nicely wrapped command."""
     result = []
     line = ""
-    space = " " * indent
-    for item in cmd.replace(SHELL_CONTINUE, "").strip().split(" "):
+    space = " " * 2
+    for item in RE_SPLIT.split(cmd.replace(SHELL_CONTINUE, "").strip()):
         item = item.strip()
         if not item:
             continue
 
         check = f"{line} {item}" if line else item
-        if len(check) <= width:
+        if item in [";", ";;"]:
+            check = f"{line}{item}"
+
+        if len(check) <= width - 4:
             line = check
-            if peek_end(line, *SHELL_BREAK):
+            if peek_end(line, *SHELL_BREAK):  # pragma: no cover
                 result.extend([line, "\n"])
                 line = ""
             continue
 
-        result.append(line)  # line added
-        line = item  # next line
-
         # How should we terminate this line?
         if peek_end(line, *SHELL_TERMINATORS):  # no continuation
-            result.append("\n")
+            result.append(f"{line}\n")
         else:
-            result.append(f" {SHELL_CONTINUE}")
+            result.append(f"{line} {SHELL_CONTINUE}")
 
-        # Does the next line need to be indented?
-        if space and not peek_end(line, *SHELL_BREAK):
-            line = f"{space}{line}"
+        # Indent next line?
+        if space and not peek_end(line, *SHELL_TERMINATORS):
+            line = f"{space}{item}"
+        else:
+            line = item  # next line
 
     if line:  # add last line
         result.append(line)

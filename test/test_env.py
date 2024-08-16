@@ -90,6 +90,26 @@ def test_wrap_cmd() -> None:
     # duplicate spaces removed
     assert wrap_cmd("ls    -lah") == "ls -lah"
 
+    # cleans up multiple commands
+    assert "$ " + wrap_cmd("ls&&ls") == "$ ls &&\n  ls"
+    assert "$ " + wrap_cmd("ls;ls") == "$ ls;\n  ls"
+
+    assert (
+        "$ " + wrap_cmd("what if a command is just really long", 20)
+        == "$ what if a \\\n    command is \\\n    just really \\\n    long"
+    )
+
+    # no line continuation for list terminators
+    assert "$ " + wrap_cmd(
+        "cmd --with-long-options --another || "
+        "call --and=another --some value that is big",
+        40,
+    ) == (
+        "$ cmd --with-long-options --another ||\n"
+        "  call --and=another --some value that \\\n"
+        "    is big"
+    )
+
     # long wrap with indent
     assert "$ " + wrap_cmd(
         "coverage run --branch --source=src -m pytest "
@@ -101,4 +121,13 @@ def test_wrap_cmd() -> None:
         "$ coverage run --branch --source=src -m pytest --doctest-modules \\\n"
         "    --doctest-ignore-import-errors src test;\n"
         "  coverage report --omit=src/cog_helpers.py -m"
+    )
+
+    # long unbreakable line
+    assert "$ " + wrap_cmd(
+        "echo 'This is a really long string that cannot be broken.';", 40
+    ) == (
+        "$ echo \\\n"
+        "    'This is a really long string that cannot be broken.' \\\n"
+        "    ;"
     )
