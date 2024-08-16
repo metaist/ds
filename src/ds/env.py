@@ -2,12 +2,14 @@
 
 # std
 from __future__ import annotations
+from itertools import chain
 from os import environ as ENV
+from os import get_terminal_size
 from typing import Any
 from typing import Dict
-from typing import Mapping
 from typing import Iterator
 from typing import List
+from typing import Mapping
 from typing import Match
 from typing import Optional
 import re
@@ -15,13 +17,25 @@ import re
 # pkg
 from .symbols import ARG_PREFIX
 from .symbols import ARG_REST
+from .symbols import SHELL_BREAK
+from .symbols import SHELL_CONTINUE
+from .symbols import SHELL_TERMINATORS
 from .symbols import starts
+from .symbols import peek_end
 
 RE_ARGS = re.compile(r"(?:\$(@|\d+)|\$\{(@|\d+)(?::-(.*?))?\})")
 """Regex for matching an argument to be interpolated."""
 
 RE_EXPAND = re.compile(r"\$(\w+|\{[^}]*\})", re.ASCII)
 """Regex for finding variable expansions."""
+
+DEFAULT_WIDTH = 80
+"""Default width for warping commands."""
+
+try:
+    DEFAULT_WIDTH = min(100, max(80, get_terminal_size().columns - 2))
+except OSError:
+    DEFAULT_WIDTH = 80
 
 
 def interpolate_args(cmd: str, args: List[str]) -> str:
@@ -213,3 +227,40 @@ def read_env(text: str) -> Dict[str, str]:
             value = value[1:-1]  # unquote value
         result[key] = value
     return result
+
+
+def wrap_cmd(cmd: str, width: int = DEFAULT_WIDTH, indent: int = 2) -> str:
+    """Return a nicely wrapped command."""
+    result = []
+    line = ""
+    space = " " * indent
+    for item in cmd.replace(SHELL_CONTINUE, "").strip().split(" "):
+        item = item.strip()
+        if not item:
+            continue
+
+        check = f"{line} {item}" if line else item
+        if len(check) <= width:
+            line = check
+            if peek_end(line, *SHELL_BREAK):
+                result.extend([line, "\n"])
+                line = ""
+            continue
+
+        result.append(line)  # line added
+        line = item  # next line
+
+        # How should we terminate this line?
+        if peek_end(line, *SHELL_TERMINATORS):  # no continuation
+            result.append("\n")
+        else:
+            result.append(f" {SHELL_CONTINUE}")
+
+        # Does the next line need to be indented?
+        if space and not peek_end(line, *SHELL_BREAK):
+            line = f"{space}{line}"
+
+    if line:  # add last line
+        result.append(line)
+
+    return "".join(result).replace("\n", f"\n{space}").strip()

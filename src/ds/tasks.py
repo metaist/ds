@@ -17,7 +17,6 @@ from typing import Iterable
 from typing import List
 from typing import Optional
 import sys
-import textwrap
 
 
 # TODO 2024-10-31 [3.8 EOL]: remove conditional
@@ -29,6 +28,7 @@ else:  # pragma: no cover
 # pkg
 from .env import interpolate_args
 from .env import read_env
+from .env import wrap_cmd
 from .symbols import GLOB_DELIMITER
 from .symbols import GLOB_EXCLUDE
 from .symbols import starts
@@ -154,34 +154,42 @@ class Task:
 
     def pprint(self) -> None:
         """Pretty-print a representation of this task."""
-        cmd = f"{TASK_KEEP_GOING if self.keep_going else ''}{self.cmd}"
-        if self.depends:
-            cmd = str(
+        cmd = self.cmd
+        if self.help:
+            print("#", self.help)
+        print(">", wrap_cmd(self.as_args()))
+        if not self.depends:
+            print("$", wrap_cmd(cmd))
+        else:
+            print(
                 [
                     f"{TASK_KEEP_GOING if t.keep_going else ''}{t.cmd}"
                     for t in self.depends
                 ]
             )
+        print()
 
-        if self.cwd:
-            cmd = f"pushd '{self.cwd}'; {cmd}; popd"
+    def as_args(
+        self,
+        cwd: Optional[Path] = None,
+        env: Optional[Dict[str, str]] = None,
+        keep_going: bool = False,
+    ) -> str:
+        """Return a shell representation of running this task."""
+        args = ["ds"]
+        if cwd or self.cwd:
+            args.extend(["--cwd", str(cwd or self.cwd)])
+        for key, val in (env or self.env or {}).items():
+            args.extend(["-e", f"{key}={val}"])
 
-        indent = " " * 4
-        print(f"{self.name}:{' ' + self.help if self.help else ''}")
-        if len(cmd) < 80 - len(indent):
-            print(f"{indent}{cmd.strip()}\n")
-        else:
-            print(
-                textwrap.fill(
-                    cmd.strip(),
-                    78,
-                    initial_indent=indent,
-                    subsequent_indent=indent,
-                    break_on_hyphens=False,
-                    tabsize=len(indent),
-                ).replace("\n", " \\\n")
-                + "\n"
-            )
+        prefix = ""
+        if keep_going or self.keep_going:
+            prefix = TASK_KEEP_GOING
+        if self.name == TASK_COMPOSITE:
+            args.append(f"{prefix}{self.cmd}")
+        elif self.name:
+            args.append(f"{prefix}{self.name}")
+        return join(args)
 
     def run(
         self,
@@ -223,14 +231,10 @@ class Task:
             raise ValueError(f"Unknown task: {self.cmd}")
 
         # 4. Run in the shell.
-        dry_prefix = "[DRY RUN]" if dry_run else ""
-        prefix = TASK_KEEP_GOING if keep_going else ""
         cmd = interpolate_args(self.cmd, [*extra])
-        print(f"\n{dry_prefix}> {prefix}{self.name}")
-        if cwd:
-            print(f"$ pushd '{cwd}'; {cmd}; popd")
-        else:
-            print(f"$ {cmd}")
+        dry_prefix = "[DRY RUN]\n" if dry_run else ""
+        print(f"\n{dry_prefix}>", wrap_cmd(self.as_args(cwd, env, keep_going)))
+        print(f"$ {wrap_cmd(cmd)}")
         if dry_run:  # do not actually run the command
             return 0
 

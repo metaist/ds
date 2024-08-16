@@ -9,6 +9,7 @@ import pytest
 
 # pkg
 from ds.env import interpolate_args
+from ds.env import wrap_cmd
 from ds.symbols import ARG_PREFIX
 from ds.symbols import ARG_REST
 
@@ -79,3 +80,25 @@ def test_pdm_args() -> None:
         interpolate_args(cmd, ["--something"]) == "echo '--before --something --after'"
     )
     assert interpolate_args(cmd, []) == "echo '--before --default --value --after'"
+
+
+def test_wrap_cmd() -> None:
+    """Wrap commands."""
+    # basic
+    assert wrap_cmd("ls -lah") == "ls -lah"
+
+    # duplicate spaces removed
+    assert wrap_cmd("ls    -lah") == "ls -lah"
+
+    # long wrap with indent
+    assert "$ " + wrap_cmd(
+        "coverage run --branch --source=src -m pytest "
+        "--doctest-modules "
+        "--doctest-ignore-import-errors "
+        "src test; "
+        "coverage report --omit=src/cog_helpers.py -m"
+    ) == (
+        "$ coverage run --branch --source=src -m pytest --doctest-modules \\\n"
+        "    --doctest-ignore-import-errors src test;\n"
+        "  coverage report --omit=src/cog_helpers.py -m"
+    )

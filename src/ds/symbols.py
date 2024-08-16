@@ -30,6 +30,15 @@ GLOB_DELIMITER = ";"
 KEY_DELIMITER = "."
 """Separator between key parts."""
 
+SHELL_CONTINUE = "\\\n"
+"""Line continuation."""
+
+SHELL_TERMINATORS = ";; && |& || ; & |".split()
+"""No line continuation needed after these."""
+
+SHELL_BREAK = "; &&".split()
+"""Prefer line breaks after these."""
+
 TASK_COMPOSITE = "#composite"
 """Composite task name."""
 
@@ -66,3 +75,31 @@ def ends(haystack: str, needle: str) -> Tuple[bool, str]:
     if haystack.endswith(needle):
         return True, haystack[: -len(needle)]
     return False, haystack
+
+
+def peek_start(haystack: str, *needles: str) -> str:
+    """Return the first `needle` starts `haystack`.
+
+    >>> peek_start("abc", "a", "b", "c")
+    'a'
+    >>> peek_start("abc", "x")
+    ''
+    """
+    for needle in needles:
+        if haystack.startswith(needle):
+            return needle
+    return ""
+
+
+def peek_end(haystack: str, *needles: str) -> str:
+    """Return the first `needle` that ends `haystack`.
+
+    >>> peek_end("abc", "a", "b", "c")
+    'c'
+    >>> peek_end("abc", "x")
+    ''
+    """
+    for needle in needles:
+        if haystack.endswith(needle):
+            return needle
+    return ""

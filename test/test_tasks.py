@@ -180,6 +180,23 @@ def test_print() -> None:
     print_tasks(Path(), {"echo": task})
 
 
+def test_as_args() -> None:
+    """Render task as args."""
+    assert Task().as_args() == "ds"
+
+    task = Task(name="run")
+    assert task.as_args() == "ds run"
+
+    task = Task(name="run", keep_going=True)
+    assert task.as_args() == "ds +run"
+
+    task = Task(name="run", cwd=Path("test"))
+    assert task.as_args() == "ds --cwd test run"
+
+    task = Task(name="run", env=dict(VAR="value"))
+    assert task.as_args() == "ds -e VAR=value run"
+
+
 def test_missing() -> None:
     """Try to run a missing task."""
     with pytest.raises(ValueError):
