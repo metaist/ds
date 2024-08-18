@@ -91,7 +91,7 @@ True
 <div class="desc"><p>Parse workspace configurations.</p></div>
 </dd>
 <dt id="ds.configs.parse_tasks"><code class="name flex">
-<span>def <span class="ident">parse_tasks</span></span>(<span>config: Dict[str, Any]) ‑> Tuple[bool, Dict[str, <a title="ds.tasks.Task" href="tasks.html#ds.tasks.Task">Task</a>]]</span>
+<span>def <span class="ident">parse_tasks</span></span>(<span>config: Dict[str, Any], origin: Optional[Path] = None) ‑> Tuple[bool, Dict[str, <a title="ds.tasks.Task" href="tasks.html#ds.tasks.Task">Task</a>]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Parse task configurations.</p></div>
@@ -148,7 +148,7 @@ class Config:
         if require_workspace and not found:
             raise LookupError(&#34;Could not find workspace configuration.&#34;)
 
-        found, self.tasks = parse_tasks(self.config)
+        found, self.tasks = parse_tasks(self.config, self.path)
         if not require_workspace and not found:
             raise LookupError(&#34;Could not find task configuration.&#34;)
 

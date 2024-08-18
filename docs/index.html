@@ -30,16 +30,53 @@ hljs.highlightAll();
 [[[cog from cog_helpers import * ]]]
 [[[end]]]
 -->
-<!-- <p align="center">
-<a href="https://metaist.github.io/ds/"><img alt="ds" width="200" src="https://raw.githubusercontent.com/metaist/ds/main/dash-the-rabbit.png" /></a><br />
-<em>Dash the Sprinter</em>
-</p> -->
 <p align="center">
 <a href="https://github.com/metaist/ds/actions/workflows/ci.yaml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/metaist/ds/.github/workflows/ci.yaml?branch=main&logo=github"/></a>
 <a href="https://pypi.org/project/ds-run"><img alt="PyPI" src="https://img.shields.io/pypi/v/ds-run.svg?color=blue" /></a>
 <a href="https://pypi.org/project/ds-run"><img alt="Supported Python Versions" src="https://img.shields.io/pypi/pyversions/ds-run" /></a>
 </p>
-<p>A very simple task runner to run dev scripts (e.g., lint, build, test, start server) that works across multiple projects and is language-agnostic (see <a href="#inspirations">Inspirations</a>).</p>
+<p>Dev scripts are the short names we give to common tasks and long commands in a software project. <code><a title="ds" href="#ds">ds</a></code> finds and runs dev scripts in your project's configuration file (e.g., <code>Cargo.toml</code>, <code>package.json</code>, <code>pyproject.toml</code>, etc.):</p>
+<pre><code class="language-bash">pip install ds-run  # or: uv tool install ds-run
+ds --list           # list the tasks
+ds clean lint test  # run multiple tasks
+ds format:*         # run tasks that match a glob
+ds test -vv         # pass arguments to tasks
+ds -e PORT=8080 run # set environment variables
+ds +cspell test     # suppress errors
+ds -w* build        # supports monorepo/workspaces
+</code></pre>
+<p>Read more:</p>
+<ul>
+<li><a href="#install">Installing <code>ds</code></a></li>
+<li><a href="https://github.com/metaist/ds/tree/main/examples/formats">Example configuration files</a></li>
+<li><a href="#when-should-i-make-a-dev-script">When should I make a dev script?</a></li>
+<li><a href="#where-should-i-put-my-config">Where should I put my config?</a></li>
+<li><a href="#how-does-ds-find-my-config">How does <code>ds</code> find my config?</a></li>
+<li><a href="#where-do-tasks-run">Where do tasks run?</a></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>Suppose you want to use <code>pytest</code> with <code>coverage</code> to run unit tests, doctests, and to generate a branch-level coverage report:</p>
+<pre><code class="language-bash">coverage run --branch --source=src -m \
+  pytest \
+    --doctest-modules \
+    --doctest-ignore-import-errors \
+    src test;
+coverage report -m
+</code></pre>
+<p>Instead of typing that, we just add a script to our <code>pyproject.toml</code> file:</p>
+<pre><code class="language-toml">[tool.ds.scripts]
+test = &quot;&quot;&quot;
+  coverage run --branch --source=src -m \
+    pytest \
+      --doctest-modules \
+      --doctest-ignore-import-errors \
+      src test;
+  coverage report -m
+&quot;&quot;&quot;
+</code></pre>
+<p>And now you can run it with a quick shorthand:</p>
+<pre><code class="language-bash">ds test
+</code></pre>
 <h2 id="benefits">Benefits</h2>
 <p>♻️ <strong>Works with existing projects</strong><br />
 <a href="#limitations">Almost</a> a drop-in replacement for:</p>
@@ -49,6 +86,7 @@ hljs.highlightAll();
 <li><strong>PHP</strong> (<code>composer.json</code>): <a href="https://getcomposer.org/doc/articles/scripts.md#running-scripts-manually"><code>composer run-script</code></a></li>
 <li><strong>Rust</strong> (<code>Cargo.toml</code>): <a href="https://github.com/JoshMcguigan/cargo-run-script/"><code>cargo run-script</code></a></li>
 </ul>
+<p>See: <a href="#inspirations">Inspirations</a></p>
 <p>🗂️ <strong>Add monorepo/workspace support anywhere</strong><br />
 Easily <a href="#workspaces">manage monorepos and sub-projects</a>, even if they use different tooling.</p>
 <p>🏃 <strong>Run multiple tasks with custom arguments for each task</strong><br />
@@ -68,7 +106,6 @@ Currently working on removing all of these (see <a href="https://github.com/meta
 <li>Not Supported: <a href="#not-supported-lifecycle-events">Lifecycle Events</a></li>
 <li>Not Supported: <a href="#not-supported-call-tasks"><code>call</code> Tasks</a></li>
 <li>In Progress: <a href="https://github.com/metaist/ds/issues/44">Shell Completions</a> (see <a href="https://github.com/metaist/ds/issues/44">#44</a>)</li>
-<li>In Progress: <a href="https://github.com/metaist/ds/issues/51">Task-Specific Env Vars</a> (see <a href="https://github.com/metaist/ds/issues/51">#51</a>)</li>
 <li>In Progress: <a href="https://github.com/metaist/ds/issues/46">Remove Python Dependency</a> (see <a href="https://github.com/metaist/ds/issues/46">#46</a>)</li>
 </ul>
 <h2 id="install">Install</h2>
@@ -76,70 +113,24 @@ Currently working on removing all of these (see <a href="https://github.com/meta
 <pre><code class="language-bash">python -m pip install ds-run
 
 # or, if you use uv:
-uv pip install --system ds-run
+uv tool install ds-run
 </code></pre>
-<h2 id="example">Example</h2>
-<p>Create a <code>ds.toml</code> file in the top-level of your project or you can also put this configuration in an existing <a href="#where-should-i-put-my-config">project configuration file</a> to reduce file-cruft.</p>
-<!--[[[cog insert_file("examples/readme/example.toml")]]]-->
-<pre><code class="language-toml"># Example: Basic `ds` configuration.
-
-[scripts]
-clean = &quot;rm -rf build/&quot;
-build = &quot;mkdir $@&quot; # pass arguments
-all = [&quot;clean&quot;, &quot;build -p build&quot;] # a composite task
+<p>If you just want to try <code><a title="ds" href="#ds">ds</a></code>:</p>
+<pre><code class="language-bash">uvx --from ds-run ds --version
+# or
+pipx run ds-run --version
 </code></pre>
-<!--[[[end]]]-->
-<p>Now you can list the tasks with <code>ds --list</code> or just <code><a title="ds" href="#ds">ds</a></code>:</p>
-<pre><code># Found 3 tasks in ds.toml
-
-clean:
-    rm -rf build/
-
-build:
-    mkdir $@
-
-all:
-    ['clean', 'build -p build']
-</code></pre>
-<p>Run the tasks.</p>
-<pre><code class="language-bash">ds clean
-# =&gt; rm -rf build/
-
-ds build: some-folder
-# =&gt; mkdir some-folder
-
-ds all
-# =&gt; rm -rf build/
-# =&gt; mkdir -p build
-</code></pre>
-<p>Read more:</p>
-<ul>
-<li><a href="#configuration-file">Configuration File</a></li>
-<li><a href="#argument-interpolation">Argument Interpolation</a></li>
-<li><a href="#error-suppression">Error Suppression</a></li>
-</ul>
-<h2 id="where-should-i-put-my-config">Where should I put my config?</h2>
-<p>To avoid making lots of top-level files, <code><a title="ds" href="#ds">ds</a></code> tries to use common project configuration files.</p>
-<ul>
-<li><strong>Node</strong>: <code>package.json</code> under <code>scripts</code></li>
-<li><strong>Python</strong>: <code>pyproject.toml</code> under <code>[tool.ds.scripts]</code></li>
-<li><strong>PHP</strong>: <code>composer.json</code> under <code>scripts</code></li>
-<li><strong>Rust</strong>: <code>Cargo.toml</code> under <code>[package.metadata.scripts]</code> or <code>[workspace.metadata.scripts]</code></li>
-<li><strong>Other</strong>: <code>ds.toml</code> under <code>[scripts]</code></li>
-</ul>
-<p>Read more:</p>
-<ul>
-<li><a href="https://github.com/metaist/ds/tree/main/examples/formats">Example configuration files</a></li>
-<li><a href="#configuration-file">Configuration File</a></li>
-<li><a href="#workspaces">Workspaces</a></li>
-</ul>
 <h2 id="usage">Usage</h2>
 <!--[[[cog fenced_block(snip_file("src/ds/args.py", beg="Usage:", end="Examples:")) ]]]-->
 <pre><code class="language-text">Usage: ds [--help | --version] [--debug]
-          [--file PATH]
+          [--dry-run]
+          [--list]
           [--cwd PATH]
+          [--file PATH]
+          [--env-file PATH]
+          [(--env NAME=VALUE)...]
           [--workspace GLOB]...
-          [--list | (&lt;task&gt;[: &lt;options&gt;... --])...]
+          [&lt;task&gt;[: &lt;options&gt;... --]...]
 
 Options:
   -h, --help
@@ -151,15 +142,29 @@ Options:
   --debug
     Show debug messages.
 
+  --cwd PATH
+    Set the starting working directory (default: --file parent).
+    PATH is resolved relative to the current working directory.
+
+  --dry-run
+    Show which tasks would be run, but don't actually run them.
+
+  --env-file PATH
+    File with environment variables. This file is read before --env
+    values are applied.
+
+  -e NAME=VALUE, --env NAME=VALUE
+    Set one or more environment variables. Supersedes any values set in
+    an `--env-file`.
+
   -f PATH, --file PATH
     File with task and workspace definitions (default: search in parents).
 
     Read more about the configuration file:
-    https://github.com/metaist/ds#configuration-file
+    https://github.com/metaist/ds
 
-  --cwd PATH
-    Set the starting working directory (default: --file parent).
-    PATH is resolved relative to the current working directory.
+  -l, --list
+    List available tasks and exit.
 
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.
@@ -169,9 +174,6 @@ Options:
 
     Read more about configuring workspaces:
     https://github.com/metaist/ds#workspaces
-
-  -l, --list
-    List available tasks and exit.
 
   &lt;task&gt;[: &lt;options&gt;... --]
     One or more tasks to run with task-specific arguments.
@@ -192,8 +194,24 @@ Options:
 
 </code></pre>
 <!--[[[end]]]-->
-<h2 id="configuration-file">Configuration File</h2>
-<p><code><a title="ds" href="#ds">ds</a></code> supports <code>.json</code> and <code>.toml</code> configuration files (see <a href="https://github.com/metaist/ds/tree/main/examples/formats">examples</a>).</p>
+<h2 id="when-should-i-make-a-dev-script">When should I make a dev script?</h2>
+<p>Typically, you should make a dev script for important steps in your development process. For example, most projects will need a way to run linters and unit tests (see the <a href="#example"><code>test</code> example above</a>). Some projects also need a way to start up a server, fetch configuration files, or clean up generated files.</p>
+<p>Dev scripts act as another form of documentation that helps developers understand how to build and work on your project.</p>
+<h2 id="where-should-i-put-my-config">Where should I put my config?</h2>
+<p><code><a title="ds" href="#ds">ds</a></code> supports <code>.json</code> and <code>.toml</code> configuration files (see <a href="https://github.com/metaist/ds/tree/main/examples/formats">examples</a>) which typically go in the top-level of your project. To avoid making lots of top-level files, <code><a title="ds" href="#ds">ds</a></code> can use common project configuration files.</p>
+<ul>
+<li><strong>Node</strong>: <code>package.json</code> under <code>scripts</code></li>
+<li><strong>PHP</strong>: <code>composer.json</code> under <code>scripts</code></li>
+<li><strong>Python</strong>: <code>pyproject.toml</code> under <code>[tool.ds.scripts]</code> (<code>[tool.pdm.scripts]</code> and <code>[tool.rye.scripts]</code> also supported)</li>
+<li><strong>Rust</strong>: <code>Cargo.toml</code> under <code>[package.metadata.scripts]</code> or <code>[workspace.metadata.scripts]</code></li>
+<li><strong>Other</strong>: <code>ds.toml</code> under <code>[scripts]</code></li>
+</ul>
+<p>Read more:</p>
+<ul>
+<li><a href="https://github.com/metaist/ds/tree/main/examples/formats">Example configuration files</a></li>
+<li><a href="#workspaces">Workspaces</a></li>
+</ul>
+<h2 id="how-does-ds-find-my-config">How does <code><a title="ds" href="#ds">ds</a></code> find my config?</h2>
 <p>If you don't provide a config file using the <code>--file</code> option, <code><a title="ds" href="#ds">ds</a></code> will search the current directory and all of its parents for files with these names in the following order:</p>
 <!--[[[cog
 from ds.configs import SEARCH_FILES
@@ -213,6 +231,12 @@ cog.outl()
 <!--[[[end]]]-->
 <p>If you provide one or more <code>--workspace</code> options, the file must contain a <a href="#workspaces">workspace key</a>. Otherwise, then the file must contain a <a href="#task-keys">task key</a>.</p>
 <p>If the appropriate key cannot be found, searching continues up the directory tree. The first file that has the appropriate key is used.</p>
+<p>One exception to the search process is when using the <code>--workspace</code> option: If a workspace member contains a file with the same name as the configuration file, that file is used <em>within</em> the workspace (e.g., a workspace defined in <code>Cargo.toml</code> will try to find a <code>Cargo.toml</code> in each workspace). Otherwise, the usual search process is used.</p>
+<h2 id="where-do-tasks-run">Where do tasks run?</h2>
+<p>Typically, tasks run in the same directory as the configuration file.</p>
+<p>If you provide a <code>--cwd</code> option (but not a <code>--workspace</code> option), tasks will run in the directory provided by the <code>--cwd</code> option.</p>
+<p>If you provide one or more <code>--workspace</code> options, <code>--cwd</code> is ignored and tasks are run in each of the selected workspace members.</p>
+<p><strong>NOTE</strong>: In configuration files, you can use the <code>cwd</code> or <code>working_dir</code> option to specify a working directory for a <em>specific</em> task and that option will be respected even when using <code>--workspace</code> or <code>--cwd</code> from the command line.</p>
 <h2 id="task-keys">Task Keys</h2>
 <p><code><a title="ds" href="#ds">ds</a></code> searches configuration files for the following keys, in the following order, to find task definitions. The first key that's found is used and should contain a mapping from <a href="#task-names">task names</a> to <a href="#basic-task">basic tasks</a> or <a href="#composite-task">composite tasks</a>.</p>
 <!--[[[cog
@@ -233,8 +257,8 @@ cog.outl()
 <!--[[[end]]]-->
 <h2 id="task-names">Task Names</h2>
 <ul>
-<li>Task names are strings, that are usually short and all lowercase.</li>
-<li>They can have a colon (<code>:</code>) in them, like <code>py:build</code>, or other punctuation, like <code>py.build</code>.</li>
+<li>Task names are strings, that are usually short, lowercase, ASCII letters.</li>
+<li>They can have a colon (<code>:</code>) in them, like <code>py:build</code>.</li>
 <li>All leading and trailing whitespace in a task name is trimmed.</li>
 <li>If the name is empty or starts with a hash (<code>#</code>) it is ignored. This allows formats like <code>package.json</code> to "comment out" tasks.</li>
 <li>Don't start a name with a plus (<code>+</code>) because that indicates <a href="#error-suppression">error suppression</a>.</li>
@@ -309,10 +333,13 @@ rye-style = { chain = [
 # pass arguments, but supply defaults
 test = &quot;pytest ${@:-src test}&quot;
 
-
 # interpolate the first argument (required)
 # and then interpolate the remaining arguments, if any
 lint = &quot;ruff check $1 ${@:-}&quot;
+
+# we also support the pdm-style {args} placeholder
+test2 = &quot;pytest {args:src test}&quot;
+lint2 = &quot;ruff check {args}&quot;
 
 # pass an argument and re-use it
 release = &quot;&quot;&quot;\
@@ -364,6 +391,26 @@ lint = [&quot;+cspell&quot;, &quot;format&quot;] # format runs even if cspell fi
 ds +die_hard format
 # =&gt; no error
 </code></pre>
+<h2 id="environment-variables">Environment Variables</h2>
+<p>You can set environment variables on a per-task basis:</p>
+<!--[[[cog insert_file("examples/readme/environment-variables.toml")]]]-->
+<pre><code class="language-toml"># Example: Environment variables can be set on tasks.
+
+[scripts]
+# set an environment variable
+run = { cmd = &quot;python -m src.server&quot;, env = { FLASK_PORT = &quot;8080&quot; } }
+
+# use a file relative to the configuration file
+run2 = { cmd = &quot;python -m src.server&quot;, env-file = &quot;.env&quot; }
+
+# composite tasks override environment variables
+run3 = { composite = [&quot;run&quot;], env = { FLASK_PORT = &quot;8081&quot; } }
+</code></pre>
+<!--[[[end]]]-->
+<p>You can also set environment variables on the command-line, but the apply to <em>all</em> of the tasks:</p>
+<pre><code class="language-bash">ds -e FLASK_PORT=8080 run
+ds --env-file .env run
+</code></pre>
 <h2 id="workspaces">Workspaces</h2>
 <p>Workspaces are a way of managing multiple sub-projects from a top-level. <code><a title="ds" href="#ds">ds</a></code> supports <code>npm</code>, <code>rye</code>, and <code>Cargo</code> style workspaces (see <a href="https://github.com/metaist/ds/tree/main/examples/workspace">examples</a>).</p>
 <p>When <code><a title="ds" href="#ds">ds</a></code> is called with the <code>--workspace</code> option, the configuration file must have one of the following keys:</p>
@@ -407,7 +454,7 @@ members = [&quot;members/*&quot;, &quot;!members/x&quot;]
 <pre><code class="language-bash">ds --workspace '*' test   # special match that means &quot;all workspaces&quot;
 ds -w '*' test            # short option
 ds -w* test               # even shorter option
-ds -w '*/a' -w '*/b' test # enumerate each workspace
+ds -w '*/a' -w '*/b' test # manually select multiple workspaces
 </code></pre>
 <h2 id="not-supported-lifecycle-events">Not Supported: Lifecycle Events</h2>
 <p>Some task runners (all the <code>node</code> ones, <code>pdm</code>, <code>composer</code>) support running additional pre- and post- tasks when you run a task. However, this obscures the relationship between tasks and can create surprises if you happen to have two tasks with unfortunate names (e.g., <code>pend</code> and <code>prepend</code>). <code><a title="ds" href="#ds">ds</a></code> does not plan to support this behavior (see <a href="https://github.com/metaist/ds/issues/24">#24</a>).</p>
@@ -547,13 +594,15 @@ python -c &quot;import sys; from pkg import main as _1; sys.exit(main('test'))&q
 <nav id="sidebar">
 <div class="toc">
 <ul>
+<li><a href="#example">Example</a></li>
 <li><a href="#benefits">Benefits</a></li>
 <li><a href="#limitations">Limitations</a></li>
 <li><a href="#install">Install</a></li>
-<li><a href="#example">Example</a></li>
-<li><a href="#where-should-i-put-my-config">Where should I put my config?</a></li>
 <li><a href="#usage">Usage</a></li>
-<li><a href="#configuration-file">Configuration File</a></li>
+<li><a href="#when-should-i-make-a-dev-script">When should I make a dev script?</a></li>
+<li><a href="#where-should-i-put-my-config">Where should I put my config?</a></li>
+<li><a href="#how-does-ds-find-my-config">How does ds find my config?</a></li>
+<li><a href="#where-do-tasks-run">Where do tasks run?</a></li>
 <li><a href="#task-keys">Task Keys</a></li>
 <li><a href="#task-names">Task Names</a></li>
 <li><a href="#basic-task">Basic Task</a></li>
@@ -563,6 +612,7 @@ python -c &quot;import sys; from pkg import main as _1; sys.exit(main('test'))&q
 </ul>
 </li>
 <li><a href="#error-suppression">Error Suppression</a></li>
+<li><a href="#environment-variables">Environment Variables</a></li>
 <li><a href="#workspaces">Workspaces</a><ul>
 <li><a href="#workspace-members">Workspace Members</a></li>
 <li><a href="#workspace-tasks">Workspace Tasks</a></li>

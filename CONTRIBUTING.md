@@ -72,8 +72,7 @@ export VER="X.0.1"
 ds all
 
 # check build
-pip install -e .
-python -m build
+ds build
 
 # commit and push tags
 ds release: $VER
