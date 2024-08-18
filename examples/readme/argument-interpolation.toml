@@ -4,10 +4,13 @@
 # pass arguments, but supply defaults
 test = "pytest ${@:-src test}"
 
-
 # interpolate the first argument (required)
 # and then interpolate the remaining arguments, if any
 lint = "ruff check $1 ${@:-}"
+
+# we also support the pdm-style {args} placeholder
+test2 = "pytest {args:src test}"
+lint2 = "ruff check {args}"
 
 # pass an argument and re-use it
 release = """\

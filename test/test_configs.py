@@ -51,11 +51,6 @@ def test_load_readme() -> None:
     assert Config.load(path / "example.toml").parse()
 
 
-def test_load_full() -> None:
-    """Load complex toml file."""
-    assert Config.load(Path("examples") / "full.toml").parse()
-
-
 def test_unknown_name() -> None:
     """Try to parse a file with an unknown file name."""
     assert Config.load(Path("examples") / "unknown.json").parse()

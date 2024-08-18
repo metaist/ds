@@ -1,7 +1,28 @@
-# Example: Minimal Cargo.toml file with a script.
+# Example: `cargo` configuration file.
 
 [package]
 name = "ds"
 
 [package.metadata.scripts]
-ls = "ls -lah"
+"#disabled" = "this task doesn't run"
+
+# Basic
+basic1 = "ls -la"
+basic2 = "touch foo.txt"
+
+# Composite
+composite = ["basic1", "basic2"]
+
+# Argument Interpolation
+ruff = "ruff check $1 ${@:-}"
+args = ["ruff . --fix"]
+
+# Environment Variables
+env = { cmd = "flask run --debug", env = { FLASK_PORT = 8080 } }
+
+# Error Suppression
+will_fail = "exit 1"
+keep_going = ["+will_fail"]
+
+# Working Directory
+working = { composite = ["basic"], cwd = "test" }

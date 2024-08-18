@@ -1,7 +1,50 @@
-# Example: Basic `ds` configuration.
+# Example: `ds` configuration file.
 
 [scripts]
-foo = "touch foo.txt"
-ls = "ls -la"
-clean = "rm foo.txt"
-tests = ["foo", "ls", "clean"]
+# Tasks that start with a # are disabled.
+"#disabled" = "" # doesn't run
+
+# A basic task runs a shell command.
+# The following are equivalent.
+basic1 = "ls -la"
+basic2 = { cmd = "ls -la" } # string-version
+basic3 = { cmd = ["ls", "-la"] } # array-version
+basic4 = { shell = "ls -la" }
+
+# A composite task runs other tasks or shell commands.
+# The following are equivalent.
+composite1 = ["basic1", "basic2"] # ds-style
+composite2 = { chain = ["basic1", "basic2"] } # rye-style
+composite3 = { composite = ["basic1", "basic2"] } # pdm-style
+
+# Argument Interpolation: pass arguments to tasks
+# supply defaults
+test1 = "pytest ${@:-src test}" # ds-stlye
+test2 = "pytest {args:src test}" # pdm-style
+
+# interpolate the first argument (required)
+# and then interpolate the remaining arguments, if any
+lint1 = "ruff check $1 ${@:-}" # ds-style
+lint2 = "ruff check {args}" # pdm-style; only interpolates all args
+
+# composite tasks can call basic tasks with arguments
+lint3 = ["lint1 . --fix"]
+
+# Environment Variables: pass environment variables to tasks
+# Files are resolved relative to the configuration file.
+# If the .env file has "FLASK_PORT=8080", the following are equivalent.
+env1 = { cmd = "flask run --debug", env = { FLASK_PORT = 8080 } }
+env2 = { cmd = "flask run --debug", env-file = ".env" } # rye-style
+env3 = { cmd = "flask run --debug", env_file = ".env" } # pdm-style
+
+# Error Suppression: run tasks even when previous tasks fail
+will_fail = "exit 1" # will exit with error code 1
+keep_going1 = "+exit 1" # ds-style, note the plus symbol
+keep_going2 = { cmd = "exit 1", keep_going = true } # pdm-style
+keep_going3 = ["+will_fail", "echo 'Works'"] # suppress within a composite
+
+# Working Directory: where does a task run?
+# The following are equivalent and run in the `test` directory near
+# the configuration file.
+working1 = { cmd = "ls -la", cwd = "test" } # ds-style
+working2 = { cmd = "ls -la", working_dir = "test" } # pdm-style
