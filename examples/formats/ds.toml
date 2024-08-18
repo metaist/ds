@@ -11,6 +11,11 @@ basic2 = { cmd = "ls -la" } # string-version
 basic3 = { cmd = ["ls", "-la"] } # array-version
 basic4 = { shell = "ls -la" }
 
+# Add a description tasks.
+basic5 = { cmd = "ls -la", help = "list files" }
+basic6.shell = "ls -la"
+basic6.help = "list files"
+
 # A composite task runs other tasks or shell commands.
 # The following are equivalent.
 composite1 = ["basic1", "basic2"] # ds-style
