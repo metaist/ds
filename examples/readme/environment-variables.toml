@@ -1,0 +1,11 @@
+# Example: Environment variables can be set on tasks.
+
+[scripts]
+# set an environment variable
+run = { cmd = "python -m src.server", env = { FLASK_PORT = "8080" } }
+
+# use a file relative to the configuration file
+run2 = { cmd = "python -m src.server", env-file = ".env" }
+
+# composite tasks override environment variables
+run3 = { composite = ["run"], env = { FLASK_PORT = "8081" } }

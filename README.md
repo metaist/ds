@@ -10,7 +10,7 @@
   <a href="https://pypi.org/project/ds-run"><img alt="Supported Python Versions" src="https://img.shields.io/pypi/pyversions/ds-run" /></a>
 </p>
 
-`ds` [finds the nearest configuration file](#how-does-ds-find-my-config) that has dev scripts (`package.json`, `pyproject.toml`, `Cargo.toml`, etc.) and runs them:
+Dev scripts are the short names we give to common tasks and long commands in a software project. `ds` finds and runs dev scripts in your project's configuration file (e.g., `Cargo.toml`, `package.json`, `pyproject.toml`, etc.):
 
 ```bash
 pip install ds-run  # or: uv tool install ds-run
@@ -27,9 +27,43 @@ Read more:
 
 - [Installing `ds`](#install)
 - [Example configuration files][example-tasks]
+- [When should I make a dev script?](#when-should-i-make-a-dev-script)
 - [Where should I put my config?](#where-should-i-put-my-config)
 - [How does `ds` find my config?](#how-does-ds-find-my-config)
 - [Where do tasks run?](#where-do-tasks-run)
+
+## Example
+
+Suppose you want to use `pytest` with `coverage` to run unit tests, doctests, and to generate a branch-level coverage report:
+
+```bash
+coverage run --branch --source=src -m \
+  pytest \
+    --doctest-modules \
+    --doctest-ignore-import-errors \
+    src test;
+coverage report -m
+```
+
+Instead of typing that, we just add a script to our `pyproject.toml` file:
+
+```toml
+[tool.ds.scripts]
+test = """
+  coverage run --branch --source=src -m \
+    pytest \
+      --doctest-modules \
+      --doctest-ignore-import-errors \
+      src test;
+  coverage report -m
+"""
+```
+
+And now you can run it with a quick shorthand:
+
+```bash
+ds test
+```
 
 ## Benefits
 
@@ -65,9 +99,7 @@ Currently working on removing all of these (see [#46]):
 
 - Not Supported: [Lifecycle Events](#not-supported-lifecycle-events)
 - Not Supported: [`call` Tasks](#not-supported-call-tasks)
-- Under Design: [Collect Tasks Across Multiple Config Files][#54] (see [#54])
 - In Progress: [Shell Completions][#44] (see [#44])
-- In Progress: [Task-Specific Env Vars][#51] (see [#51])
 - In Progress: [Remove Python Dependency][#46] (see [#46])
 
 ## Install
@@ -95,10 +127,14 @@ pipx run ds-run --version
 
 ```text
 Usage: ds [--help | --version] [--debug]
-          [--file PATH]
+          [--dry-run]
+          [--list]
           [--cwd PATH]
+          [--file PATH]
+          [--env-file PATH]
+          [(--env NAME=VALUE)...]
           [--workspace GLOB]...
-          [--list | (<task>[: <options>... --])...]
+          [<task>[: <options>... --]...]
 
 Options:
   -h, --help
@@ -110,15 +146,29 @@ Options:
   --debug
     Show debug messages.
 
+  --cwd PATH
+    Set the starting working directory (default: --file parent).
+    PATH is resolved relative to the current working directory.
+
+  --dry-run
+    Show which tasks would be run, but don't actually run them.
+
+  --env-file PATH
+    File with environment variables. This file is read before --env
+    values are applied.
+
+  -e NAME=VALUE, --env NAME=VALUE
+    Set one or more environment variables. Supersedes any values set in
+    an `--env-file`.
+
   -f PATH, --file PATH
     File with task and workspace definitions (default: search in parents).
 
     Read more about the configuration file:
     https://github.com/metaist/ds
 
-  --cwd PATH
-    Set the starting working directory (default: --file parent).
-    PATH is resolved relative to the current working directory.
+  -l, --list
+    List available tasks and exit.
 
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.
@@ -128,9 +178,6 @@ Options:
 
     Read more about configuring workspaces:
     https://github.com/metaist/ds#workspaces
-
-  -l, --list
-    List available tasks and exit.
 
   <task>[: <options>... --]
     One or more tasks to run with task-specific arguments.
@@ -152,6 +199,12 @@ Options:
 ```
 
 <!--[[[end]]]-->
+
+## When should I make a dev script?
+
+Typically, you should make a dev script for important steps in your development process. For example, most projects will need a way to run linters and unit tests (see the [`test` example above](#example)). Some projects also need a way to start up a server, fetch configuration files, or clean up generated files.
+
+Dev scripts act as another form of documentation that helps developers understand how to build and work on your project.
 
 ## Where should I put my config?
 
@@ -193,7 +246,7 @@ If you provide one or more `--workspace` options, the file must contain a [works
 
 If the appropriate key cannot be found, searching continues up the directory tree. The first file that has the appropriate key is used.
 
-One exception to the search process is when using the `--workspace` option: If a workspace member contains a file with the same name as the configuration file, that file is used _within_ the workspace. Otherwise, the usual search process is used.
+One exception to the search process is when using the `--workspace` option: If a workspace member contains a file with the same name as the configuration file, that file is used _within_ the workspace (e.g., a workspace defined in `Cargo.toml` will try to find a `Cargo.toml` in each workspace). Otherwise, the usual search process is used.
 
 ## Where do tasks run?
 
@@ -202,6 +255,8 @@ Typically, tasks run in the same directory as the configuration file.
 If you provide a `--cwd` option (but not a `--workspace` option), tasks will run in the directory provided by the `--cwd` option.
 
 If you provide one or more `--workspace` options, `--cwd` is ignored and tasks are run in each of the selected workspace members.
+
+**NOTE**: In configuration files, you can use the `cwd` or `working_dir` option to specify a working directory for a _specific_ task and that option will be respected even when using `--workspace` or `--cwd` from the command line.
 
 ## Task Keys
 
@@ -319,10 +374,13 @@ Arguments from a [composite task](#composite-task) precede those [from the comma
 # pass arguments, but supply defaults
 test = "pytest ${@:-src test}"
 
-
 # interpolate the first argument (required)
 # and then interpolate the remaining arguments, if any
 lint = "ruff check $1 ${@:-}"
+
+# we also support the pdm-style {args} placeholder
+test2 = "pytest {args:src test}"
+lint2 = "ruff check {args}"
 
 # pass an argument and re-use it
 release = """\
@@ -395,6 +453,35 @@ ds die_hard format
 
 ds +die_hard format
 # => no error
+```
+
+## Environment Variables
+
+You can set environment variables on a per-task basis:
+
+<!--[[[cog insert_file("examples/readme/environment-variables.toml")]]]-->
+
+```toml
+# Example: Environment variables can be set on tasks.
+
+[scripts]
+# set an environment variable
+run = { cmd = "python -m src.server", env = { FLASK_PORT = "8080" } }
+
+# use a file relative to the configuration file
+run2 = { cmd = "python -m src.server", env-file = ".env" }
+
+# composite tasks override environment variables
+run3 = { composite = ["run"], env = { FLASK_PORT = "8081" } }
+```
+
+<!--[[[end]]]-->
+
+You can also set environment variables on the command-line, but the apply to _all_ of the tasks:
+
+```bash
+ds -e FLASK_PORT=8080 run
+ds --env-file .env run
 ```
 
 ## Workspaces

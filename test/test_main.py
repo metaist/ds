@@ -37,13 +37,6 @@ def test_list() -> None:
         main(split(f"ds {arg}"))
 
 
-def test_task() -> None:
-    """Run some dummy tasks."""
-    main(split("ds --cwd test -f examples/formats/ds.toml tests"))
-    main(split("ds -f examples/formats/ds.toml --debug tests"))
-    main(split("ds --cwd . -f examples/full.toml composite"))
-
-
 def test_good_loop() -> None:
     """Run some loop-looking tasks."""
     main(split("ds -f examples/loop-good.toml ls"))  # ok

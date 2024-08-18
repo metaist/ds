@@ -5,6 +5,8 @@
     "capsys",
     "codeql",
     "docopt",
+    "doctest",
+    "doctests",
     "graphlib",
     "justfile",
     "metaist",

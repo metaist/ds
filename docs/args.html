@@ -47,7 +47,7 @@ hljs.highlightAll();
 <dl>
 <dt id="ds.args.Args"><code class="flex name class">
 <span>class <span class="ident">Args</span></span>
-<span>(</span><span>help: bool = False, version: bool = False, debug: bool = False, cwd: Optional[Path] = None, file_: Optional[Path] = None, workspace: List[str] = &lt;factory&gt;, list_: bool = False, task: Task = &lt;factory&gt;)</span>
+<span>(</span><span>help: bool = False, version: bool = False, debug: bool = False, dry_run: bool = False, list_: bool = False, cwd: Optional[Path] = None, env: Dict[str, str] = &lt;factory&gt;, env_file: Optional[Path] = None, file_: Optional[Path] = None, workspace: List[str] = &lt;factory&gt;, task: Task = &lt;factory&gt;)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Type-checked arguments.</p></div>
@@ -68,17 +68,26 @@ class Args:
     debug: bool = False
     &#34;&#34;&#34;Whether to show debug messages&#34;&#34;&#34;
 
+    dry_run: bool = False
+    &#34;&#34;&#34;Whether to skip actually running tasks.&#34;&#34;&#34;
+
+    list_: bool = False
+    &#34;&#34;&#34;Whether to show available tasks&#34;&#34;&#34;
+
     cwd: Optional[Path] = None
     &#34;&#34;&#34;Path to run tasks in.&#34;&#34;&#34;
+
+    env: Dict[str, str] = field(default_factory=dict)
+    &#34;&#34;&#34;Environment variable overrides.&#34;&#34;&#34;
+
+    env_file: Optional[Path] = None
+    &#34;&#34;&#34;Path to environment variables.&#34;&#34;&#34;
 
     file_: Optional[Path] = None
     &#34;&#34;&#34;Path to task definitions.&#34;&#34;&#34;
 
     workspace: List[str] = field(default_factory=list)
     &#34;&#34;&#34;List of workspace patterns to run tasks in.&#34;&#34;&#34;
-
-    list_: bool = False
-    &#34;&#34;&#34;Whether to show available tasks&#34;&#34;&#34;
 
     task: Task = field(default_factory=Task)
     &#34;&#34;&#34;A composite task for the tasks given on the command-line.&#34;&#34;&#34;
@@ -96,15 +105,23 @@ class Args:
             result.append(&#34;--version&#34;)
         if self.debug:
             result.append(&#34;--debug&#34;)
+        if self.dry_run:
+            result.append(&#34;--dry-run&#34;)
+        if self.list_:
+            result.append(&#34;--list&#34;)
         if self.cwd:
             result.extend([&#34;--cwd&#34;, str(self.cwd)])
+        if self.env_file:
+            result.extend([&#34;--env-file&#34;, str(self.env_file)])
         if self.file_:
             result.extend([&#34;--file&#34;, str(self.file_)])
         if self.workspace:
             for w in self.workspace:
                 result.extend([&#34;--workspace&#34;, w])
-        if self.list_:
-            result.append(&#34;--list&#34;)
+
+        for key, val in self.env.items():
+            result.extend([&#34;--env&#34;, f&#34;&#39;{key}={val}&#39;&#34;])
+
         for t in self.task.depends:
             parts = split(t.cmd)
             result.extend([parts[0], ARG_BEG, *parts[1:], ARG_END])
@@ -112,6 +129,10 @@ class Args:
 </details>
 <h3>Class variables</h3>
 <dl>
+<dt id="ds.args.Args.env"><code class="name">var <span class="ident">env</span> : Dict[str, str]</code></dt>
+<dd>
+<div class="desc"><p>Environment variable overrides.</p></div>
+</dd>
 <dt id="ds.args.Args.workspace"><code class="name">var <span class="ident">workspace</span> : List[str]</code></dt>
 <dd>
 <div class="desc"><p>List of workspace patterns to run tasks in.</p></div>
@@ -132,17 +153,25 @@ class Args:
 <dd>
 <div class="desc"><p>Whether to show debug messages</p></div>
 </dd>
-<dt id="ds.args.Args.cwd"><code class="name">var <span class="ident">cwd</span> : Optional[pathlib.Path]</code></dt>
+<dt id="ds.args.Args.dry_run"><code class="name">var <span class="ident">dry_run</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Path to run tasks in.</p></div>
-</dd>
-<dt id="ds.args.Args.file_"><code class="name">var <span class="ident">file_</span> : Optional[pathlib.Path]</code></dt>
-<dd>
-<div class="desc"><p>Path to task definitions.</p></div>
+<div class="desc"><p>Whether to skip actually running tasks.</p></div>
 </dd>
 <dt id="ds.args.Args.list_"><code class="name">var <span class="ident">list_</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>Whether to show available tasks</p></div>
+</dd>
+<dt id="ds.args.Args.cwd"><code class="name">var <span class="ident">cwd</span> : Optional[pathlib.Path]</code></dt>
+<dd>
+<div class="desc"><p>Path to run tasks in.</p></div>
+</dd>
+<dt id="ds.args.Args.env_file"><code class="name">var <span class="ident">env_file</span> : Optional[pathlib.Path]</code></dt>
+<dd>
+<div class="desc"><p>Path to environment variables.</p></div>
+</dd>
+<dt id="ds.args.Args.file_"><code class="name">var <span class="ident">file_</span> : Optional[pathlib.Path]</code></dt>
+<dd>
+<div class="desc"><p>Path to task definitions.</p></div>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -186,14 +215,17 @@ class Args:
 <ul class="two-column">
 <li><code><a title="ds.args.Args.copy" href="#ds.args.Args.copy">copy</a></code></li>
 <li><code><a title="ds.args.Args.as_argv" href="#ds.args.Args.as_argv">as_argv</a></code></li>
+<li><code><a title="ds.args.Args.env" href="#ds.args.Args.env">env</a></code></li>
 <li><code><a title="ds.args.Args.workspace" href="#ds.args.Args.workspace">workspace</a></code></li>
 <li><code><a title="ds.args.Args.task" href="#ds.args.Args.task">task</a></code></li>
 <li><code><a title="ds.args.Args.help" href="#ds.args.Args.help">help</a></code></li>
 <li><code><a title="ds.args.Args.version" href="#ds.args.Args.version">version</a></code></li>
 <li><code><a title="ds.args.Args.debug" href="#ds.args.Args.debug">debug</a></code></li>
-<li><code><a title="ds.args.Args.cwd" href="#ds.args.Args.cwd">cwd</a></code></li>
-<li><code><a title="ds.args.Args.file_" href="#ds.args.Args.file_">file_</a></code></li>
+<li><code><a title="ds.args.Args.dry_run" href="#ds.args.Args.dry_run">dry_run</a></code></li>
 <li><code><a title="ds.args.Args.list_" href="#ds.args.Args.list_">list_</a></code></li>
+<li><code><a title="ds.args.Args.cwd" href="#ds.args.Args.cwd">cwd</a></code></li>
+<li><code><a title="ds.args.Args.env_file" href="#ds.args.Args.env_file">env_file</a></code></li>
+<li><code><a title="ds.args.Args.file_" href="#ds.args.Args.file_">file_</a></code></li>
 </ul>
 </li>
 </ul>

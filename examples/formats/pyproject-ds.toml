@@ -1,5 +1,60 @@
-# Example: minimal pyproject.toml configuration.
+# Example: `pyproject.toml` using `ds`.
 
 [tool.ds.scripts]
-ls = "ls -lah"
-outside = "echo $_DS_CURRENT_FILE" # Called from package.json
+# See more examples of supported commands:
+# https://github.com/metaist/ds/blob/main/examples/formats/ds.toml
+
+"ruff:format" = "ruff format ${@:-.}"
+"ruff:lint" = "ruff check --fix ${@:-.}"
+ruff = ["ruff:*"]
+cspell = "cspell --gitignore '**/*.{py,txt,md,markdown}'"
+pyright = "pyright src test"
+
+mypy = """
+  mypy \
+    --strict \
+    --install-types \
+    --non-interactive \
+    src test
+"""
+
+test = """
+  coverage run --branch --source=src -m \
+    pytest \
+      --doctest-modules \
+      --doctest-ignore-import-errors \
+      $@ src test;
+  coverage report --omit=src/cog_helpers.py -m
+"""
+
+"coverage:report" = "coverage html"
+"coverage:serve".shell = "python -m http.server 8080"
+"coverage:serve".cwd = "htmlcov"
+coverage = ["coverage:*"]
+
+lint = ["ruff", "+cspell", "pyright", "mypy"]
+dev = ["lint", "test"]
+all = ["lint", "test", "docs"]
+
+build = ["pip install -e .", "python -m build"]
+clean = """
+  rm -rf .coverage;
+  rm -rf .mypy_cache;
+  rm -rf .pytest_cache;
+  rm -rf .ruff_cache;
+  rm -rf dist;
+  rm -rf htmlcov;
+"""
+
+release = """
+  git commit -am "release: $1";
+  git tag $1;
+  git push;
+  git push --tags;
+  git checkout main;
+  git merge --no-ff --no-edit prod;
+  git push
+"""
+
+# This task is called from package.json in the same directory.
+outside = "echo $_DS_CURRENT_FILE"

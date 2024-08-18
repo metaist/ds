@@ -19,6 +19,39 @@ These are changes that are on `main` that are not yet in `prod`.
 
 ---
 
+[#30]: https://github.com/metaist/ds/issues/30
+[#46]: https://github.com/metaist/ds/issues/46
+[#51]: https://github.com/metaist/ds/issues/51
+[#52]: https://github.com/metaist/ds/issues/52
+[#53]: https://github.com/metaist/ds/issues/53
+[#55]: https://github.com/metaist/ds/issues/55
+[#57]: https://github.com/metaist/ds/issues/57
+[#58]: https://github.com/metaist/ds/issues/58
+[#59]: https://github.com/metaist/ds/issues/59
+[#60]: https://github.com/metaist/ds/issues/60
+[#61]: https://github.com/metaist/ds/issues/61
+[#62]: https://github.com/metaist/ds/issues/62
+[1.1.0]: https://github.com/metaist/ds/compare/1.0.0...1.1.0
+
+## [1.1.0] - 2024-08-18T04:48:22Z
+
+**Changed**
+
+- [#53]: `README.md` to have a quicker start section
+- [#61]: improved command wrapping for `--list`
+
+**Added**
+
+- [#30]: `uv`, `uvx`, and `pipx` instructions to `README.md`
+- [#51]: `--env` and `--env-file` command-line option together with `env` and `env-file`/`env_file` task options for passing environment variables to tasks
+- [#55]: `--dry-run` command-line option to show which tasks would be run
+- [#57]: support for glob-like task selector from the command line and in composite tasks
+- [#58]: `help` task option to display description when using `--list`
+- [#59]: support for `pdm`-style `{args}` during argument interpolation
+- [#60]: `cwd` / `working_dir` task option for where tasks should run
+
+---
+
 [#17]: https://github.com/metaist/ds/issues/17
 [#22]: https://github.com/metaist/ds/issues/22
 [#28]: https://github.com/metaist/ds/issues/28
