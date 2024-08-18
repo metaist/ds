@@ -30,8 +30,8 @@ from .tasks import check_cycles
 from .tasks import CycleError
 from .tasks import print_tasks
 
-__version__ = "1.0.0"
-__pubdate__ = "2024-08-08T16:25:40Z"
+__version__ = "1.0.0post"
+__pubdate__ = "unpublished"
 
 
 @contextmanager
@@ -142,7 +142,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         with TempEnv(_DS_CURRENT_FILE=str(args.file_)):
             assert args.cwd is not None
             with pushd(args.cwd):
-                args.task.run(config.tasks)
+                args.task.run(config.tasks, dry_run=args.dry_run)
     except ValueError as e:
         print("ERROR:", e)
         sys.exit(1)

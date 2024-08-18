@@ -6,11 +6,13 @@ from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 from shlex import split
+from typing import Dict
 from typing import List
 from typing import Optional
 import dataclasses
 
 # pkg
+from .env import read_env
 from .symbols import ARG_BEG
 from .symbols import ARG_END
 from .symbols import ARG_OPTION
@@ -20,10 +22,14 @@ from .tasks import Task
 USAGE = """ds: Run dev scripts.
 
 Usage: ds [--help | --version] [--debug]
-          [--file PATH]
+          [--dry-run]
+          [--list]
           [--cwd PATH]
+          [--file PATH]
+          [--env-file PATH]
+          [(--env NAME=VALUE)...]
           [--workspace GLOB]...
-          [--list | (<task>[: <options>... --])...]
+          [<task>[: <options>... --]...]
 
 Options:
   -h, --help
@@ -35,15 +41,29 @@ Options:
   --debug
     Show debug messages.
 
+  --cwd PATH
+    Set the starting working directory (default: --file parent).
+    PATH is resolved relative to the current working directory.
+
+  --dry-run
+    Show which tasks would be run, but don't actually run them.
+
+  --env-file PATH
+    File with environment variables. This file is read before --env
+    values are applied.
+
+  -e NAME=VALUE, --env NAME=VALUE
+    Set one or more environment variables. Supersedes any values set in
+    an `--env-file`.
+
   -f PATH, --file PATH
     File with task and workspace definitions (default: search in parents).
 
     Read more about the configuration file:
-    https://github.com/metaist/ds#configuration-file
+    https://github.com/metaist/ds
 
-  --cwd PATH
-    Set the starting working directory (default: --file parent).
-    PATH is resolved relative to the current working directory.
+  -l, --list
+    List available tasks and exit.
 
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.
@@ -53,9 +73,6 @@ Options:
 
     Read more about configuring workspaces:
     https://github.com/metaist/ds#workspaces
-
-  -l, --list
-    List available tasks and exit.
 
   <task>[: <options>... --]
     One or more tasks to run with task-specific arguments.
@@ -106,17 +123,26 @@ class Args:
     debug: bool = False
     """Whether to show debug messages"""
 
+    dry_run: bool = False
+    """Whether to skip actually running tasks."""
+
+    list_: bool = False
+    """Whether to show available tasks"""
+
     cwd: Optional[Path] = None
     """Path to run tasks in."""
+
+    env: Dict[str, str] = field(default_factory=dict)
+    """Environment variable overrides."""
+
+    env_file: Optional[Path] = None
+    """Path to environment variables."""
 
     file_: Optional[Path] = None
     """Path to task definitions."""
 
     workspace: List[str] = field(default_factory=list)
     """List of workspace patterns to run tasks in."""
-
-    list_: bool = False
-    """Whether to show available tasks"""
 
     task: Task = field(default_factory=Task)
     """A composite task for the tasks given on the command-line."""
@@ -134,15 +160,23 @@ class Args:
             result.append("--version")
         if self.debug:
             result.append("--debug")
+        if self.dry_run:
+            result.append("--dry-run")
+        if self.list_:
+            result.append("--list")
         if self.cwd:
             result.extend(["--cwd", str(self.cwd)])
+        if self.env_file:
+            result.extend(["--env-file", str(self.env_file)])
         if self.file_:
             result.extend(["--file", str(self.file_)])
         if self.workspace:
             for w in self.workspace:
                 result.extend(["--workspace", w])
-        if self.list_:
-            result.append("--list")
+
+        for key, val in self.env.items():
+            result.extend(["--env", f"'{key}={val}'"])
+
         for t in self.task.depends:
             parts = split(t.cmd)
             result.extend([parts[0], ARG_BEG, *parts[1:], ARG_END])
@@ -159,14 +193,20 @@ def parse_args(argv: List[str]) -> Args:
     while argv:
         arg = argv.pop(0)
         if is_ours:
-            if arg in ["--help", "--version", "--debug"]:
-                setattr(args, arg[2:], True)
+            if arg in ["--help", "--version", "--debug", "--dry-run"]:
+                attr = arg[2:].replace("-", "_")
+                setattr(args, attr, True)
             elif arg == "-h":
                 args.help = True
             elif arg in ["-l", "--list"]:
                 args.list_ = True
             elif arg == "--cwd":
                 args.cwd = Path(argv.pop(0)).resolve()
+            elif arg == "--env-file":
+                args.env_file = Path(argv.pop(0)).resolve()
+            elif arg in ["-e", "--env"]:
+                key, val = argv.pop(0).split("=")
+                args.env[key] = val
             elif arg in ["-f", "--file"]:
                 args.file_ = Path(argv.pop(0)).resolve()
             elif arg in ["-w", "--workspace"]:
@@ -203,6 +243,13 @@ def parse_args(argv: List[str]) -> Args:
         tasks.append(task)
 
     args.task = Task.parse(tasks)
+    args.task.cwd = args.cwd
+
+    env = args.env
+    if args.env_file:
+        env = {**read_env(args.env_file.read_text()), **args.env}
+    args.task.env = env
+
     for dep in args.task.depends:
         # top-level tasks can't be shell commands
         dep.allow_shell = False

@@ -9,6 +9,7 @@ import pytest
 
 # pkg
 from ds.env import interpolate_args
+from ds.env import wrap_cmd
 from ds.symbols import ARG_PREFIX
 from ds.symbols import ARG_REST
 
@@ -65,3 +66,68 @@ def test_default_args() -> None:
     assert interpolate_args(cmd, []) == "ls foo"
     assert interpolate_args(cmd, ["bar"]) == "ls bar"
     assert interpolate_args(cmd, [""]) == "ls"
+
+
+def test_pdm_args() -> None:
+    """Test `pdm`-style arg interpolation."""
+    cmd = "echo '--before {args} --after'"
+    assert (
+        interpolate_args(cmd, ["--something"]) == "echo '--before --something --after'"
+    )
+
+    cmd = "echo '--before {args:--default --value} --after'"
+    assert (
+        interpolate_args(cmd, ["--something"]) == "echo '--before --something --after'"
+    )
+    assert interpolate_args(cmd, []) == "echo '--before --default --value --after'"
+
+
+def test_wrap_cmd() -> None:
+    """Wrap commands."""
+    # basic
+    assert wrap_cmd("ls -lah") == "ls -lah"
+
+    # duplicate spaces removed
+    assert wrap_cmd("ls    -lah") == "ls -lah"
+
+    # cleans up multiple commands
+    assert "$ " + wrap_cmd("ls&&ls") == "$ ls &&\n  ls"
+    assert "$ " + wrap_cmd("ls;ls") == "$ ls;\n  ls"
+
+    assert (
+        "$ " + wrap_cmd("what if a command is just really long", 20)
+        == "$ what if a \\\n    command is \\\n    just really \\\n    long"
+    )
+
+    # no line continuation for list terminators
+    assert "$ " + wrap_cmd(
+        "cmd --with-long-options --another || "
+        "call --and=another --some value that is big",
+        40,
+    ) == (
+        "$ cmd --with-long-options --another ||\n"
+        "  call --and=another --some value that \\\n"
+        "    is big"
+    )
+
+    # long wrap with indent
+    assert "$ " + wrap_cmd(
+        "coverage run --branch --source=src -m pytest "
+        "--doctest-modules "
+        "--doctest-ignore-import-errors "
+        "src test; "
+        "coverage report --omit=src/cog_helpers.py -m"
+    ) == (
+        "$ coverage run --branch --source=src -m pytest --doctest-modules \\\n"
+        "    --doctest-ignore-import-errors src test;\n"
+        "  coverage report --omit=src/cog_helpers.py -m"
+    )
+
+    # long unbreakable line
+    assert "$ " + wrap_cmd(
+        "echo 'This is a really long string that cannot be broken.';", 40
+    ) == (
+        "$ echo \\\n"
+        "    'This is a really long string that cannot be broken.' \\\n"
+        "    ;"
+    )

@@ -1,6 +1,29 @@
-# Example: minimal `pyproject.toml` configuration using `rye`.
+# Example: `pyproject.toml` using `rye`.
+# See: https://rye.astral.sh/guide/pyproject/#toolryescripts
 
 [tool.rye.scripts]
-lint = { chain = ["lint:black", "lint:check"] }
-"lint:black" = "ruff format ."
-"lint:check" = ["ruff", "check", "."]
+# These three options are equivalent:
+devserver = "flask run --app ./hello.py --debug"
+devserver-alt = ["flask", "run", "--app", "./hello.py", "--debug"]
+devserver-explicit = { cmd = "flask run --app ./hello.py --debug" }
+
+# `cmd`
+devserver2 = { cmd = "flask run --app ./hello.py --debug" }
+http = { cmd = ["python", "-mhttp.server", "8000"] }
+
+# `env`
+devserver3 = { cmd = "flask run --debug", env = { FLASK_APP = "./hello.py" } }
+
+# `env-file`
+devserver4 = { cmd = "flask run --debug", env-file = ".env" }
+
+# `chain`
+lint = { chain = ["lint:black", "lint:flake8"] }
+"lint:black" = "black --check src"
+"lint:flake8" = "flake8 src"
+
+# `call`: Not Supported
+# See: https://github.com/metaist/ds#not-supported-call-tasks
+# serve = { call = "http.server" }
+# help = { call = "builtins:help" }
+# hello-world = { call = "builtins:print('Hello World!')" }

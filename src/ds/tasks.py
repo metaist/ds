@@ -4,16 +4,20 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
+from fnmatch import fnmatch
+from os import environ as ENV
 from os.path import relpath
 from pathlib import Path
+from shlex import join
 from shlex import split
 from subprocess import run
 from typing import Any
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Optional
 import sys
-import textwrap
+
 
 # TODO 2024-10-31 [3.8 EOL]: remove conditional
 if sys.version_info >= (3, 9):  # pragma: no cover
@@ -23,6 +27,10 @@ else:  # pragma: no cover
 
 # pkg
 from .env import interpolate_args
+from .env import read_env
+from .env import wrap_cmd
+from .symbols import GLOB_DELIMITER
+from .symbols import GLOB_EXCLUDE
 from .symbols import starts
 from .symbols import TASK_COMPOSITE
 from .symbols import TASK_KEEP_GOING
@@ -38,11 +46,26 @@ ORIGINAL_CWD = Path.cwd()
 class Task:
     """Represents a thing to be done."""
 
+    origin: Optional[Path] = None
+    """File from which this configuration came."""
+
+    origin_key: str = ""
+    """Key from which this task came."""
+
     name: str = ""
-    """Name of the task."""
+    """Task name."""
+
+    help: str = ""
+    """Task description."""
 
     cmd: str = ""
     """Shell command to execute after `depends`."""
+
+    cwd: Optional[Path] = None
+    """Task working directory."""
+
+    env: Dict[str, str] = field(default_factory=dict)
+    """Task environment variables."""
 
     depends: List[Task] = field(default_factory=list)
     """Tasks to execute before this one."""
@@ -54,12 +77,12 @@ class Task:
     """Whether this task is allowed to run on the shell."""
 
     @staticmethod
-    def parse(config: Any) -> Task:
+    def parse(config: Any, origin: Optional[Path] = None, key: str = "") -> Task:
         """Parse a config into a `Task`."""
-        task = Task()
+        task = Task(origin=origin, origin_key=key)
         if isinstance(config, list):
             for item in config:
-                parsed = Task.parse(item)
+                parsed = Task.parse(item, origin, key)
                 parsed.name = TASK_COMPOSITE
                 task.depends.append(parsed)
 
@@ -67,20 +90,59 @@ class Task:
             task.keep_going, task.cmd = starts(config, TASK_KEEP_GOING)
 
         elif isinstance(config, Dict):
-            if "composite" in config:
-                assert isinstance(config["composite"], list)
-                return Task.parse(config["composite"])
+            if "help" in config:
+                task.help = config["help"]
 
-            elif "chain" in config:
+            if "keep_going" in config:
+                task.keep_going = config["keep_going"]
+
+            if "cwd" in config:  # `working_dir` alias (ds)
+                assert origin is not None
+                task.cwd = origin.parent / config["cwd"]
+            if "working_dir" in config:  # `cwd` alias (pdm)
+                assert origin is not None
+                task.cwd = origin.parent / config["working_dir"]
+
+            if "env_file" in config:  # `env-file` alias (pdm)
+                assert origin is not None
+                task.env.update(
+                    read_env((origin.parent / config["env_file"]).read_text())
+                )
+            if "env-file" in config:  # `env_file` alias (rye)
+                assert origin is not None
+                task.env.update(
+                    read_env((origin.parent / config["env-file"]).read_text())
+                )
+            if "env" in config:
+                assert isinstance(config["env"], dict)
+                task.env.update(config["env"])
+
+            if "composite" in config:  # `chain` alias
+                assert isinstance(config["composite"], list)
+                parsed = Task.parse(config["composite"], origin, key)
+                task.name = parsed.name
+                task.depends = parsed.depends
+
+            elif "chain" in config:  # `composite` alias
                 assert isinstance(config["chain"], list)
-                return Task.parse(config["chain"])
+                parsed = Task.parse(config["chain"], origin, key)
+                task.name = parsed.name
+                task.depends = parsed.depends
 
             elif "shell" in config:
-                return Task.parse(str(config["shell"]))
+                parsed = Task.parse(str(config["shell"]), origin, key)
+                task.cmd = parsed.cmd
+                task.keep_going = parsed.keep_going
 
             elif "cmd" in config:
                 cmd = config["cmd"]
-                return Task.parse(" ".join(cmd) if isinstance(cmd, list) else str(cmd))
+                parsed = Task.parse(
+                    " ".join(cmd) if isinstance(cmd, list) else str(cmd),
+                    origin,
+                    key,
+                )
+                task.cmd = parsed.cmd
+                task.keep_going = parsed.keep_going
 
             elif "call" in config:
                 raise ValueError(f"`call` commands not supported: {config}")
@@ -92,42 +154,61 @@ class Task:
 
     def pprint(self) -> None:
         """Pretty-print a representation of this task."""
-        cmd = f"{TASK_KEEP_GOING if self.keep_going else ''}{self.cmd}"
-        if self.depends:
-            cmd = str(
+        cmd = self.cmd
+        if self.help:
+            print("#", self.help)
+        print(">", wrap_cmd(self.as_args()))
+        if not self.depends:
+            print("$", wrap_cmd(cmd))
+        else:
+            print(
                 [
                     f"{TASK_KEEP_GOING if t.keep_going else ''}{t.cmd}"
                     for t in self.depends
                 ]
             )
+        print()
 
-        indent = " " * 4
-        print(f"{self.name}:")
-        if len(cmd) < 80 - len(indent):
-            print(f"{indent}{cmd.strip()}\n")
-        else:
-            print(
-                textwrap.fill(
-                    cmd.strip(),
-                    78,
-                    initial_indent=indent,
-                    subsequent_indent=indent,
-                    break_on_hyphens=False,
-                    tabsize=len(indent),
-                ).replace("\n", " \\\n")
-                + "\n"
-            )
+    def as_args(
+        self,
+        cwd: Optional[Path] = None,
+        env: Optional[Dict[str, str]] = None,
+        keep_going: bool = False,
+    ) -> str:
+        """Return a shell representation of running this task."""
+        args = ["ds"]
+        if cwd or self.cwd:
+            args.extend(["--cwd", str(cwd or self.cwd)])
+        for key, val in (env or self.env or {}).items():
+            args.extend(["-e", f"{key}={val}"])
+
+        prefix = ""
+        if keep_going or self.keep_going:
+            prefix = TASK_KEEP_GOING
+        if self.name == TASK_COMPOSITE:
+            args.append(f"{prefix}{self.cmd}")
+        elif self.name:
+            args.append(f"{prefix}{self.name}")
+        return join(args)
 
     def run(
-        self, tasks: Tasks, extra: Optional[List[str]] = None, keep_going: bool = False
+        self,
+        tasks: Tasks,
+        extra: Optional[List[str]] = None,
+        cwd: Optional[Path] = None,
+        env: Optional[Dict[str, str]] = None,
+        keep_going: bool = False,
+        dry_run: bool = False,
     ) -> int:
         """Run this task."""
         extra = extra or []
+        cwd = cwd or self.cwd
+        env = env or self.env
         keep_going = keep_going or self.keep_going
 
         # 1. Run all the dependencies.
         for dep in self.depends:
-            dep.run(tasks, extra, keep_going)
+            dep.run(tasks, extra, cwd, env, keep_going, dry_run)
 
         # 2. Check if we have anything to do.
         if not self.cmd.strip():  # nothing to do
@@ -136,18 +217,28 @@ class Task:
         # 3. Check if a part of a composite task is calling another task.
         if self.name == TASK_COMPOSITE:
             cmd, *args = split(self.cmd)
-            other = tasks.get(cmd)
-            if other and other != self and self not in other.depends:
-                return other.run(tasks, args + extra, keep_going)
+            others = glob_names(tasks.keys(), cmd.split(GLOB_DELIMITER))
+            ran, code = False, 0
+            for other_name in others:
+                other = tasks.get(other_name)
+                if other and other != self and self not in other.depends:
+                    ran = True
+                    code = other.run(tasks, args + extra, cwd, env, keep_going, dry_run)
+            if ran:
+                return code
 
         if not self.allow_shell:
             raise ValueError(f"Unknown task: {self.cmd}")
 
         # 4. Run in the shell.
-        prefix = TASK_KEEP_GOING if keep_going else ""
         cmd = interpolate_args(self.cmd, [*extra])
-        print(f"\n$ {prefix}{cmd}")
-        proc = run(cmd, shell=True, text=True)
+        dry_prefix = "[DRY RUN]\n" if dry_run else ""
+        print(f"\n{dry_prefix}>", wrap_cmd(self.as_args(cwd, env, keep_going)))
+        print(f"$ {wrap_cmd(cmd)}")
+        if dry_run:  # do not actually run the command
+            return 0
+
+        proc = run(cmd, shell=True, text=True, cwd=cwd, env={**ENV, **env})
         code = proc.returncode
 
         if code != 0 and not keep_going:
@@ -184,3 +275,25 @@ def print_tasks(path: Path, tasks: Tasks) -> None:
     print(f"# Found {count} task{plural} in {location}\n")
     for task in tasks.values():
         task.pprint()
+
+
+def glob_names(names: Iterable[str], patterns: List[str]) -> List[str]:
+    """Return the names of `tasks` that match `patterns`.
+
+    Prefixing a pattern with `!` will remove that matched pattern
+    from the result.
+
+    >>> names = ['cab', 'car', 'cat', 'crab']
+    >>> glob_names(names, ['c?r', 'c*b'])
+    ['cab', 'car', 'crab']
+
+    >>> glob_names(names, ['*', '!crab'])
+    ['cab', 'car', 'cat']
+    """
+    result: Dict[str, bool] = {name: False for name in names}
+    for pattern in patterns:
+        exclude, pattern = starts(pattern, GLOB_EXCLUDE)
+        for name in result:
+            if fnmatch(name, pattern):
+                result[name] = not exclude
+    return [name for name, include in result.items() if include]

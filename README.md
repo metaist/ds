@@ -4,18 +4,32 @@
 [[[cog from cog_helpers import * ]]]
 [[[end]]]
 -->
-
-<!-- <p align="center">
-  <a href="https://metaist.github.io/ds/"><img alt="ds" width="200" src="https://raw.githubusercontent.com/metaist/ds/main/dash-the-rabbit.png" /></a><br />
-  <em>Dash the Sprinter</em>
-</p> -->
 <p align="center">
   <a href="https://github.com/metaist/ds/actions/workflows/ci.yaml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/metaist/ds/.github/workflows/ci.yaml?branch=main&logo=github"/></a>
   <a href="https://pypi.org/project/ds-run"><img alt="PyPI" src="https://img.shields.io/pypi/v/ds-run.svg?color=blue" /></a>
   <a href="https://pypi.org/project/ds-run"><img alt="Supported Python Versions" src="https://img.shields.io/pypi/pyversions/ds-run" /></a>
 </p>
 
-A very simple task runner to run dev scripts (e.g., lint, build, test, start server) that works across multiple projects and is language-agnostic (see [Inspirations](#inspirations)).
+`ds` [finds the nearest configuration file](#how-does-ds-find-my-config) that has dev scripts (`package.json`, `pyproject.toml`, `Cargo.toml`, etc.) and runs them:
+
+```bash
+pip install ds-run  # or: uv tool install ds-run
+ds --list           # list the tasks
+ds clean lint test  # run multiple tasks
+ds format:*         # run tasks that match a glob
+ds test -vv         # pass arguments to tasks
+ds -e PORT=8080 run # set environment variables
+ds +cspell test     # suppress errors
+ds -w* build        # supports monorepo/workspaces
+```
+
+Read more:
+
+- [Installing `ds`](#install)
+- [Example configuration files][example-tasks]
+- [Where should I put my config?](#where-should-i-put-my-config)
+- [How does `ds` find my config?](#how-does-ds-find-my-config)
+- [Where do tasks run?](#where-do-tasks-run)
 
 ## Benefits
 
@@ -26,6 +40,8 @@ A very simple task runner to run dev scripts (e.g., lint, build, test, start ser
 - **Python** (`pyproject.toml`): [`pdm run`][pdm run], [`rye run`][rye run]
 - **PHP** (`composer.json`): [`composer run-script`][composer run-script]
 - **Rust** (`Cargo.toml`): [`cargo run-script`][cargo run-script]
+
+See: [Inspirations](#inspirations)
 
 🗂️ **Add monorepo/workspace support anywhere**<br />
 Easily [manage monorepos and sub-projects](#workspaces), even if they use different tooling.
@@ -49,6 +65,7 @@ Currently working on removing all of these (see [#46]):
 
 - Not Supported: [Lifecycle Events](#not-supported-lifecycle-events)
 - Not Supported: [`call` Tasks](#not-supported-call-tasks)
+- Under Design: [Collect Tasks Across Multiple Config Files][#54] (see [#54])
 - In Progress: [Shell Completions][#44] (see [#44])
 - In Progress: [Task-Specific Env Vars][#51] (see [#51])
 - In Progress: [Remove Python Dependency][#46] (see [#46])
@@ -61,76 +78,16 @@ Currently working on removing all of these (see [#46]):
 python -m pip install ds-run
 
 # or, if you use uv:
-uv pip install --system ds-run
+uv tool install ds-run
 ```
 
-## Example
-
-Create a `ds.toml` file in the top-level of your project or you can also put this configuration in an existing [project configuration file](#where-should-i-put-my-config) to reduce file-cruft.
-
-<!--[[[cog insert_file("examples/readme/example.toml")]]]-->
-
-```toml
-# Example: Basic `ds` configuration.
-
-[scripts]
-clean = "rm -rf build/"
-build = "mkdir $@" # pass arguments
-all = ["clean", "build -p build"] # a composite task
-```
-
-<!--[[[end]]]-->
-
-Now you can list the tasks with `ds --list` or just `ds`:
-
-```
-# Found 3 tasks in ds.toml
-
-clean:
-    rm -rf build/
-
-build:
-    mkdir $@
-
-all:
-    ['clean', 'build -p build']
-```
-
-Run the tasks.
+If you just want to try `ds`:
 
 ```bash
-ds clean
-# => rm -rf build/
-
-ds build: some-folder
-# => mkdir some-folder
-
-ds all
-# => rm -rf build/
-# => mkdir -p build
+uvx --from ds-run ds --version
+# or
+pipx run ds-run --version
 ```
-
-Read more:
-
-- [Configuration File](#configuration-file)
-- [Argument Interpolation](#argument-interpolation)
-- [Error Suppression](#error-suppression)
-
-## Where should I put my config?
-
-To avoid making lots of top-level files, `ds` tries to use common project configuration files.
-
-- **Node**: `package.json` under `scripts`
-- **Python**: `pyproject.toml` under `[tool.ds.scripts]`
-- **PHP**: `composer.json` under `scripts`
-- **Rust**: `Cargo.toml` under `[package.metadata.scripts]` or `[workspace.metadata.scripts]`
-- **Other**: `ds.toml` under `[scripts]`
-
-Read more:
-
-- [Example configuration files](https://github.com/metaist/ds/tree/main/examples/formats)
-- [Configuration File](#configuration-file)
-- [Workspaces](#workspaces)
 
 ## Usage
 
@@ -157,7 +114,7 @@ Options:
     File with task and workspace definitions (default: search in parents).
 
     Read more about the configuration file:
-    https://github.com/metaist/ds#configuration-file
+    https://github.com/metaist/ds
 
   --cwd PATH
     Set the starting working directory (default: --file parent).
@@ -196,9 +153,22 @@ Options:
 
 <!--[[[end]]]-->
 
-## Configuration File
+## Where should I put my config?
 
-`ds` supports `.json` and `.toml` configuration files (see [examples](https://github.com/metaist/ds/tree/main/examples/formats)).
+`ds` supports `.json` and `.toml` configuration files (see [examples][example-tasks]) which typically go in the top-level of your project. To avoid making lots of top-level files, `ds` can use common project configuration files.
+
+- **Node**: `package.json` under `scripts`
+- **PHP**: `composer.json` under `scripts`
+- **Python**: `pyproject.toml` under `[tool.ds.scripts]` (`[tool.pdm.scripts]` and `[tool.rye.scripts]` also supported)
+- **Rust**: `Cargo.toml` under `[package.metadata.scripts]` or `[workspace.metadata.scripts]`
+- **Other**: `ds.toml` under `[scripts]`
+
+Read more:
+
+- [Example configuration files][example-tasks]
+- [Workspaces](#workspaces)
+
+## How does `ds` find my config?
 
 If you don't provide a config file using the `--file` option, `ds` will search the current directory and all of its parents for files with these names in the following order:
 
@@ -223,6 +193,16 @@ If you provide one or more `--workspace` options, the file must contain a [works
 
 If the appropriate key cannot be found, searching continues up the directory tree. The first file that has the appropriate key is used.
 
+One exception to the search process is when using the `--workspace` option: If a workspace member contains a file with the same name as the configuration file, that file is used _within_ the workspace. Otherwise, the usual search process is used.
+
+## Where do tasks run?
+
+Typically, tasks run in the same directory as the configuration file.
+
+If you provide a `--cwd` option (but not a `--workspace` option), tasks will run in the directory provided by the `--cwd` option.
+
+If you provide one or more `--workspace` options, `--cwd` is ignored and tasks are run in each of the selected workspace members.
+
 ## Task Keys
 
 `ds` searches configuration files for the following keys, in the following order, to find task definitions. The first key that's found is used and should contain a mapping from [task names](#task-names) to [basic tasks](#basic-task) or [composite tasks](#composite-task).
@@ -246,8 +226,8 @@ cog.outl()
 
 ## Task Names
 
-- Task names are strings, that are usually short and all lowercase.
-- They can have a colon (`:`) in them, like `py:build`, or other punctuation, like `py.build`.
+- Task names are strings, that are usually short, lowercase, ASCII letters.
+- They can have a colon (`:`) in them, like `py:build`.
 - All leading and trailing whitespace in a task name is trimmed.
 - If the name is empty or starts with a hash (`#`) it is ignored. This allows formats like `package.json` to "comment out" tasks.
 - Don't start a name with a plus (`+`) because that indicates [error suppression](#error-suppression).
@@ -478,7 +458,7 @@ The following are all equivalent and run `test` in both `member/a` and `member/b
 ds --workspace '*' test   # special match that means "all workspaces"
 ds -w '*' test            # short option
 ds -w* test               # even shorter option
-ds -w '*/a' -w '*/b' test # enumerate each workspace
+ds -w '*/a' -w '*/b' test # manually select multiple workspaces
 ```
 
 ## Not Supported: Lifecycle Events
@@ -566,6 +546,7 @@ I've used several task runners, usually as part of build tools. Below is a list 
 [#44]: https://github.com/metaist/ds/issues/44
 [#46]: https://github.com/metaist/ds/issues/46
 [#51]: https://github.com/metaist/ds/issues/51
+[#54]: https://github.com/metaist/ds/issues/54
 [ant]: https://en.wikipedia.org/wiki/Apache_Ant
 [bun run]: https://bun.sh/docs/cli/run
 [bun]: https://en.wikipedia.org/wiki/Bun_(software)
@@ -588,3 +569,4 @@ I've used several task runners, usually as part of build tools. Below is a list 
 [rye]: https://rye.astral.sh
 [yarn run]: https://yarnpkg.com/cli/run
 [yarn]: https://yarnpkg.com
+[example-tasks]: https://github.com/metaist/ds/tree/main/examples/formats

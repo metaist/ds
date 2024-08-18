@@ -12,6 +12,8 @@
     "outl",
     "pathlib",
     "pdoc3",
+    "pipx",
+    "popd",
     "prebuild",
     "pushd",
     "pypa",
