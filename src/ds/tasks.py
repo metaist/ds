@@ -238,7 +238,15 @@ class Task:
         if dry_run:  # do not actually run the command
             return 0
 
-        proc = run(cmd, shell=True, text=True, cwd=cwd, env={**ENV, **env})
+        combined_env = {**ENV, **env}
+        proc = run(
+            cmd,
+            shell=True,
+            text=True,
+            cwd=cwd,
+            env=combined_env,
+            executable=combined_env.get("SHELL"),
+        )
         code = proc.returncode
 
         if code != 0 and not keep_going:
