@@ -55,7 +55,7 @@ def test_no_task() -> None:
     """Try to run a missing task."""
     with pytest.raises(SystemExit) as e:
         main(split("ds _does_not_exist"))
-    assert e.value.code == 1
+    assert e.value.code == 127  # command not found
 
 
 def test_bad_cwd() -> None:

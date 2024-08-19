@@ -199,10 +199,10 @@ def test_as_args() -> None:
 
 def test_missing() -> None:
     """Try to run a missing task."""
-    with pytest.raises(ValueError):
-        task = Task.parse("ls")
-        task.allow_shell = False
+    with pytest.raises(SystemExit) as e_info:
+        task = Task.parse("task-and-command-not-found")
         task.run({})
+    assert e_info.value.code == 127  # command not found
 
 
 def test_single() -> None:

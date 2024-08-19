@@ -143,9 +143,6 @@ def main(argv: Optional[List[str]] = None) -> None:
             assert args.cwd is not None
             with pushd(args.cwd):
                 args.task.run(config.tasks, dry_run=args.dry_run)
-    except ValueError as e:
-        print("ERROR:", e)
-        sys.exit(1)
     except KeyboardInterrupt:  # pragma: no cover
         return
 

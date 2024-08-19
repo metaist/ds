@@ -73,9 +73,6 @@ class Task:
     keep_going: bool = False
     """Ignore a non-zero return code."""
 
-    allow_shell: bool = True
-    """Whether this task is allowed to run on the shell."""
-
     @staticmethod
     def parse(config: Any, origin: Optional[Path] = None, key: str = "") -> Task:
         """Parse a config into a `Task`."""
@@ -227,9 +224,6 @@ class Task:
             if ran:
                 return code
 
-        if not self.allow_shell:
-            raise ValueError(f"Unknown task: {self.cmd}")
-
         # 4. Run in the shell.
         cmd = interpolate_args(self.cmd, [*extra])
         dry_prefix = "[DRY RUN]\n" if dry_run else ""
@@ -250,6 +244,7 @@ class Task:
         code = proc.returncode
 
         if code != 0 and not keep_going:
+            print("ERROR: return code =", code)
             sys.exit(code)
         return 0  # either it was zero or we keep going
 
