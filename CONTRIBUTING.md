@@ -31,6 +31,9 @@ Checkout `prod`:
 ```bash
 git checkout prod
 git merge --no-ff --no-edit main
+
+# run against all python versions
+ds dev-all
 ```
 
 Update top-most `__init__.py`:

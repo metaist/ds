@@ -120,6 +120,17 @@ lint = ["ruff", "+cspell", "pyright", "mypy"]
 dev = ["lint", "test"]
 all = ["lint", "test", "cog", "docs"]
 
+dev-all = """
+  _PYVERSION=$(python -V | cut -d " " -f 2 | cut -d "." -f 1,2);
+  versions=($(grep -oP '(?<=Python :: )[0-9]+\\.[0-9]+' pyproject.toml))
+  for v in ${versions[@]};
+  do
+    uv run --all-extras --python $v -- ds dev;
+    echo
+  done;
+  uv run --all-extras --python $_PYVERSION -- echo 'done'
+"""
+
 build = ["pip install -e .", "python -m build"]
 
 cosmo.help = "Build cosmopolitan portable executable."
