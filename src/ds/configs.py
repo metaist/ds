@@ -67,6 +67,7 @@ SEARCH_KEYS_WORKSPACE = [
     "workspace.members",  # ds.toml, .ds.toml, Cargo.toml
     "tool.ds.workspace.members",  # project.toml
     "tool.rye.workspace.members",  # pyproject.toml
+    "tool.uv.workspace.members",  # pyproject.toml
     "workspaces",  # package.json
 ]
 """Search for workspace configuration keys."""

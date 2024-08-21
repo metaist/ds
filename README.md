@@ -486,7 +486,7 @@ ds --env-file .env run
 
 ## Workspaces
 
-Workspaces are a way of managing multiple sub-projects from a top-level. `ds` supports `npm`, `rye`, and `Cargo` style workspaces (see [examples](https://github.com/metaist/ds/tree/main/examples/workspace)).
+Workspaces are a way of managing multiple sub-projects from a top-level. `ds` supports `npm`, `rye`, `uv`, and `Cargo` style workspaces (see [examples](https://github.com/metaist/ds/tree/main/examples/workspace)).
 
 When `ds` is called with the `--workspace` option, the configuration file must have one of the following keys:
 
@@ -501,6 +501,7 @@ cog.outl()
 - `workspace.members`
 - `tool.ds.workspace.members`
 - `tool.rye.workspace.members`
+- `tool.uv.workspace.members`
 - `workspaces`
 
 <!--[[[end]]]-->
@@ -520,7 +521,7 @@ The value corresponding to the workspace key should be a list of patterns that i
 
 If you prefix any pattern with an exclamation point (`!`) then the rest of the pattern describes which files should _not_ be matched.
 
-Patterns are applied in order so subsequent patterns can include or exclude sub-directories as needed. For compatibility with `Cargo`, [we also support the `excludes` key](https://github.com/metaist/ds/tree/main/examples/workspace/Cargo.toml) which is applied _after_ all the members.
+Patterns are applied in order so subsequent patterns can include or exclude sub-directories as needed. [We also support the `excludes` key](https://github.com/metaist/ds/tree/main/examples/workspace/Cargo.toml) (for `uv` and `Cargo`) which is applied _after_ all the members.
 
 <!--[[[cog insert_file("examples/workspace/ds.toml")]]]-->
 
