@@ -2,17 +2,27 @@
 
 ## Local Development
 
+We recommend installing , but you can also use `pip`.
+
 ```bash
 # get the code
 git clone git@github.com:metaist/ds.git
 cd ds
+```
 
-# create a virtual environment
+If using [`uv`](https://github.com/astral-sh/uv) (recommended):
+
+```bash
+uv sync --extra dev
+. .venv/bin/activate
+```
+
+If using `pip`:
+
+```bash
 python -m venv .venv
 . .venv/bin/activate
 pip install --upgrade pip
-
-# install dependencies and dev tools
 pip install -e ".[dev]"
 ```
 
@@ -32,8 +42,8 @@ Checkout `prod`:
 git checkout prod
 git merge --no-ff --no-edit main
 
-# run against all python versions
-ds dev-all
+# check every supported python version
+ds dev-all # requires uv >= 0.3.0
 ```
 
 Update top-most `__init__.py`:
@@ -66,19 +76,13 @@ Sections order is: `Fixed`, `Changed`, `Added`, `Deprecated`, `Removed`, `Securi
 **Security**
 ```
 
-###
+### Final checks, tag, and push
 
 ```bash
 export VER="X.0.1"
 
-# final checks
-ds all
-
-# check build
-ds build
-
-# build binary
-ds cosmo
+# final checks, docs, build
+ds dev docs build
 
 # commit and push tags
 ds release: $VER

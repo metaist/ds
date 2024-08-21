@@ -71,23 +71,15 @@ classifiers = [
 ]
 
 [tool.ds.scripts] # run dev scripts <https://github.com/metaist/ds>
-clean = """
-  rm -rf .mypy_cache;
-  rm -rf .pytest_cache;
-  rm -rf .ruff_cache;
-  rm -rf dist;
-  rm -rf htmlcov;
-  rm -rf .coverage;
-"""
-
+# Lint
+lint = ["ruff-*", "+cspell"]
+ruff-format = "ruff format ${@:-.}"
+ruff-lint = "ruff check --fix ${@:-.}"
 cspell = "cspell --gitignore '**/*.{py,txt,md,markdown}'"
 
-"ruff:format" = "ruff format ${@:-.}"
-"ruff:lint" = "ruff check --fix ${@:-.}"
-ruff = ["ruff:*"]
-
+# Type Check
+types = ["pyright", "mypy"]
 pyright = "pyright src test"
-
 mypy = """
   mypy \
     --strict \
@@ -96,7 +88,8 @@ mypy = """
     src test
 """
 
-test.help = "Run unit tests."
+# Test
+test.help = "run unit tests"
 test.env = { PYTHONPATH = "src" }
 test.shell = """
   coverage run --branch --source=src -m \
@@ -107,13 +100,14 @@ test.shell = """
   coverage report --omit=src/cog_helpers.py -m
 """
 
-"coverage:report" = "coverage html"
-"coverage:serve" = { shell = "python -m http.server 8080", cwd = "htmlcov" }
-coverage = ["coverage:*"]
+coverage-report = "coverage html"
+coverage-serve = { shell = "python -m http.server 8080", cwd = "htmlcov" }
+coverage = ["coverage-*"]
 
+# Documentation
+docs = ["cog", "pdoc"]
 cog = "cog -r README.md"
-
-docs = """
+pdoc = """
   rm -rf docs;
   mkdir -p docs;
   pdoc \
@@ -126,24 +120,25 @@ docs = """
   touch docs/.nojekyll
 """
 
-lint = ["ruff", "+cspell", "pyright", "mypy"]
-dev = ["lint", "test"]
-all = ["lint", "test", "cog", "docs"]
+# Common
+dev.help = "lint, type-check, and unit tests"
+dev.composite = ["lint", "types", "test"]
 
-dev-all = """
+dev-all.help = "check every supported python version"
+dev-all.shell = """
   _PYVERSION=$(python -V | cut -d " " -f 2 | cut -d "." -f 1,2);
-  versions=($(grep -oP '(?<=Python :: )[0-9]+\\.[0-9]+' pyproject.toml))
+  versions=($(grep -oP '(?<=Python :: )[0-9]+\\.[0-9]+' pyproject.toml));
   for v in ${versions[@]};
   do
     uv run --all-extras --python $v -- ds dev;
-    echo
+    echo;
   done;
-  uv run --all-extras --python $_PYVERSION -- echo 'done'
+  uv run --all-extras --python $_PYVERSION -- echo 'done';
 """
 
-build = ["pip install -e .", "python -m build"]
-
-cosmo.help = "Build cosmopolitan portable executable."
+# Build
+build = ["pip install -e .", "python -m build", "cosmo"]
+cosmo.help = "build cosmopolitan portable executable"
 cosmo.shell = """
   PKG="ds";
   DIR="dist/cosmo";
@@ -164,7 +159,18 @@ cosmo.shell = """
   popd
 """
 
-release = """
+clean = """
+  rm -rf .mypy_cache;
+  rm -rf .pytest_cache;
+  rm -rf .ruff_cache;
+  rm -rf dist;
+  rm -rf htmlcov;
+  rm -rf .coverage;
+"""
+
+# Release
+release.help = "commit & tag the release"
+release.shell = """
   git commit -am "release: $1";
   git tag $1;
   git push;
