@@ -39,15 +39,15 @@ def test_list() -> None:
 
 def test_good_loop() -> None:
     """Run some loop-looking tasks."""
-    main(split("ds -f examples/loop-good.toml ls"))  # ok
-    main(split("ds -f examples/loop-good.toml df"))  # ok
-    main(split("ds -f examples/loop-good.toml ls2"))  # ok
+    main(split("ds -f examples/misc/loop-good.toml ls"))  # ok
+    main(split("ds -f examples/misc/loop-good.toml df"))  # ok
+    main(split("ds -f examples/misc/loop-good.toml ls2"))  # ok
 
 
 def test_bad_loop() -> None:
     """Try to run bad loops."""
     with pytest.raises(SystemExit) as e:
-        main(split("ds -f examples/loop-bad.toml bad"))
+        main(split("ds -f examples/misc/loop-bad.toml bad"))
     assert e.value.code == 1
 
 

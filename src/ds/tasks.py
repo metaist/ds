@@ -18,7 +18,7 @@ from typing import List
 from typing import Optional
 import sys
 
-
+# Coverage disabled to cover all python versions.
 # TODO 2024-10-31 [3.8 EOL]: remove conditional
 if sys.version_info >= (3, 9):  # pragma: no cover
     import graphlib

@@ -15,6 +15,7 @@ from typing import Union
 import json
 import sys
 
+# Coverage disabled to cover all python versions.
 # TODO 2026-10-04 [3.10 EOL]: remove conditional
 if sys.version_info >= (3, 11):  # pragma: no cover
     import tomllib as toml
@@ -125,6 +126,7 @@ def get_path(
     elif isinstance(name, list):
         path = name
     else:  # pragma: no cover
+        # No coverage for using a bad type.
         raise TypeError("Unknown type of key:", type(name))
 
     result: Any = default
@@ -241,6 +243,6 @@ def find_config(
                 continue
             try:
                 return Config.load(check).parse(require_workspace)
-            except LookupError:  # pragma: no cover
+            except LookupError:
                 continue  # No valid sections.
     raise FileNotFoundError("No valid configuration file found.")

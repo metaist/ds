@@ -70,11 +70,22 @@ classifiers = [
   "Typing :: Typed",
 ]
 
-[tool.ds.scripts] # dev scripts <https://github.com/metaist/ds>
+[tool.ds.scripts] # run dev scripts <https://github.com/metaist/ds>
+clean = """
+  rm -rf .mypy_cache;
+  rm -rf .pytest_cache;
+  rm -rf .ruff_cache;
+  rm -rf dist;
+  rm -rf htmlcov;
+  rm -rf .coverage;
+"""
+
+cspell = "cspell --gitignore '**/*.{py,txt,md,markdown}'"
+
 "ruff:format" = "ruff format ${@:-.}"
 "ruff:lint" = "ruff check --fix ${@:-.}"
 ruff = ["ruff:*"]
-cspell = "cspell --gitignore '**/*.{py,txt,md,markdown}'"
+
 pyright = "pyright src test"
 
 mypy = """
@@ -85,7 +96,7 @@ mypy = """
     src test
 """
 
-test.help = "run unit tests"
+test.help = "Run unit tests."
 test.env = { PYTHONPATH = "src" }
 test.shell = """
   coverage run --branch --source=src -m \
@@ -97,8 +108,7 @@ test.shell = """
 """
 
 "coverage:report" = "coverage html"
-"coverage:serve".shell = "python -m http.server 8080"
-"coverage:serve".cwd = "htmlcov"
+"coverage:serve" = { shell = "python -m http.server 8080", cwd = "htmlcov" }
 coverage = ["coverage:*"]
 
 cog = "cog -r README.md"

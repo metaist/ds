@@ -256,6 +256,8 @@ def wrap_cmd(cmd: str, width: int = DEFAULT_WIDTH) -> str:
 
         if len(check) <= width - 4:
             line = check
+            # Coverage incorrectly thinks this branch is not covered.
+            # See: nedbatchelder.com/blog/202406/coverage_at_a_crossroads.html
             if peek_end(line, *SHELL_BREAK):  # pragma: no cover
                 result.extend([line, "\n"])
                 line = ""
