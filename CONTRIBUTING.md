@@ -74,6 +74,9 @@ ds all
 # check build
 ds build
 
+# build binary
+ds cosmo
+
 # commit and push tags
 ds release: $VER
 ```

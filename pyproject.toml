@@ -121,12 +121,26 @@ dev = ["lint", "test"]
 all = ["lint", "test", "cog", "docs"]
 
 build = ["pip install -e .", "python -m build"]
-clean = """
-  rm -rf .mypy_cache;
-  rm -rf .pytest_cache;
-  rm -rf .ruff_cache;
-  rm -rf dist;
-  rm -rf .coverage;
+
+cosmo.help = "Build cosmopolitan portable executable."
+cosmo.shell = """
+  PKG="ds";
+  DIR="dist/cosmo";
+  DIR_PKG="Lib/site-packages/$PKG"
+  mkdir -p "$DIR/$DIR_PKG";
+  cp src/$PKG/*.py "$DIR/$DIR_PKG";
+  pushd $DIR;
+    printf -- "-m\\n$PKG\\n..." > .args;
+    wget -N https://cosmo.zip/pub/cosmos/bin/python;
+    chmod +x python;
+    ./python -m compileall -b $DIR_PKG;
+    rm $DIR_PKG/*.py;
+    cp python $PKG.zip;
+    zip -r $PKG.zip .args Lib;
+    zip -d $PKG.zip Lib/site-packages/pip;
+    zip -d $PKG.zip 'usr/*';
+    mv $PKG.zip $PKG
+  popd
 """
 
 release = """
