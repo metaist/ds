@@ -116,6 +116,15 @@ python -m pip install ds-run
 uv tool install ds-run
 ```
 
+You can also [download a Cosmopolitan binary](https://github.com/metaist/ds/releases/latest/download/ds) which runs on Windows, macOS, and Linux:
+
+```bash
+wget -N https://github.com/metaist/ds/releases/latest/download/ds
+chmod +x ds
+./ds --version
+# NOTE: it takes a few seconds the first time you run it
+```
+
 If you just want to try `ds`:
 
 ```bash
