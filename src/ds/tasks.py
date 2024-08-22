@@ -93,45 +93,56 @@ class Task:
             if "keep_going" in config:
                 task.keep_going = config["keep_going"]
 
+            # Working directory
             if "cwd" in config:  # `working_dir` alias (ds)
                 assert origin is not None
                 task.cwd = origin.parent / config["cwd"]
-            if "working_dir" in config:  # `cwd` alias (pdm)
+            elif "working_dir" in config:  # `cwd` alias (pdm)
                 assert origin is not None
                 task.cwd = origin.parent / config["working_dir"]
 
+            # Environment File
             if "env_file" in config:  # `env-file` alias (pdm)
                 assert origin is not None
                 task.env.update(
                     read_env((origin.parent / config["env_file"]).read_text())
                 )
-            if "env-file" in config:  # `env_file` alias (rye)
+            elif "env-file" in config:  # `env_file` alias (rye)
                 assert origin is not None
                 task.env.update(
                     read_env((origin.parent / config["env-file"]).read_text())
                 )
+
+            # Environment Variables
             if "env" in config:
                 assert isinstance(config["env"], dict)
                 task.env.update(config["env"])
 
+            found = False
+            # Composite Task
             if "composite" in config:  # `chain` alias
+                found = True
                 assert isinstance(config["composite"], list)
                 parsed = Task.parse(config["composite"], origin, key)
                 task.name = parsed.name
+                task.cmd = parsed.cmd
                 task.depends = parsed.depends
-
             elif "chain" in config:  # `composite` alias
+                found = True
                 assert isinstance(config["chain"], list)
                 parsed = Task.parse(config["chain"], origin, key)
                 task.name = parsed.name
+                task.cmd = parsed.cmd
                 task.depends = parsed.depends
 
-            elif "shell" in config:
+            # Basic Task
+            if "shell" in config:
+                found = True
                 parsed = Task.parse(str(config["shell"]), origin, key)
                 task.cmd = parsed.cmd
                 task.keep_going = parsed.keep_going
-
             elif "cmd" in config:
+                found = True
                 cmd = config["cmd"]
                 parsed = Task.parse(
                     " ".join(cmd) if isinstance(cmd, list) else str(cmd),
@@ -141,9 +152,9 @@ class Task:
                 task.cmd = parsed.cmd
                 task.keep_going = parsed.keep_going
 
-            elif "call" in config:
-                raise ValueError(f"`call` commands not supported: {config}")
-            else:
+            if not found:
+                if "call" in config:
+                    raise ValueError(f"`call` commands not supported: {config}")
                 raise TypeError(f"Unknown task type: {config}")
         else:
             raise TypeError(f"Unknown task type: {config}")

@@ -92,6 +92,36 @@ def test_composite() -> None:
     assert parse_tasks({"scripts": {"all": {"chain": cmd}}})[1] == expected
 
 
+def test_composite_and_shell() -> None:
+    """Parse a `composite` with a `shell`."""
+    expected = {
+        "build": Task(
+            origin_key="scripts",
+            name="build",
+            depends=[Task(origin_key="scripts", name=TASK_COMPOSITE, cmd="cd ..")],
+            cmd="ls -la",
+            verbatim=True,
+        )
+    }
+    expected["build"].pprint()  # print a verbatim task
+    expected["build"].run(expected)  # run a verbatim task
+
+    assert (
+        parse_tasks(
+            {
+                "scripts": {
+                    "build": {
+                        "composite": ["cd .."],
+                        "shell": "ls -la",
+                        "verbatim": True,
+                    }
+                }
+            }
+        )[1]
+        == expected
+    )
+
+
 def test_shell_cmd() -> None:
     """Parse a `shell` or `cmd` task."""
     cmd = f"{TASK_KEEP_GOING}ls -la"
