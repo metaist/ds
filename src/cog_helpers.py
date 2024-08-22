@@ -1,4 +1,5 @@
 # pragma: no cover
+# No coverage for these cog-based README-only functions.
 
 # std
 from pathlib import Path

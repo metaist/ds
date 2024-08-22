@@ -61,9 +61,9 @@ def test_parse_no_args() -> None:
     assert parse_args(split("a b c")) == Args(
         task=Task(
             depends=[
-                Task(name=TASK_COMPOSITE, cmd="a", allow_shell=False),
-                Task(name=TASK_COMPOSITE, cmd="b", allow_shell=False),
-                Task(name=TASK_COMPOSITE, cmd="c", allow_shell=False),
+                Task(name=TASK_COMPOSITE, cmd="a"),
+                Task(name=TASK_COMPOSITE, cmd="b"),
+                Task(name=TASK_COMPOSITE, cmd="c"),
             ]
         )
     )
@@ -74,7 +74,7 @@ def test_implicit_args() -> None:
     assert parse_args(split("a --arg1 --arg2")) == Args(
         task=Task(
             depends=[
-                Task(name=TASK_COMPOSITE, cmd="a --arg1 --arg2", allow_shell=False),
+                Task(name=TASK_COMPOSITE, cmd="a --arg1 --arg2"),
             ]
         ),
     )
@@ -85,8 +85,8 @@ def test_implicit_arg_start() -> None:
     assert parse_args(split(f"a --arg {ARG_END} b")) == Args(
         task=Task(
             depends=[
-                Task(name=TASK_COMPOSITE, cmd="a --arg", allow_shell=False),
-                Task(name=TASK_COMPOSITE, cmd="b", allow_shell=False),
+                Task(name=TASK_COMPOSITE, cmd="a --arg"),
+                Task(name=TASK_COMPOSITE, cmd="b"),
             ]
         ),
     )
@@ -98,8 +98,8 @@ def test_explicit_task_args() -> None:
     assert parse_args(split(f"a {ARG_BEG} b {ARG_END} c")) == Args(
         task=Task(
             depends=[
-                Task(name=TASK_COMPOSITE, cmd="a b", allow_shell=False),
-                Task(name=TASK_COMPOSITE, cmd="c", allow_shell=False),
+                Task(name=TASK_COMPOSITE, cmd="a b"),
+                Task(name=TASK_COMPOSITE, cmd="c"),
             ]
         ),
     )
@@ -108,8 +108,8 @@ def test_explicit_task_args() -> None:
     assert parse_args(split(f"a{ARG_BEG} b {ARG_END} c")) == Args(
         task=Task(
             depends=[
-                Task(name=TASK_COMPOSITE, cmd="a b", allow_shell=False),
-                Task(name=TASK_COMPOSITE, cmd="c", allow_shell=False),
+                Task(name=TASK_COMPOSITE, cmd="a b"),
+                Task(name=TASK_COMPOSITE, cmd="c"),
             ]
         ),
     )
@@ -135,8 +135,8 @@ def test_as_argv() -> None:
     assert Args(
         task=Task(
             depends=[
-                Task(name=TASK_COMPOSITE, cmd="a b", allow_shell=False),
-                Task(name=TASK_COMPOSITE, cmd="c", allow_shell=False),
+                Task(name=TASK_COMPOSITE, cmd="a b"),
+                Task(name=TASK_COMPOSITE, cmd="c"),
             ]
         ),
     ).as_argv() == ["ds", "a", ARG_BEG, "b", ARG_END, "c", ARG_BEG, ARG_END]

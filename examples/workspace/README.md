@@ -16,6 +16,7 @@ Members are usually in `./modules`
 
 - `ds`: [`pyproject-ds.toml`](./pyproject-ds.toml)
 - `rye`: [`pyproject-rye.toml`](./pyproject-rye.toml)
+- `uv`: [`pyproject-uv.toml`](./pyproject-uv.toml)
 
 ## Rust
 

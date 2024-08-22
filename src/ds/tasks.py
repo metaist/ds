@@ -18,7 +18,7 @@ from typing import List
 from typing import Optional
 import sys
 
-
+# Coverage disabled to cover all python versions.
 # TODO 2024-10-31 [3.8 EOL]: remove conditional
 if sys.version_info >= (3, 9):  # pragma: no cover
     import graphlib
@@ -73,8 +73,8 @@ class Task:
     keep_going: bool = False
     """Ignore a non-zero return code."""
 
-    allow_shell: bool = True
-    """Whether this task is allowed to run on the shell."""
+    verbatim: bool = False
+    """Whether to format the command at all."""
 
     @staticmethod
     def parse(config: Any, origin: Optional[Path] = None, key: str = "") -> Task:
@@ -90,51 +90,64 @@ class Task:
             task.keep_going, task.cmd = starts(config, TASK_KEEP_GOING)
 
         elif isinstance(config, Dict):
+            if "verbatim" in config:
+                task.verbatim = config["verbatim"]
             if "help" in config:
                 task.help = config["help"]
 
             if "keep_going" in config:
                 task.keep_going = config["keep_going"]
 
+            # Working directory
             if "cwd" in config:  # `working_dir` alias (ds)
                 assert origin is not None
                 task.cwd = origin.parent / config["cwd"]
-            if "working_dir" in config:  # `cwd` alias (pdm)
+            elif "working_dir" in config:  # `cwd` alias (pdm)
                 assert origin is not None
                 task.cwd = origin.parent / config["working_dir"]
 
+            # Environment File
             if "env_file" in config:  # `env-file` alias (pdm)
                 assert origin is not None
                 task.env.update(
                     read_env((origin.parent / config["env_file"]).read_text())
                 )
-            if "env-file" in config:  # `env_file` alias (rye)
+            elif "env-file" in config:  # `env_file` alias (rye)
                 assert origin is not None
                 task.env.update(
                     read_env((origin.parent / config["env-file"]).read_text())
                 )
+
+            # Environment Variables
             if "env" in config:
                 assert isinstance(config["env"], dict)
                 task.env.update(config["env"])
 
+            found = False
+            # Composite Task
             if "composite" in config:  # `chain` alias
+                found = True
                 assert isinstance(config["composite"], list)
                 parsed = Task.parse(config["composite"], origin, key)
                 task.name = parsed.name
+                task.cmd = parsed.cmd
                 task.depends = parsed.depends
-
             elif "chain" in config:  # `composite` alias
+                found = True
                 assert isinstance(config["chain"], list)
                 parsed = Task.parse(config["chain"], origin, key)
                 task.name = parsed.name
+                task.cmd = parsed.cmd
                 task.depends = parsed.depends
 
-            elif "shell" in config:
+            # Basic Task
+            if "shell" in config:
+                found = True
                 parsed = Task.parse(str(config["shell"]), origin, key)
                 task.cmd = parsed.cmd
                 task.keep_going = parsed.keep_going
-
             elif "cmd" in config:
+                found = True
                 cmd = config["cmd"]
                 parsed = Task.parse(
                     " ".join(cmd) if isinstance(cmd, list) else str(cmd),
@@ -144,9 +157,9 @@ class Task:
                 task.cmd = parsed.cmd
                 task.keep_going = parsed.keep_going
 
-            elif "call" in config:
-                raise ValueError(f"`call` commands not supported: {config}")
-            else:
+            if not found:
+                if "call" in config:
+                    raise ValueError(f"`call` commands not supported: {config}")
                 raise TypeError(f"Unknown task type: {config}")
         else:
             raise TypeError(f"Unknown task type: {config}")
@@ -154,19 +167,21 @@ class Task:
 
     def pprint(self) -> None:
         """Pretty-print a representation of this task."""
-        cmd = self.cmd
         if self.help:
             print("#", self.help)
         print(">", wrap_cmd(self.as_args()))
-        if not self.depends:
-            print("$", wrap_cmd(cmd))
-        else:
+        if self.depends:
             print(
                 [
                     f"{TASK_KEEP_GOING if t.keep_going else ''}{t.cmd}"
                     for t in self.depends
                 ]
             )
+        if self.cmd:
+            if self.verbatim:
+                print("$", self.cmd.strip().replace("\n", "\n$ "))
+            else:
+                print(f"$ {wrap_cmd(self.cmd)}")
         print()
 
     def as_args(
@@ -227,21 +242,30 @@ class Task:
             if ran:
                 return code
 
-        if not self.allow_shell:
-            raise ValueError(f"Unknown task: {self.cmd}")
-
         # 4. Run in the shell.
-        cmd = interpolate_args(self.cmd, [*extra])
+        cmd = interpolate_args(self.cmd, extra)
         dry_prefix = "[DRY RUN]\n" if dry_run else ""
         print(f"\n{dry_prefix}>", wrap_cmd(self.as_args(cwd, env, keep_going)))
-        print(f"$ {wrap_cmd(cmd)}")
+        if self.verbatim:
+            print("$", cmd.strip().replace("\n", "\n$ "))
+        else:
+            print(f"$ {wrap_cmd(cmd)}")
         if dry_run:  # do not actually run the command
             return 0
 
-        proc = run(cmd, shell=True, text=True, cwd=cwd, env={**ENV, **env})
+        combined_env = {**ENV, **env}
+        proc = run(
+            cmd,
+            shell=True,
+            text=True,
+            cwd=cwd,
+            env=combined_env,
+            executable=combined_env.get("SHELL"),
+        )
         code = proc.returncode
 
         if code != 0 and not keep_going:
+            print("ERROR: return code =", code)
             sys.exit(code)
         return 0  # either it was zero or we keep going
 

@@ -250,10 +250,6 @@ def parse_args(argv: List[str]) -> Args:
         env = {**read_env(args.env_file.read_text()), **args.env}
     args.task.env = env
 
-    for dep in args.task.depends:
-        # top-level tasks can't be shell commands
-        dep.allow_shell = False
-
     if not args.help and not args.version and not args.task.depends:
         # default action
         args.list_ = True

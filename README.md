@@ -75,6 +75,8 @@ ds test
 - **PHP** (`composer.json`): [`composer run-script`][composer run-script]
 - **Rust** (`Cargo.toml`): [`cargo run-script`][cargo run-script]
 
+**Experimental**: We also support an extremely small subset of the [`Makefile`](./Makefile) format (see [#68]).
+
 See: [Inspirations](#inspirations)
 
 🗂️ **Add monorepo/workspace support anywhere**<br />
@@ -99,6 +101,7 @@ Currently working on removing all of these (see [#46]):
 
 - Not Supported: [Lifecycle Events](#not-supported-lifecycle-events)
 - Not Supported: [`call` Tasks](#not-supported-call-tasks)
+- Partial Support: [`Makefile` format][#68] (see [#68])
 - In Progress: [Shell Completions][#44] (see [#44])
 - In Progress: [Remove Python Dependency][#46] (see [#46])
 
@@ -215,6 +218,8 @@ Dev scripts act as another form of documentation that helps developers understan
 - **Python**: `pyproject.toml` under `[tool.ds.scripts]` (`[tool.pdm.scripts]` and `[tool.rye.scripts]` also supported)
 - **Rust**: `Cargo.toml` under `[package.metadata.scripts]` or `[workspace.metadata.scripts]`
 - **Other**: `ds.toml` under `[scripts]`
+
+**Experimental**: We support an extremely small subset of the [`Makefile`](./Makefile) format (see [#68]).
 
 Read more:
 
@@ -486,7 +491,7 @@ ds --env-file .env run
 
 ## Workspaces
 
-Workspaces are a way of managing multiple sub-projects from a top-level. `ds` supports `npm`, `rye`, and `Cargo` style workspaces (see [examples](https://github.com/metaist/ds/tree/main/examples/workspace)).
+Workspaces are a way of managing multiple sub-projects from a top-level. `ds` supports `npm`, `rye`, `uv`, and `Cargo` style workspaces (see [examples](https://github.com/metaist/ds/tree/main/examples/workspace)).
 
 When `ds` is called with the `--workspace` option, the configuration file must have one of the following keys:
 
@@ -501,6 +506,7 @@ cog.outl()
 - `workspace.members`
 - `tool.ds.workspace.members`
 - `tool.rye.workspace.members`
+- `tool.uv.workspace.members`
 - `workspaces`
 
 <!--[[[end]]]-->
@@ -520,7 +526,7 @@ The value corresponding to the workspace key should be a list of patterns that i
 
 If you prefix any pattern with an exclamation point (`!`) then the rest of the pattern describes which files should _not_ be matched.
 
-Patterns are applied in order so subsequent patterns can include or exclude sub-directories as needed. For compatibility with `Cargo`, [we also support the `excludes` key](https://github.com/metaist/ds/tree/main/examples/workspace/Cargo.toml) which is applied _after_ all the members.
+Patterns are applied in order so subsequent patterns can include or exclude sub-directories as needed. [We also support the `excludes` key](https://github.com/metaist/ds/tree/main/examples/workspace/Cargo.toml) (for `uv` and `Cargo`) which is applied _after_ all the members.
 
 <!--[[[cog insert_file("examples/workspace/ds.toml")]]]-->
 
@@ -634,6 +640,7 @@ I've used several task runners, usually as part of build tools. Below is a list 
 [#46]: https://github.com/metaist/ds/issues/46
 [#51]: https://github.com/metaist/ds/issues/51
 [#54]: https://github.com/metaist/ds/issues/54
+[#68]: https://github.com/metaist/ds/issues/68
 [ant]: https://en.wikipedia.org/wiki/Apache_Ant
 [bun run]: https://bun.sh/docs/cli/run
 [bun]: https://en.wikipedia.org/wiki/Bun_(software)

@@ -4,6 +4,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 from typing import Callable
@@ -15,6 +16,7 @@ from typing import Union
 import json
 import sys
 
+# Coverage disabled to cover all python versions.
 # TODO 2026-10-04 [3.10 EOL]: remove conditional
 if sys.version_info >= (3, 11):  # pragma: no cover
     import tomllib as toml
@@ -29,6 +31,7 @@ from .symbols import starts
 from .symbols import TASK_DISABLED
 from .tasks import Task
 from .tasks import Tasks
+from .env import makefile_loads
 
 GlobMatches = Dict[Path, bool]
 """Mapping a path to whether it should be included."""
@@ -36,8 +39,12 @@ GlobMatches = Dict[Path, bool]
 Loader = Callable[[str], Dict[str, Any]]
 """A loader takes text and returns a mapping of strings to values."""
 
-LOADERS: Dict[str, Loader] = {".toml": toml.loads, ".json": json.loads}
-"""Mapping of file extensions to string load functions."""
+LOADERS: Dict[str, Loader] = {
+    "*.json": json.loads,
+    "*.toml": toml.loads,
+    "*[Mm]akefile": makefile_loads,
+}
+"""Mapping of file patterns to load functions."""
 
 # NOTE: Used by cog in README.md
 SEARCH_FILES = [
@@ -47,6 +54,8 @@ SEARCH_FILES = [
     "composer.json",
     "package.json",
     "pyproject.toml",
+    "Makefile",
+    "makefile",
 ]
 """Search order for configuration file names."""
 
@@ -58,6 +67,7 @@ SEARCH_KEYS_TASKS = [
     "tool.rye.scripts",  # pyproject.toml
     "package.metadata.scripts",  # Cargo.toml
     "workspace.metadata.scripts",  # Cargo.toml
+    "Makefile",  # Makefile
 ]
 """Search order for configuration keys."""
 
@@ -66,6 +76,7 @@ SEARCH_KEYS_WORKSPACE = [
     "workspace.members",  # ds.toml, .ds.toml, Cargo.toml
     "tool.ds.workspace.members",  # project.toml
     "tool.rye.workspace.members",  # pyproject.toml
+    "tool.uv.workspace.members",  # pyproject.toml
     "workspaces",  # package.json
 ]
 """Search for workspace configuration keys."""
@@ -90,11 +101,10 @@ class Config:
     @staticmethod
     def load(path: Path) -> Config:
         """Try to load a configuration file."""
-        if path.suffix not in LOADERS:
-            raise LookupError(f"Not sure how to read a {path.suffix} file: {path}")
-
-        config = LOADERS[path.suffix](path.read_text())
-        return Config(path, config)
+        for pattern, loader in LOADERS.items():
+            if fnmatch(path.name, pattern):
+                return Config(path, loader(path.read_text()))
+        raise LookupError(f"Not sure how to read file: {path}")
 
     def parse(self, require_workspace: bool = False) -> Config:
         """Parse a configuration file."""
@@ -125,6 +135,7 @@ def get_path(
     elif isinstance(name, list):
         path = name
     else:  # pragma: no cover
+        # No coverage for using a bad type.
         raise TypeError("Unknown type of key:", type(name))
 
     result: Any = default
@@ -241,6 +252,6 @@ def find_config(
                 continue
             try:
                 return Config.load(check).parse(require_workspace)
-            except LookupError:  # pragma: no cover
+            except LookupError:
                 continue  # No valid sections.
     raise FileNotFoundError("No valid configuration file found.")

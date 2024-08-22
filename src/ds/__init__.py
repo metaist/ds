@@ -30,8 +30,8 @@ from .tasks import check_cycles
 from .tasks import CycleError
 from .tasks import print_tasks
 
-__version__ = "1.1.0"
-__pubdate__ = "2024-08-18T04:48:22Z"
+__version__ = "1.1.0post"
+__pubdate__ = "unpublished"
 
 
 @contextmanager
@@ -111,6 +111,7 @@ def run_workspace(args: Args, config: Config) -> None:
                     main(cli_args)
                     print()
         except SystemExit:  # pragma: no cover
+            # Not sure how to cover this case.
             pass
 
 
@@ -125,7 +126,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         return
 
     if args.version:
-        print(f"{__version__} ({__pubdate__})\n")
+        print(f"{__version__} ({__pubdate__})")
         return
 
     config = load_config(args)
@@ -143,12 +144,11 @@ def main(argv: Optional[List[str]] = None) -> None:
             assert args.cwd is not None
             with pushd(args.cwd):
                 args.task.run(config.tasks, dry_run=args.dry_run)
-    except ValueError as e:
-        print("ERROR:", e)
-        sys.exit(1)
     except KeyboardInterrupt:  # pragma: no cover
+        # Not sure how to cover CTRL+C.
         return
 
 
 if __name__ == "__main__":  # pragma: no cover
+    # No coverage for being called from the terminal.
     main()
