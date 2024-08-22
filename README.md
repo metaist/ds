@@ -75,7 +75,7 @@ ds test
 - **PHP** (`composer.json`): [`composer run-script`][composer run-script]
 - **Rust** (`Cargo.toml`): [`cargo run-script`][cargo run-script]
 
-**Experimental**: We also support an extremely small subset of the [`Makefile`](./Makefile) format (see [#68]).
+**Experimental**: We also support an extremely small subset of the [`Makefile`][#68] format (see [#68]).
 
 See: [Inspirations](#inspirations)
 
@@ -219,7 +219,7 @@ Dev scripts act as another form of documentation that helps developers understan
 - **Rust**: `Cargo.toml` under `[package.metadata.scripts]` or `[workspace.metadata.scripts]`
 - **Other**: `ds.toml` under `[scripts]`
 
-**Experimental**: We support an extremely small subset of the [`Makefile`](./Makefile) format (see [#68]).
+**Experimental**: We support an extremely small subset of the [`Makefile`][#68] format (see [#68]).
 
 Read more:
 
