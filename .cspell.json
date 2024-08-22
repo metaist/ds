@@ -2,6 +2,7 @@
   "version": "0.2",
   "language": "en",
   "words": [
+    "akefile",
     "capsys",
     "codeql",
     "docopt",
@@ -25,6 +26,7 @@
     "pyproject",
     "pyright",
     "pytest",
+    "RECIPEPREFIX",
     "setuptools",
     "tomli",
     "tomllib",

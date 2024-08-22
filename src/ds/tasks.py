@@ -73,6 +73,9 @@ class Task:
     keep_going: bool = False
     """Ignore a non-zero return code."""
 
+    verbatim: bool = False
+    """Whether to format the command at all."""
+
     @staticmethod
     def parse(config: Any, origin: Optional[Path] = None, key: str = "") -> Task:
         """Parse a config into a `Task`."""
@@ -87,6 +90,8 @@ class Task:
             task.keep_going, task.cmd = starts(config, TASK_KEEP_GOING)
 
         elif isinstance(config, Dict):
+            if "verbatim" in config:
+                task.verbatim = config["verbatim"]
             if "help" in config:
                 task.help = config["help"]
 
@@ -162,19 +167,21 @@ class Task:
 
     def pprint(self) -> None:
         """Pretty-print a representation of this task."""
-        cmd = self.cmd
         if self.help:
             print("#", self.help)
         print(">", wrap_cmd(self.as_args()))
-        if not self.depends:
-            print("$", wrap_cmd(cmd))
-        else:
+        if self.depends:
             print(
                 [
                     f"{TASK_KEEP_GOING if t.keep_going else ''}{t.cmd}"
                     for t in self.depends
                 ]
             )
+        if self.cmd:
+            if self.verbatim:
+                print("$", self.cmd.strip().replace("\n", "\n$ "))
+            else:
+                print(f"$ {wrap_cmd(self.cmd)}")
         print()
 
     def as_args(
@@ -236,10 +243,13 @@ class Task:
                 return code
 
         # 4. Run in the shell.
-        cmd = interpolate_args(self.cmd, [*extra])
+        cmd = interpolate_args(self.cmd, extra)
         dry_prefix = "[DRY RUN]\n" if dry_run else ""
         print(f"\n{dry_prefix}>", wrap_cmd(self.as_args(cwd, env, keep_going)))
-        print(f"$ {wrap_cmd(cmd)}")
+        if self.verbatim:
+            print("$", cmd.strip().replace("\n", "\n$ "))
+        else:
+            print(f"$ {wrap_cmd(cmd)}")
         if dry_run:  # do not actually run the command
             return 0
 

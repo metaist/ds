@@ -23,3 +23,7 @@ This folder contains minimal examples of supported configuration file formats.
 ## Other
 
 For all other languages and tools, use [`ds.toml`](./ds.toml).
+
+**Experimental**: We also support an extremely small subset of the [`Makefile`](./Makefile) format (see [#68]).
+
+[#68]: https://github.com/metaist/ds/issues/68

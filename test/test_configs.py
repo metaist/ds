@@ -34,18 +34,6 @@ def test_find_config() -> None:
     assert find_config(Path(__file__)) is not None
 
 
-def test_load_formats() -> None:
-    """Load known formats."""
-    path = EXAMPLES / "formats"
-    assert Config.load(path / "Cargo.toml").parse()
-    assert Config.load(path / "composer.json").parse()
-    assert Config.load(path / "ds.toml").parse()
-    assert Config.load(path / "package.json").parse()
-    assert Config.load(path / "pyproject-ds.toml").parse()
-    assert Config.load(path / "pyproject-pdm.toml").parse()
-    assert Config.load(path / "pyproject-rye.toml").parse()
-
-
 def test_load_readme() -> None:
     """Load README examples."""
     path = EXAMPLES / "readme"
@@ -53,6 +41,19 @@ def test_load_readme() -> None:
     assert Config.load(path / "composite.toml").parse()
     assert Config.load(path / "error-suppression.toml").parse()
     assert Config.load(path / "example.toml").parse()
+
+
+def test_load_formats() -> None:
+    """Load known formats."""
+    path = EXAMPLES / "formats"
+    assert Config.load(path / "Cargo.toml").parse()
+    assert Config.load(path / "composer.json").parse()
+    assert Config.load(path / "ds.toml").parse()
+    assert Config.load(path / "Makefile").parse()
+    assert Config.load(path / "package.json").parse()
+    assert Config.load(path / "pyproject-ds.toml").parse()
+    assert Config.load(path / "pyproject-pdm.toml").parse()
+    assert Config.load(path / "pyproject-rye.toml").parse()
 
 
 def test_unknown_name() -> None:
