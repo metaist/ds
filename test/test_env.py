@@ -137,7 +137,10 @@ def test_wrap_cmd() -> None:
 def test_makefile_loads() -> None:
     """Parse basic `Makefile`."""
     # empty
-    assert makefile_loads("") == {"Makefile": {}}
+    assert makefile_loads("", debug=True) == {"Makefile": {}}
+
+    # not supported: variables
+    assert makefile_loads("foo = bar", debug=True) == {"Makefile": {}}
 
     # comments
     assert makefile_loads("# Commented Line") == {"Makefile": {}}

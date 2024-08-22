@@ -404,7 +404,9 @@ def makefile_loads(text: str, debug: bool = False) -> Dict[str, Dict[str, Any]]:
                         d = f"+{d[1:]}"
                     for target in targets:
                         result[target]["composite"].append(d)
-                _log(f"{n:03}|>>>", "start", target, result[target])
+
+                for target in targets:
+                    _log(f"{n:03}|>>>", "start", target, result[target])
 
     # https://www.gnu.org/software/make/manual/make.html#Automatic-Variables
     for name, rule in result.items():
