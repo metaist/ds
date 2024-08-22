@@ -19,6 +19,41 @@ These are changes that are on `main` that are not yet in `prod`.
 
 ---
 
+[#14]: https://github.com/metaist/ds/issues/14
+[#31]: https://github.com/metaist/ds/issues/31
+[#64]: https://github.com/metaist/ds/issues/64
+[#65]: https://github.com/metaist/ds/issues/65
+[#66]: https://github.com/metaist/ds/issues/66
+[#67]: https://github.com/metaist/ds/issues/67
+[#68]: https://github.com/metaist/ds/issues/68
+[#69]: https://github.com/metaist/ds/issues/69
+[#70]: https://github.com/metaist/ds/issues/70
+[#71]: https://github.com/metaist/ds/issues/71
+[1.2.0]: https://github.com/metaist/ds/compare/1.1.0...1.2.0
+
+## [1.2.0] - 2024-08-22T04:17:00Z
+
+**Fixed**
+
+- [#71]: allow `composite` (prerequisites) and `shell` (recipe) within a single task
+
+**Changed**
+
+- [#64]: allow shell commands directly when calling ds, e.g., `ds 'echo hello'`
+- [#65]: `ds` now respects the value of the `SHELL` environment variable when running tasks
+- [#70]: simplified `CI.yaml`
+
+**Added**
+
+- [#14]: instructions for using `uv` in `CONTRIBUTING.md`
+- [#31]: Cosmopolitan Python build; Actually Portable Executable
+- [#67]: `uv run` command that runs tests against all supported Python versions
+- [#69]: documentation for why branch coverage is disabled
+- [#66]: support for `uv` workspaces
+- [#68]: support for simplified `Makefile` format
+
+---
+
 [#30]: https://github.com/metaist/ds/issues/30
 [#46]: https://github.com/metaist/ds/issues/46
 [#51]: https://github.com/metaist/ds/issues/51

@@ -244,6 +244,8 @@ cog.outl()
 - `composer.json`
 - `package.json`
 - `pyproject.toml`
+- `Makefile`
+- `makefile`
 
 <!--[[[end]]]-->
 
@@ -281,6 +283,7 @@ cog.outl()
 - `tool.rye.scripts`
 - `package.metadata.scripts`
 - `workspace.metadata.scripts`
+- `Makefile`
 
 <!--[[[end]]]-->
 

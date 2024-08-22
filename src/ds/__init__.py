@@ -30,8 +30,8 @@ from .tasks import check_cycles
 from .tasks import CycleError
 from .tasks import print_tasks
 
-__version__ = "1.1.0post"
-__pubdate__ = "unpublished"
+__version__ = "1.2.0"
+__pubdate__ = "2024-08-22T04:17:00Z"
 
 
 @contextmanager
