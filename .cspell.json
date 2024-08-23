@@ -27,6 +27,7 @@
     "pyproject",
     "pyright",
     "pytest",
+    "pyvenv",
     "RECIPEPREFIX",
     "setuptools",
     "tomli",

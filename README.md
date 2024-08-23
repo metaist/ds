@@ -185,10 +185,10 @@ Options:
     List available tasks and exit.
 
   --no-config
-    Do not search for a configuration file.
+    Do not search for or load a configuration file. Supersedes `--file`.
 
   --no-project
-    Do not search for project dependencies, e.g., `node_modules`, `.venv`
+    Do not search for project dependencies, e.g., `.venv`, `node_modules`
 
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.

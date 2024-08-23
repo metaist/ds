@@ -68,10 +68,10 @@ Options:
     List available tasks and exit.
 
   --no-config
-    Do not search for a configuration file.
+    Do not search for or load a configuration file. Supersedes `--file`.
 
   --no-project
-    Do not search for project dependencies, e.g., `node_modules`, `.venv`
+    Do not search for project dependencies, e.g., `.venv`, `node_modules`
 
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.
@@ -224,6 +224,7 @@ class Args:
         while argv:
             arg = argv.pop(0)
             if is_ours:
+                # bool
                 if arg in [
                     "--help",
                     "--version",
@@ -238,15 +239,18 @@ class Args:
                     args.help = True
                 elif arg in ["-l", "--list"]:
                     args.list_ = True
-                elif arg == "--cwd":
-                    args.cwd = Path(argv.pop(0)).resolve()
-                elif arg == "--env-file":
-                    args.env_file = Path(argv.pop(0)).resolve()
+
+                # path
+                elif arg in ["--cwd", "--env-file", "--file"]:
+                    attr = _opt_prop(arg)
+                    setattr(args, attr, Path(argv.pop(0)).resolve())
+                elif arg == "-f":
+                    args.file = Path(argv.pop(0)).resolve()
+
+                # other
                 elif arg in ["-e", "--env"]:
                     key, val = argv.pop(0).split("=")
                     args.env[key] = val
-                elif arg in ["-f", "--file"]:
-                    args.file = Path(argv.pop(0)).resolve()
                 elif arg in ["-w", "--workspace"]:
                     args.workspace.append(argv.pop(0))
                 elif arg == "-w*":  # special shorthand

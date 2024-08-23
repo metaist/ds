@@ -81,10 +81,10 @@ LOADERS: Dict[str, Loader] = {
 # NOTE: Used by cog in README.md
 SEARCH_FILES = [
     "ds.toml",
-    "pyproject.toml", # python
-    "package.json", # node
-    "Cargo.toml", # rust
-    "composer.json", # php
+    "pyproject.toml",  # python
+    "package.json",  # node
+    "Cargo.toml",  # rust
+    "composer.json",  # php
     "[Mm]akefile",
     ".ds.toml",
 ]

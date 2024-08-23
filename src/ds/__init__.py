@@ -51,11 +51,19 @@ def pushd(dest: Union[str, Path]) -> Iterator[Path]:
     if isinstance(dest, str):
         dest = Path(dest)
 
-    cwd = os.getcwd()
+    cwd = Path.cwd()
+    if cwd == dest:
+        log.debug(f"staying in: {dest}")
+        yield dest
+        return
+
     os.chdir(dest)
     try:
-        yield Path(dest).resolve()
+        path = Path(dest).resolve()
+        log.debug(f"going to: {path}")
+        yield path
     finally:
+        log.debug(f"coming back: {cwd}")
         os.chdir(cwd)
 
 
@@ -64,7 +72,7 @@ def load_config(args: Args) -> Config:
     try:
         if not args.file:
             if path := ENV.get("_DS_CURRENT_FILE"):
-                log.debug(f"setting args.file using ENV={path}")
+                log.debug(f"Setting --file to $_DS_CURRENT_FILE = {path}")
                 args.file = Path(path)
 
         require_workspace = bool(args.workspace)
@@ -74,7 +82,7 @@ def load_config(args: Args) -> Config:
             config = Config.load(args.file).parse(require_workspace)
         else:
             # search for a valid config
-            config = find_config(Path.cwd(), require_workspace, args.debug)
+            config = find_config(Path.cwd(), require_workspace)
             args.file = config.path
         # config loaded
 
@@ -83,7 +91,7 @@ def load_config(args: Args) -> Config:
         args.cwd = args.cwd or config.path.parent
         if not args.cwd.exists():
             raise NotADirectoryError(f"Cannot find directory: {args.cwd}")
-    except CycleError as e:
+    except CycleError as e:  # TODO: move this into check_cycles
         cycle = e.args[1]
         log.error(f"Task cycle detected: {' => '.join(cycle)}")
         sys.exit(1)
@@ -151,10 +159,15 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     runner = Runner(args, {})
     if args.no_config:
+        log.debug("Not loading config. To enable: remove --no-config")
+        if args.workspace:
+            log.error("Cannot use --workspace together with --no-config.")
+            return
         if args.list_:
-            log.warning("Cannot list tasks when no configuration file loaded.")
+            log.error("Cannot use --list together with --no-config.")
             return
     else:
+        log.debug("Loading config. To disable: add --no-config")
         config = load_config(args)
         if args.workspace:
             run_workspace(args, config)
