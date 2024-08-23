@@ -36,14 +36,21 @@ def test_list() -> None:
     for arg in ["", "-l", "--list"]:
         main(split(f"ds {arg}"))
 
-    # support --no-config
-    main(split("ds --no-config"))
-
 
 def test_echo() -> None:
     """Just run a command from the top-level."""
     main(split("ds 'echo hello'"))
+
+
+def test_no_config() -> None:
+    """Test disabling config."""
     main(split("ds --no-config 'echo hello'"))
+
+    with pytest.raises(SystemExit):
+        main(split("ds --no-config --list"))
+
+    with pytest.raises(SystemExit):
+        main(split("ds --no-config -w* test"))
 
 
 def test_good_loop() -> None:
@@ -81,7 +88,7 @@ def test_bad_config() -> None:
     assert e.value.code == 1
 
 
-def test_no_config() -> None:
+def test_missing_config() -> None:
     """Fail to find a config file."""
     with pushd("/"):
         with pytest.raises(SystemExit):

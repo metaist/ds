@@ -162,13 +162,15 @@ def main(argv: Optional[List[str]] = None) -> None:
         log.debug("Not loading config. To enable: remove --no-config")
         if args.workspace:
             log.error("Cannot use --workspace together with --no-config.")
-            return
+            sys.exit(1)
         if args.list_:
             log.error("Cannot use --list together with --no-config.")
-            return
+            sys.exit(1)
     else:
         log.debug("Loading config. To disable: add --no-config")
         config = load_config(args)
+        # NOTE: We process --workspace first so that you can run $ ds -w*
+        # to be roughly equal to: $ ds --workspace '*' 'ds --list'
         if args.workspace:
             run_workspace(args, config)
             return
