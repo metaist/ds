@@ -15,7 +15,6 @@ import logging
 import sys
 import dataclasses
 
-
 # Coverage disabled to cover all python versions.
 # TODO 2026-10-04 [3.10 EOL]: remove conditional
 if sys.version_info >= (3, 11):  # pragma: no cover
@@ -24,21 +23,20 @@ else:  # pragma: no cover
     import tomli as toml
 
 # pkg
-
-from .env import read_env
-from .searchers import get_key
-from .searchers import glob_apply
-from .searchers import glob_parents
-from .searchers import GlobMatches
-from .symbols import GLOB_EXCLUDE
-from .symbols import KEY_DELIMITER
-from .symbols import SHELL_CONTINUE
-from .symbols import starts
-from .symbols import TASK_COMPOSITE
-from .symbols import TASK_DISABLED
-from .symbols import TASK_KEEP_GOING
-from .tasks import Task
-from .tasks import Tasks
+from ..env import read_env
+from ..searchers import get_key
+from ..searchers import glob_apply
+from ..searchers import glob_parents
+from ..searchers import GlobMatches
+from ..symbols import GLOB_EXCLUDE
+from ..symbols import KEY_DELIMITER
+from ..symbols import SHELL_CONTINUE
+from ..symbols import starts
+from ..symbols import TASK_COMPOSITE
+from ..symbols import TASK_DISABLED
+from ..symbols import TASK_KEEP_GOING
+from ..tasks import Task
+from ..tasks import Tasks
 
 log = logging.getLogger(__name__)
 

@@ -253,7 +253,7 @@ Read more:
 If you don't provide a config file using the `--file` option, `ds` will search the current directory and all of its parents for files with these names in the following order:
 
 <!--[[[cog
-from ds.tasks import SEARCH_FILES
+from ds.parsers import SEARCH_FILES
 cog.outl()
 for key in SEARCH_FILES:
     cog.outl(f"- `{key}`")
@@ -291,7 +291,7 @@ If you provide one or more `--workspace` options, `--cwd` is ignored and tasks a
 `ds` searches configuration files for the following keys, in the following order, to find task definitions. The first key that's found is used and should contain a mapping from [task names](#task-names) to [basic tasks](#basic-task) or [composite tasks](#composite-task).
 
 <!--[[[cog
-from ds.tasks import SEARCH_KEYS_TASKS
+from ds.parsers import SEARCH_KEYS_TASKS
 cog.outl()
 for key in SEARCH_KEYS_TASKS:
     cog.outl(f"- `{key}`")
@@ -520,7 +520,7 @@ Workspaces are a way of managing multiple sub-projects from a top-level. `ds` su
 When `ds` is called with the `--workspace` option, the configuration file must have one of the following keys:
 
 <!--[[[cog
-from ds.tasks import SEARCH_KEYS_WORKSPACE
+from ds.parsers import SEARCH_KEYS_WORKSPACE
 cog.outl()
 for key in SEARCH_KEYS_WORKSPACE:
     cog.outl(f"- `{key}`")
