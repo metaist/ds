@@ -9,7 +9,7 @@ from shlex import split
 import pytest
 
 # pkg
-from ds.configs import parse_tasks
+from ds.tasks import parse_tasks
 from ds.symbols import TASK_COMPOSITE
 from ds.symbols import TASK_DISABLED
 from ds.symbols import TASK_KEEP_GOING

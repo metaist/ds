@@ -12,6 +12,7 @@ from typing import List
 from typing import Mapping
 from typing import Match
 from typing import Optional
+import logging
 import re
 
 # pkg
@@ -22,6 +23,8 @@ from .symbols import SHELL_CONTINUE
 from .symbols import SHELL_TERMINATORS
 from .symbols import starts
 from .symbols import peek_end
+
+log = logging.getLogger(__name__)
 
 RE_ARGS = re.compile(r"(?:\$(@|\d+)|\$\{(@|\d+)(?::-(.*?))?\})")
 """Regex for matching an argument to be interpolated."""
@@ -285,7 +288,7 @@ def wrap_cmd(cmd: str, width: int = DEFAULT_WIDTH) -> str:
 def makefile_loads(text: str, debug: bool = False) -> Dict[str, Dict[str, Any]]:
     """Load a `Makefile`."""
     # debug = True
-    print("WARNING: Makefile support is experimental.")
+    log.warning("EXPERIMENTAL: Trying to parse simplified Makefile format.")
 
     result: Dict[str, Dict[str, Any]] = {}
     prefix = "\t"

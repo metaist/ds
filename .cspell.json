@@ -10,6 +10,7 @@
     "doctests",
     "graphlib",
     "justfile",
+    "levelname",
     "metaist",
     "mypy",
     "nedbatchelder",

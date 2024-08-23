@@ -7,11 +7,11 @@ from pathlib import Path
 import pytest
 
 # pkg
-from ds.configs import Config
-from ds.configs import find_config
-from ds.configs import glob_apply
-from ds.configs import glob_refine
+from ds.searchers import glob_apply
+from ds.searchers import glob_refine
 from ds.symbols import GLOB_EXCLUDE
+from ds.tasks import Config
+from ds.tasks import find_config
 
 EXAMPLES = Path("examples")
 """Path to examples."""

@@ -2,6 +2,7 @@
 
 # std
 from __future__ import annotations
+from contextlib import contextmanager
 from dataclasses import dataclass
 from dataclasses import field
 from fnmatch import fnmatch
@@ -12,11 +13,23 @@ from shlex import join
 from shlex import split
 from subprocess import run
 from typing import Any
+from typing import Callable
 from typing import Dict
-from typing import Iterable
+from typing import Iterator
 from typing import List
 from typing import Optional
+from typing import Tuple
+import json
+import logging
+import os
 import sys
+
+# Coverage disabled to cover all python versions.
+# TODO 2026-10-04 [3.10 EOL]: remove conditional
+if sys.version_info >= (3, 11):  # pragma: no cover
+    import tomllib as toml
+else:  # pragma: no cover
+    import tomli as toml
 
 # Coverage disabled to cover all python versions.
 # TODO 2024-10-31 [3.8 EOL]: remove conditional
@@ -27,19 +40,114 @@ else:  # pragma: no cover
 
 # pkg
 from .env import interpolate_args
+from .env import makefile_loads
 from .env import read_env
+from .env import TempEnv
 from .env import wrap_cmd
 from .symbols import GLOB_DELIMITER
 from .symbols import GLOB_EXCLUDE
+from .symbols import KEY_DELIMITER
 from .symbols import starts
 from .symbols import TASK_COMPOSITE
+from .symbols import TASK_DISABLED
 from .symbols import TASK_KEEP_GOING
+from .searchers import get_key
+from .searchers import GlobMatches
+from .searchers import glob_names
+from .searchers import glob_apply
+
+log = logging.getLogger(__name__)
+
+Tasks = Dict[str, "Task"]
+"""Mapping of task names to `Task` objects."""
 
 CycleError = graphlib.CycleError
 """Error thrown where there is a cycle in the tasks."""
 
 ORIGINAL_CWD = Path.cwd()
 """Save a reference to the original working directory."""
+
+Loader = Callable[[str], Dict[str, Any]]
+"""A loader takes text and returns a mapping of strings to values."""
+
+LOADERS: Dict[str, Loader] = {
+    "*.json": json.loads,
+    "*.toml": toml.loads,
+    "*[Mm]akefile": makefile_loads,
+}
+"""Mapping of file patterns to load functions."""
+
+# NOTE: Used by cog in README.md
+SEARCH_FILES = [
+    "ds.toml",
+    ".ds.toml",
+    "Cargo.toml",
+    "composer.json",
+    "package.json",
+    "pyproject.toml",
+    "Makefile",
+    "makefile",
+]
+"""Search order for configuration file names."""
+
+# NOTE: Used by cog in README.md
+SEARCH_KEYS_TASKS = [
+    "scripts",  # ds.toml, .ds.toml, package.json, composer.json
+    "tool.ds.scripts",  # pyproject.toml
+    "tool.pdm.scripts",  # pyproject.toml
+    "tool.rye.scripts",  # pyproject.toml
+    "package.metadata.scripts",  # Cargo.toml
+    "workspace.metadata.scripts",  # Cargo.toml
+    "Makefile",  # Makefile
+]
+"""Search order for configuration keys."""
+
+# NOTE: Used by cog in README.md
+SEARCH_KEYS_WORKSPACE = [
+    "workspace.members",  # ds.toml, .ds.toml, Cargo.toml
+    "tool.ds.workspace.members",  # project.toml
+    "tool.rye.workspace.members",  # pyproject.toml
+    "tool.uv.workspace.members",  # pyproject.toml
+    "workspaces",  # package.json
+]
+"""Search for workspace configuration keys."""
+
+
+@dataclass
+class Config:
+    """ds configuration."""
+
+    path: Path
+    """Path to the configuration file."""
+
+    config: Dict[str, Any]
+    """Configuration data."""
+
+    tasks: Tasks = field(default_factory=dict)
+    """Task definitions."""
+
+    members: GlobMatches = field(default_factory=dict)
+    """Workspace members mapped to `True` for active members."""
+
+    @staticmethod
+    def load(path: Path) -> Config:
+        """Try to load a configuration file."""
+        for pattern, loader in LOADERS.items():
+            if fnmatch(path.name, pattern):
+                return Config(path, loader(path.read_text()))
+        raise LookupError(f"Not sure how to read file: {path}")
+
+    def parse(self, require_workspace: bool = False) -> Config:
+        """Parse a configuration file."""
+        found, self.members = parse_workspace(self.path.parent, self.config)
+        if require_workspace and not found:
+            raise LookupError("Could not find workspace configuration.")
+
+        found, self.tasks = parse_tasks(self.config, self.path)
+        if not require_workspace and not found:
+            raise LookupError("Could not find task configuration.")
+
+        return self
 
 
 @dataclass
@@ -58,8 +166,23 @@ class Task:
     help: str = ""
     """Task description."""
 
+    verbatim: bool = False
+    """Whether to format the command at all."""
+
+    depends: List[Task] = field(default_factory=list)
+    """Tasks to execute before this one."""
+
     cmd: str = ""
     """Shell command to execute after `depends`."""
+
+    code: int = 0
+    """Return code from running this task."""
+
+    # NOTE: args, cwd, env, keep_going are overridable
+    # via the CLI or when calling a composite command.
+
+    args: List[str] = field(default_factory=list)
+    """Additional arguments to `cmd`."""
 
     cwd: Optional[Path] = None
     """Task working directory."""
@@ -67,14 +190,11 @@ class Task:
     env: Dict[str, str] = field(default_factory=dict)
     """Task environment variables."""
 
-    depends: List[Task] = field(default_factory=list)
-    """Tasks to execute before this one."""
+    _env: Dict[str, str] = field(default_factory=dict)
+    """Hidden environment variables."""
 
     keep_going: bool = False
     """Ignore a non-zero return code."""
-
-    verbatim: bool = False
-    """Whether to format the command at all."""
 
     @staticmethod
     def parse(config: Any, origin: Optional[Path] = None, key: str = "") -> Task:
@@ -244,34 +364,55 @@ class Task:
 
         # 4. Run in the shell.
         cmd = interpolate_args(self.cmd, extra)
-        dry_prefix = "[DRY RUN]\n" if dry_run else ""
-        print(f"\n{dry_prefix}>", wrap_cmd(self.as_args(cwd, env, keep_going)))
-        if self.verbatim:
-            print("$", cmd.strip().replace("\n", "\n$ "))
-        else:
-            print(f"$ {wrap_cmd(cmd)}")
-        if dry_run:  # do not actually run the command
-            return 0
+        with proxy_cmd(self, cwd or Path(), cmd) as cmd:
+            dry_prefix = "[DRY RUN]\n" if dry_run else ""
+            print(f"\n{dry_prefix}>", wrap_cmd(self.as_args(cwd, env, keep_going)))
+            if self.verbatim:
+                print("$", cmd.strip().replace("\n", "\n$ "))
+            else:
+                print(f"$ {wrap_cmd(cmd)}")
+            if dry_run:  # do not actually run the command
+                return 0
 
-        combined_env = {**ENV, **env}
-        proc = run(
-            cmd,
-            shell=True,
-            text=True,
-            cwd=cwd,
-            env=combined_env,
-            executable=combined_env.get("SHELL"),
-        )
+            combined_env = {**ENV, **env}
+            proc = run(
+                cmd,
+                shell=True,
+                text=True,
+                cwd=cwd,
+                env=combined_env,
+                executable=combined_env.get("SHELL"),
+            )
+
         code = proc.returncode
-
         if code != 0 and not keep_going:
-            print("ERROR: return code =", code)
+            log.error(f"return code = {code}")
             sys.exit(code)
         return 0  # either it was zero or we keep going
 
 
-Tasks = Dict[str, Task]
-"""Mapping of task names to `Task` objects."""
+@contextmanager
+def proxy_cmd(task: Task, cwd: Path, cmd: str) -> Iterator[str]:
+    """Change conditions for a command."""
+    # node: add ./node_modules/bin to PATH
+    node_modules = Path("node_modules") / ".bin"
+    checks = [node_modules]
+    if task.origin:
+        checks.append(task.origin / node_modules)
+
+    node_bin = Path(".") / "node_modules" / ".bin"
+    if cwd and not node_bin.exists():
+        node_bin = cwd / "node_modules" / ".bin"
+
+    if node_bin.exists():
+        prev_path = ENV.get("PATH", "")
+        next_path = f"{node_bin}{os.pathsep if prev_path else ''}{prev_path}"
+        with TempEnv(PATH=next_path):
+            yield cmd
+        return
+
+    # default: return command unchanged
+    yield cmd
 
 
 def check_cycles(tasks: Tasks) -> List[str]:
@@ -301,23 +442,79 @@ def print_tasks(path: Path, tasks: Tasks) -> None:
         task.pprint()
 
 
-def glob_names(names: Iterable[str], patterns: List[str]) -> List[str]:
-    """Return the names of `tasks` that match `patterns`.
+def parse_workspace(
+    path: Path, config: Dict[str, Any]
+) -> Tuple[bool, Dict[Path, bool]]:
+    """Parse workspace configurations."""
+    found = False
+    members: Dict[Path, bool] = {}
+    key = ""
+    patterns: List[str] = []
+    for key in SEARCH_KEYS_WORKSPACE:
+        patterns = get_key(config, key)
+        if patterns is not None:
+            found = True
+            break
+    if not found:
+        return found, members
 
-    Prefixing a pattern with `!` will remove that matched pattern
-    from the result.
+    members = glob_apply(path, patterns)
 
-    >>> names = ['cab', 'car', 'cat', 'crab']
-    >>> glob_names(names, ['c?r', 'c*b'])
-    ['cab', 'car', 'crab']
+    # special case: Cargo.toml exclude patterns
+    if KEY_DELIMITER in key:
+        patterns = get_key(config, key.split(KEY_DELIMITER)[:-1] + ["exclude"])
+        if patterns:  # remove all of these
+            patterns = [f"{GLOB_EXCLUDE}{p}" for p in patterns]
+            members = glob_apply(path, patterns, members)
+    return found, members
 
-    >>> glob_names(names, ['*', '!crab'])
-    ['cab', 'car', 'cat']
-    """
-    result: Dict[str, bool] = {name: False for name in names}
-    for pattern in patterns:
-        exclude, pattern = starts(pattern, GLOB_EXCLUDE)
-        for name in result:
-            if fnmatch(name, pattern):
-                result[name] = not exclude
-    return [name for name, include in result.items() if include]
+
+def parse_tasks(
+    config: Dict[str, Any], origin: Optional[Path] = None
+) -> Tuple[bool, Tasks]:
+    """Parse task configurations."""
+    found = False
+    tasks: Tasks = {}
+    key, section = "", {}
+    for key in SEARCH_KEYS_TASKS:
+        section = get_key(config, key)
+        if section is not None:
+            found = True
+            break
+
+    if not found:
+        return found, tasks
+
+    assert isinstance(section, Dict)
+    for name, cmd in section.items():
+        name = str(name).strip()
+        if not name or name.startswith(TASK_DISABLED):
+            continue
+
+        # special case: rye bare cmd as list
+        if key == "tool.rye.scripts" and isinstance(cmd, list):
+            cmd = {"cmd": cmd}
+
+        task = Task.parse(cmd, origin, key)
+        task.name = name
+        tasks[name] = task
+
+    return found, tasks
+
+
+def find_config(
+    start: Path, require_workspace: bool = False, debug: bool = False
+) -> Config:
+    """Return the config file in `start` or its parents."""
+    log.debug(f"require_workspace={require_workspace}")
+    for path in (start / "x").resolve().parents:  # to include start
+        for name in SEARCH_FILES:
+            check = path / name
+            log.debug(f"check {check.resolve()}")
+            if not check.exists():
+                continue
+            try:
+                return Config.load(check).parse(require_workspace)
+            except LookupError:
+                continue  # No valid sections.
+    raise FileNotFoundError("No valid configuration file found.")
