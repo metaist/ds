@@ -140,13 +140,15 @@ pipx run ds-run --version
 ```text
 Usage: ds [--help | --version] [--debug]
           [--dry-run]
+          [--no-config]
+          [--no-project]
           [--list]
           [--cwd PATH]
           [--file PATH]
           [--env-file PATH]
           [(--env NAME=VALUE)...]
           [--workspace GLOB]...
-          [<task>[: <options>... --]...]
+          [<task>...]
 
 Options:
   -h, --help
@@ -182,6 +184,12 @@ Options:
   -l, --list
     List available tasks and exit.
 
+  --no-config
+    Do not search for a configuration file.
+
+  --no-project
+    Do not search for project dependencies, e.g., `node_modules`, `.venv`
+
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.
 
@@ -191,11 +199,16 @@ Options:
     Read more about configuring workspaces:
     https://github.com/metaist/ds#workspaces
 
-  <task>[: <options>... --]
+  <task>
     One or more tasks to run with task-specific arguments.
 
-    Use a colon (`:`) to indicate start of arguments and
-    double-dash (`--`) to indicate the end.
+    The simplest way to pass arguments to tasks is to put them in quotes:
+
+    $ ds 'echo "Hello world"'
+
+    For more complex cases you can use a colon (`:`) to indicate start of arguments and double-dash (`--`) to indicate the end:
+
+    $ ds echo: "Hello from" -- echo: "the world"
 
     If the first <option> starts with a hyphen (`-`), you may omit the
     colon (`:`). If there are no more tasks after the last option, you
@@ -240,7 +253,7 @@ Read more:
 If you don't provide a config file using the `--file` option, `ds` will search the current directory and all of its parents for files with these names in the following order:
 
 <!--[[[cog
-from ds.configs import SEARCH_FILES
+from ds.tasks import SEARCH_FILES
 cog.outl()
 for key in SEARCH_FILES:
     cog.outl(f"- `{key}`")
@@ -279,7 +292,7 @@ If you provide one or more `--workspace` options, `--cwd` is ignored and tasks a
 `ds` searches configuration files for the following keys, in the following order, to find task definitions. The first key that's found is used and should contain a mapping from [task names](#task-names) to [basic tasks](#basic-task) or [composite tasks](#composite-task).
 
 <!--[[[cog
-from ds.configs import SEARCH_KEYS_TASKS
+from ds.tasks import SEARCH_KEYS_TASKS
 cog.outl()
 for key in SEARCH_KEYS_TASKS:
     cog.outl(f"- `{key}`")
@@ -508,7 +521,7 @@ Workspaces are a way of managing multiple sub-projects from a top-level. `ds` su
 When `ds` is called with the `--workspace` option, the configuration file must have one of the following keys:
 
 <!--[[[cog
-from ds.configs import SEARCH_KEYS_WORKSPACE
+from ds.tasks import SEARCH_KEYS_WORKSPACE
 cog.outl()
 for key in SEARCH_KEYS_WORKSPACE:
     cog.outl(f"- `{key}`")
