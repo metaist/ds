@@ -20,6 +20,7 @@ from .searchers import glob_parents
 from .symbols import GLOB_DELIMITER
 from .symbols import TASK_COMPOSITE
 from .tasks import Task
+from .tasks import Tasks
 
 log = logging.getLogger(__name__)
 
@@ -66,10 +67,7 @@ class Runner:
     args: Args
     """Command-line arguments."""
 
-    # config: Config
-    # """Parsed configuration file."""
-
-    tasks: Dict[str, Task]
+    tasks: Tasks
     """Mapping of names to tasks."""
 
     def run(self, task: Task, override: Task) -> int:
