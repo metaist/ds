@@ -261,13 +261,12 @@ cog.outl()
 ]]] -->
 
 - `ds.toml`
-- `.ds.toml`
+- `pyproject.toml`
+- `package.json`
 - `Cargo.toml`
 - `composer.json`
-- `package.json`
-- `pyproject.toml`
-- `Makefile`
-- `makefile`
+- `[Mm]akefile`
+- `.ds.toml`
 
 <!--[[[end]]]-->
 

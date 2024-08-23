@@ -54,6 +54,7 @@ from .symbols import TASK_KEEP_GOING
 from .searchers import get_key
 from .searchers import GlobMatches
 from .searchers import glob_names
+from .searchers import glob_parents
 from .searchers import glob_apply
 
 log = logging.getLogger(__name__)
@@ -80,13 +81,12 @@ LOADERS: Dict[str, Loader] = {
 # NOTE: Used by cog in README.md
 SEARCH_FILES = [
     "ds.toml",
+    "pyproject.toml", # python
+    "package.json", # node
+    "Cargo.toml", # rust
+    "composer.json", # php
+    "[Mm]akefile",
     ".ds.toml",
-    "Cargo.toml",
-    "composer.json",
-    "package.json",
-    "pyproject.toml",
-    "Makefile",
-    "makefile",
 ]
 """Search order for configuration file names."""
 
@@ -502,19 +502,12 @@ def parse_tasks(
     return found, tasks
 
 
-def find_config(
-    start: Path, require_workspace: bool = False, debug: bool = False
-) -> Config:
+def find_config(start: Path, require_workspace: bool = False) -> Config:
     """Return the config file in `start` or its parents."""
     log.debug(f"require_workspace={require_workspace}")
-    for path in (start / "x").resolve().parents:  # to include start
-        for name in SEARCH_FILES:
-            check = path / name
-            log.debug(f"check {check.resolve()}")
-            if not check.exists():
-                continue
-            try:
-                return Config.load(check).parse(require_workspace)
-            except LookupError:
-                continue  # No valid sections.
+    for _, check in glob_parents(start, {v: v for v in SEARCH_FILES}):
+        try:
+            return Config.load(check).parse(require_workspace)
+        except LookupError:
+            continue  # No valid sections.
     raise FileNotFoundError("No valid configuration file found.")

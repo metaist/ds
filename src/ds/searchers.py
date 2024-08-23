@@ -9,6 +9,7 @@ from typing import Iterable
 from typing import Iterator
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 import logging
 
@@ -22,17 +23,6 @@ log = logging.getLogger(__name__)
 
 GlobMatches = Dict[Path, bool]
 """Mapping a path to whether it should be included."""
-
-
-def walk_parents(start: Path, names: Iterable[str]) -> Iterator[Path]:
-    """Yield name matches as you walk up parents."""
-    for path in (start / "x").resolve().parents:
-        for name in names:
-            check = path / name
-            log.debug(f"check {check}")
-            if not check.exists():
-                continue
-            yield check
 
 
 def get_key(
@@ -63,6 +53,20 @@ def get_key(
         # key doesn't exist, index is unreachable, or item is not indexable
         result = default
     return result
+
+
+def glob_parents(start: Path, patterns: Dict[str, str]) -> Iterator[Tuple[str, Path]]:
+    """Yield glob matches in every parent."""
+    for path in (start / "x").resolve().parents:
+        for key, pattern in patterns.items():
+            log.debug(f"check {path / pattern}")
+            if "*" in pattern or "?" in pattern or "[" in pattern or "/" in pattern:
+                for check in sorted(path.glob(pattern)):
+                    yield key, check
+            else:  # just normal check
+                check = path / pattern
+                if check.exists():
+                    yield key, check
 
 
 def glob_names(names: Iterable[str], patterns: List[str]) -> List[str]:
