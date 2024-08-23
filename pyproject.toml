@@ -70,6 +70,9 @@ classifiers = [
   "Typing :: Typed",
 ]
 
+[tool.coverage.report]
+exclude_also = ["no cover: start(?s:.)*?no cover: stop"]
+
 [tool.ds.scripts] # run dev scripts <https://github.com/metaist/ds>
 # Lint
 lint = ["ruff-*", "+cspell"]

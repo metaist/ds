@@ -137,7 +137,8 @@ def main(argv: Optional[List[str]] = None) -> None:
             handler.setFormatter(formatter)
         log.debug(args)
 
-    if __pubdate__ == "unpublished":
+    if __pubdate__ == "unpublished":  # pragma: no cover
+        # NOTE: When testing we're always using the development version.
         log.warning("You are using a development version of ds.")
 
     if args.help:

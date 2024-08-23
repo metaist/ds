@@ -43,9 +43,10 @@ def venv_activate_cmd(venv: Path) -> str:
         return f"source {venv / 'bin' / 'activate.csh'};"
     if "fish" in shell:
         return f"source {venv / 'bin' / 'activate.fish'};"
-    if sys.platform in ["linux", "linux2", "darwin"]:
+    if sys.platform.startswith("linux") or sys.platform.startswith("darwin"):
         return default
 
+    # no cover: start
     log.warning("EXPERIMENTAL: Trying to detect venv activation script.")
 
     # mixed
@@ -59,6 +60,7 @@ def venv_activate_cmd(venv: Path) -> str:
         return str(venv / "Scripts" / "activate")
 
     return default
+    # no cover: stop
 
 
 @dataclasses.dataclass
@@ -139,6 +141,7 @@ class Runner:
                 break
         # maybe found them all
 
+        # node
         if node_bin := found.get("node_modules"):
             node_bin = node_bin / ".bin"
             if node_bin.exists():
@@ -148,6 +151,7 @@ class Runner:
                     prev_path = f"{os.pathsep}{prev_path}"
                 result._env["PATH"] = f"{node_bin}{prev_path}"
 
+        # python
         if in_venv():
             log.debug("we are in a .venv")
             return result
@@ -163,7 +167,7 @@ class Runner:
         # TODO: refactor printing task with --list
         dry_prefix = "[DRY RUN]\n" if self.args.dry_run else ""
         print(
-            f"\n{dry_prefix}>*",
+            f"\n{dry_prefix}>",
             wrap_cmd(task.as_args(resolved.cwd, resolved.env, resolved.keep_going)),
         )
         if task.verbatim:

@@ -36,6 +36,15 @@ def test_list() -> None:
     for arg in ["", "-l", "--list"]:
         main(split(f"ds {arg}"))
 
+    # support --no-config
+    main(split("ds --no-config"))
+
+
+def test_echo() -> None:
+    """Just run a command from the top-level."""
+    main(split("ds 'echo hello'"))
+    main(split("ds --no-config 'echo hello'"))
+
 
 def test_good_loop() -> None:
     """Run some loop-looking tasks."""
