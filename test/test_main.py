@@ -104,32 +104,32 @@ def test_stay_in_file() -> None:
 def test_get_file_from_env() -> None:
     """Get config file from environment variable."""
     path = str(Path("examples") / "formats" / "package.json")
-    with TempEnv(_DS_CURRENT_FILE=path):
+    with TempEnv(DS_INTERNAL__FILE=path):
         main(split("ds"))
 
-    with TempEnv(_DS_CURRENT_FILE=path):
+    with TempEnv(DS_INTERNAL__FILE=path):
         main(split("ds --debug"))
 
-    with TempEnv(_DS_CURRENT_FILE=None):
+    with TempEnv(DS_INTERNAL__FILE=None):
         main(split("ds"))
 
 
 def test_run_workspace() -> None:
     """Run a workspace."""
-    with TempEnv(_DS_CURRENT_FILE=None):
+    with TempEnv(DS_INTERNAL__FILE=None):
         with pushd(PATH_WK):
             main(split("ds --debug -w*"))
 
 
 def test_run_some_workspaces() -> None:
     """Run in only one workspace."""
-    with TempEnv(_DS_CURRENT_FILE=None):
+    with TempEnv(DS_INTERNAL__FILE=None):
         with pushd(PATH_WK):
             main(split("ds -w '*/a'"))
 
 
 def test_workspace_same_name() -> None:
     """Run files with same name."""
-    with TempEnv(_DS_CURRENT_FILE=None):
+    with TempEnv(DS_INTERNAL__FILE=None):
         with pushd(PATH_WK):
             main(split("ds --file 'package.json' -w*"))

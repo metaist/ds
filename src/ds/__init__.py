@@ -32,8 +32,6 @@ from .tasks import find_config
 from .tasks import print_tasks
 from .tasks import Task
 
-# from .runner import Runner
-
 __version__ = "1.2.0post"
 __pubdate__ = "unpublished"
 
@@ -71,8 +69,8 @@ def load_config(args: Args) -> Config:
     """Load configuration file."""
     try:
         if not args.file:
-            if path := ENV.get("_DS_CURRENT_FILE"):
-                log.debug(f"Setting --file to $_DS_CURRENT_FILE = {path}")
+            if path := ENV.get("DS_INTERNAL__FILE"):
+                log.debug(f"Setting --file to $DS_INTERNAL__FILE = {path}")
                 args.file = Path(path)
 
         require_workspace = bool(args.workspace)
@@ -121,7 +119,7 @@ def run_workspace(args: Args, config: Config) -> None:
             member_args.file = None
 
         try:
-            with TempEnv(_DS_CURRENT_FILE=None):
+            with TempEnv(DS_INTERNAL__FILE=None):
                 with pushd(member):
                     cli_args = member_args.as_argv()
                     print(f"$ pushd {member}")
@@ -180,7 +178,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         runner.tasks = config.tasks
 
     try:
-        with TempEnv(_DS_CURRENT_FILE=str(args.file)):
+        with TempEnv(DS_INTERNAL__FILE=str(args.file)):
             with pushd(args.cwd or Path()):
                 runner.run(args.task, Task())
     except KeyboardInterrupt:  # pragma: no cover

@@ -57,4 +57,4 @@ release = """
 """
 
 # This task is called from package.json in the same directory.
-outside = "echo $_DS_CURRENT_FILE"
+outside = "echo $DS_INTERNAL__FILE"
