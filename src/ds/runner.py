@@ -24,15 +24,6 @@ from .tasks import Task
 log = logging.getLogger(__name__)
 
 
-def get_venv() -> str:
-    """Return the path to the current virtual environment."""
-    # NOTE: We only look at the `VIRTUAL_ENV` environment variable
-    # because we might be in a `uvx` or `pipx` virtual environment.
-    # Those environments help us stay isolated, but they don't set
-    # this environment variable.
-    return ENV.get("VIRTUAL_ENV", "")
-
-
 def venv_activate_cmd(venv: Path) -> str:
     """Return command for activating a .venv
 
@@ -141,11 +132,17 @@ class Runner:
             return override
 
         log.info("Searching for project dependencies. To disable: add --no-project")
-        found, to_find = {}, {}
+        result = dataclasses.replace(override)  # make a copy
+        to_find: Dict[str, str] = {}
+        found: Dict[str, Path] = {}
 
         # python
-        if venv := get_venv():
-            log.debug(f"[python] venv detected: {venv}")
+        # NOTE: We only look at the `VIRTUAL_ENV` environment variable
+        # because we might be in a `uvx` or `pipx` virtual environment.
+        # Those environments help us stay isolated, but they don't set
+        # this environment variable.
+        if current_venv := ENV.get("VIRTUAL_ENV"):
+            log.debug(f"[python] venv detected: {current_venv}")
         else:
             log.debug("[python] No venv detected; searching for */pyvenv.cfg")
             to_find["python_venv"] = "*/pyvenv.cfg"
@@ -165,8 +162,6 @@ class Runner:
                 break
         # done searching
 
-        result = dataclasses.replace(override)  # make a copy
-
         # python
         if venv := found.get("python_venv"):
             venv = venv.parent
@@ -176,8 +171,7 @@ class Runner:
         # node
         if node_bin := found.get("node_modules"):
             log.debug(f"[node] found: {node_bin}")
-            combined_env = {**ENV, **override.env}
-            prev = combined_env.get("PATH", "")
+            prev = {**ENV, **result.env}.get("PATH", "")
             result._env["PATH"] = f"{node_bin}{os.pathsep if prev else ''}{prev}"
 
         return result
