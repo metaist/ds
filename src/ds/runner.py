@@ -151,11 +151,11 @@ class Runner:
             to_find["python_venv"] = "*/pyvenv.cfg"
 
         # node
-        if task.origin and task.origin.name == "package.json":
-            log.debug("[node] Using package.json; searching for node_modules/.bin")
+        if not task.origin or (task.origin and task.origin.name == "package.json"):
+            log.debug("[node] searching for node_modules/.bin")
             to_find["node_modules"] = "node_modules/.bin"
         else:
-            log.debug("[node] Not in package.json; not searching for node_modules/.bin")
+            log.debug("[node] Not searching for node_modules/.bin")
 
         # ready to search
         for key, item in glob_parents(Path(), to_find):
