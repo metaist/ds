@@ -85,7 +85,7 @@ def load_config(args: Args) -> Config:
             raise NotADirectoryError(f"Cannot find directory: {args.cwd}")
     except CycleError as e:
         cycle = e.args[1]
-        log.error(f"Task cycle detected: {" => ".join(cycle)}")
+        log.error(f"Task cycle detected: {' => '.join(cycle)}")
         sys.exit(1)
     except (FileNotFoundError, NotADirectoryError, LookupError) as e:
         log.error(str(e))
