@@ -17,6 +17,7 @@ from .symbols import ARG_BEG
 from .symbols import ARG_END
 from .symbols import ARG_OPTION
 from .tasks import Task
+from .parsers import parse_task
 
 # NOTE: Used by cog in README.md
 USAGE = """ds: Run dev scripts.
@@ -284,7 +285,7 @@ class Args:
             task = arg
             tasks.append(task)
 
-        args.task = Task.parse(tasks)
+        args.task = parse_task(tasks)
         args.task.cwd = args.cwd
 
         env = args.env

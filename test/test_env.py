@@ -10,7 +10,6 @@ import pytest
 # pkg
 from ds.env import interpolate_args
 from ds.env import wrap_cmd
-from ds.parsers import makefile_loads
 from ds.symbols import ARG_PREFIX
 from ds.symbols import ARG_REST
 

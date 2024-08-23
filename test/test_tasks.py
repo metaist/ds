@@ -9,6 +9,7 @@ import pytest
 
 # pkg
 from ds.args import Args
+from ds.parsers import parse_task
 from ds.runner import Runner
 from ds.tasks import print_tasks
 from ds.tasks import Task
@@ -22,7 +23,7 @@ def _run(task: Task, tasks: Optional[Tasks] = None) -> int:
 def test_print() -> None:
     """Print tasks."""
     # long task
-    task = Task.parse("echo " * 100)
+    task = parse_task("echo " * 100)
     task.pprint()
 
     print_tasks(Path(), {})
@@ -49,14 +50,14 @@ def test_as_args() -> None:
 def test_missing() -> None:
     """Try to run a missing task."""
     with pytest.raises(SystemExit) as e_info:
-        task = Task.parse("task-and-command-not-found")
+        task = parse_task("task-and-command-not-found")
         _run(task)
     assert e_info.value.code == 127  # command not found
 
 
 def test_single() -> None:
     """Run a task."""
-    tasks: Tasks = {"ls": Task.parse("ls -la")}
+    tasks: Tasks = {"ls": parse_task("ls -la")}
 
     _run(tasks["ls"], tasks)
     Runner(Args(), tasks).run(tasks["ls"], Task(args=["-h"]))
@@ -65,19 +66,19 @@ def test_single() -> None:
 
 def test_multiple() -> None:
     """Run multiple tasks."""
-    tasks: Tasks = {"ls": Task.parse("ls -la"), "all": Task.parse(["ls"])}
+    tasks: Tasks = {"ls": parse_task("ls -la"), "all": parse_task(["ls"])}
     _run(tasks["all"], tasks)
 
 
 def test_composite_shell() -> None:
     """Run a shell command in a composite task."""
-    tasks: Tasks = {"all": Task.parse(["ls -la"])}
+    tasks: Tasks = {"all": parse_task(["ls -la"])}
     _run(tasks["all"], tasks)
 
 
 def test_failing() -> None:
     """Run a failing task."""
-    tasks: Tasks = {"fail": Task.parse("exit 123")}
+    tasks: Tasks = {"fail": parse_task("exit 123")}
     with pytest.raises(SystemExit) as e_info:
         _run(tasks["fail"], tasks)
     assert e_info.value.code == 123

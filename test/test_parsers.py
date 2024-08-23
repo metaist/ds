@@ -9,14 +9,14 @@ from shlex import split
 import pytest
 
 # pkg
+from ds.parsers import makefile_loads
+from ds.parsers import parse_tasks
 from ds.symbols import TASK_COMPOSITE
 from ds.symbols import TASK_DISABLED
 from ds.symbols import TASK_KEEP_GOING
 from ds.tasks import check_cycles
 from ds.tasks import CycleError
-from ds.tasks import parse_tasks
 from ds.tasks import Task
-from ds.parsers import makefile_loads
 
 
 def test_no_key() -> None:

@@ -7,7 +7,6 @@ from os import get_terminal_size
 from typing import Any
 from typing import Dict
 from typing import Iterator
-from typing import Tuple
 from typing import List
 from typing import Mapping
 from typing import Match

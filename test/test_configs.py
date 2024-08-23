@@ -7,10 +7,10 @@ from pathlib import Path
 import pytest
 
 # pkg
+from ds.parsers import Config
 from ds.searchers import glob_apply
 from ds.searchers import glob_refine
 from ds.symbols import GLOB_EXCLUDE
-from ds.tasks import Config
 
 EXAMPLES = Path("examples")
 """Path to examples."""

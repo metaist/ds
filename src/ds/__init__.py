@@ -23,10 +23,10 @@ import sys
 from .args import Args
 from .args import USAGE
 from .env import TempEnv
+from .parsers import Config
 from .runner import Runner
 from .searchers import glob_refine
 from .tasks import check_cycles
-from .tasks import Config
 from .tasks import CycleError
 from .tasks import print_tasks
 from .tasks import Task
