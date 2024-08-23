@@ -9,8 +9,8 @@ import pytest
 
 # pkg
 from ds.env import interpolate_args
-from ds.env import makefile_loads
 from ds.env import wrap_cmd
+from ds.parsers import makefile_loads
 from ds.symbols import ARG_PREFIX
 from ds.symbols import ARG_REST
 
@@ -132,72 +132,3 @@ def test_wrap_cmd() -> None:
         "    'This is a really long string that cannot be broken.' \\\n"
         "    ;"
     )
-
-
-def test_makefile_loads() -> None:
-    """Parse basic `Makefile`."""
-    # empty
-    assert makefile_loads("", debug=True) == {"Makefile": {}}
-
-    # not supported: variables
-    assert makefile_loads("foo = bar", debug=True) == {"Makefile": {}}
-
-    # comments
-    assert makefile_loads("# Commented Line") == {"Makefile": {}}
-    assert makefile_loads("\n\n") == {"Makefile": {}}
-
-    # empty target
-    assert makefile_loads("target:") == {
-        "Makefile": {"target": {"composite": [], "shell": "", "verbatim": True}}
-    }
-
-    # has prerequisites, no recipe
-    assert makefile_loads("target: pre1 pre2") == {
-        "Makefile": {
-            "target": {"composite": ["pre1", "pre2"], "shell": "", "verbatim": True}
-        }
-    }
-
-    # no prerequisites, has recipe
-    assert makefile_loads("target:\n\techo Works") == {
-        "Makefile": {
-            "target": {"composite": [], "shell": "echo Works\n", "verbatim": True}
-        }
-    }
-
-    # has prerequisites and recipe
-    assert makefile_loads("target : pre1 pre2\n\techo Works") == {
-        "Makefile": {
-            "target": {
-                "composite": ["pre1", "pre2"],
-                "shell": "echo Works\n",
-                "verbatim": True,
-            }
-        }
-    }
-
-    # has prerequisites and recipe starting on same line
-    assert makefile_loads("target : pre1 -pre2 ;echo Hello\n\techo world") == {
-        "Makefile": {
-            "target": {
-                "composite": ["pre1", "+pre2"],
-                "shell": "echo Hello\necho world\n",
-                "verbatim": True,
-            }
-        }
-    }
-
-    # no prerequisites, but recipe starting on same line
-    assert makefile_loads("target : ;echo Hello\n\t-echo world") == {
-        "Makefile": {
-            "target": {
-                "composite": [],
-                "shell": "echo Hello\necho world\n",
-                "verbatim": True,
-                "keep_going": True,
-            }
-        }
-    }
-
-    # line continuation & .RECIPEPREFIX
-    # are exercised in the sample file

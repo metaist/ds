@@ -39,23 +39,19 @@ else:  # pragma: no cover
     import graphlib  # type: ignore
 
 # pkg
-from .env import interpolate_args
-from .env import makefile_loads
 from .env import read_env
-from .env import TempEnv
 from .env import wrap_cmd
-from .symbols import GLOB_DELIMITER
+from .parsers import makefile_loads
+from .searchers import get_key
+from .searchers import glob_apply
+from .searchers import glob_parents
+from .searchers import GlobMatches
 from .symbols import GLOB_EXCLUDE
 from .symbols import KEY_DELIMITER
 from .symbols import starts
 from .symbols import TASK_COMPOSITE
 from .symbols import TASK_DISABLED
 from .symbols import TASK_KEEP_GOING
-from .searchers import get_key
-from .searchers import GlobMatches
-from .searchers import glob_names
-from .searchers import glob_parents
-from .searchers import glob_apply
 
 log = logging.getLogger(__name__)
 
