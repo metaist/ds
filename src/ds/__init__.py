@@ -28,7 +28,6 @@ from .searchers import glob_refine
 from .tasks import check_cycles
 from .tasks import Config
 from .tasks import CycleError
-from .tasks import find_config
 from .tasks import print_tasks
 from .tasks import Task
 
@@ -80,7 +79,7 @@ def load_config(args: Args) -> Config:
             config = Config.load(args.file).parse(require_workspace)
         else:
             # search for a valid config
-            config = find_config(Path.cwd(), require_workspace)
+            config = Config.find(Path.cwd(), require_workspace)
             args.file = config.path
         # config loaded
 

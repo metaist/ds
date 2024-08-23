@@ -11,7 +11,6 @@ from ds.searchers import glob_apply
 from ds.searchers import glob_refine
 from ds.symbols import GLOB_EXCLUDE
 from ds.tasks import Config
-from ds.tasks import find_config
 
 EXAMPLES = Path("examples")
 """Path to examples."""
@@ -23,12 +22,12 @@ WORKSPACE = EXAMPLES / "workspace"
 def test_no_config() -> None:
     """Fail to find a config."""
     with pytest.raises(FileNotFoundError):
-        assert find_config(Path("/")) is None
+        assert Config.find(Path("/")) is None
 
 
-def test_find_config() -> None:
+def test_config_find() -> None:
     """Successfully find a config."""
-    assert find_config(Path(__file__)) is not None
+    assert Config.find(Path(__file__)) is not None
 
 
 def test_load_readme() -> None:
@@ -66,7 +65,7 @@ def test_unknown_suffix() -> None:
 
 def test_no_section() -> None:
     """Try to parse a file with no scripts."""
-    assert find_config(EXAMPLES / "misc")
+    assert Config.find(EXAMPLES / "misc")
 
 
 def test_bad_key() -> None:

@@ -126,6 +126,18 @@ class Config:
     """Workspace members mapped to `True` for active members."""
 
     @staticmethod
+    def find(start: Path, require_workspace: bool = False) -> Config:
+        """Return the config file in `start` or its parents."""
+        log.debug(f"require_workspace={require_workspace}")
+        for _, check in glob_parents(start, {v: v for v in SEARCH_FILES}):
+            try:
+                return Config.load(check).parse(require_workspace)
+            except LookupError:
+                continue  # No valid sections.
+        raise FileNotFoundError("No valid configuration file found.")
+
+
+    @staticmethod
     def load(path: Path) -> Config:
         """Try to load a configuration file."""
         for pattern, loader in LOADERS.items():
@@ -408,14 +420,3 @@ def parse_tasks(
         tasks[name] = task
 
     return found, tasks
-
-
-def find_config(start: Path, require_workspace: bool = False) -> Config:
-    """Return the config file in `start` or its parents."""
-    log.debug(f"require_workspace={require_workspace}")
-    for _, check in glob_parents(start, {v: v for v in SEARCH_FILES}):
-        try:
-            return Config.load(check).parse(require_workspace)
-        except LookupError:
-            continue  # No valid sections.
-    raise FileNotFoundError("No valid configuration file found.")
