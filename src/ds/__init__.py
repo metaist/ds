@@ -51,17 +51,17 @@ def pushd(dest: Union[str, Path]) -> Iterator[Path]:
     if isinstance(dest, str):
         dest = Path(dest)
 
+    dest = dest.resolve()
     cwd = Path.cwd()
     if cwd == dest:
         log.debug(f"staying in: {dest}")
         yield dest
         return
 
+    log.debug(f"going to: {dest}")
     os.chdir(dest)
     try:
-        path = Path(dest).resolve()
-        log.debug(f"going to: {path}")
-        yield path
+        yield dest
     finally:
         log.debug(f"coming back: {cwd}")
         os.chdir(cwd)
@@ -145,10 +145,6 @@ def main(argv: Optional[List[str]] = None) -> None:
             handler.setFormatter(formatter)
         log.debug(args)
 
-    if __pubdate__ == "unpublished":  # pragma: no cover
-        # NOTE: When testing we're always using the development version.
-        log.warning("You are using a development version of ds.")
-
     if args.help:
         print(USAGE)
         return
@@ -156,6 +152,10 @@ def main(argv: Optional[List[str]] = None) -> None:
     if args.version:
         print(f"{__version__} ({__pubdate__})")
         return
+
+    if __pubdate__ == "unpublished":  # pragma: no cover
+        # NOTE: When testing we're always using the development version.
+        log.warning("You are using a development version of ds.")
 
     runner = Runner(args, {})
     if args.no_config:

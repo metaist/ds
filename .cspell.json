@@ -30,6 +30,7 @@
     "pyvenv",
     "RECIPEPREFIX",
     "setuptools",
+    "tcsh",
     "tomli",
     "tomllib",
     "typechecks",

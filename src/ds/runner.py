@@ -6,17 +6,17 @@ from pathlib import Path
 from typing import Dict
 from typing import Tuple
 import dataclasses
+import logging
 import os
 import subprocess
 import sys
-import logging
 
 # pkg
 from .args import Args
 from .env import interpolate_args
 from .env import wrap_cmd
 from .searchers import glob_names
-from .searchers import walk_parents
+from .searchers import glob_parents
 from .symbols import GLOB_DELIMITER
 from .symbols import TASK_COMPOSITE
 from .tasks import Task
@@ -24,40 +24,47 @@ from .tasks import Task
 log = logging.getLogger(__name__)
 
 
-def in_venv() -> bool:
-    """Return True if we are in a venv."""
-    # TODO: consider using ENV["VIRTUAL_ENV"]
-    return hasattr(sys, "real_prefix") or (
-        hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix
-    )
+def get_venv() -> str:
+    """Return the path to the current virtual environment."""
+    # NOTE: We only look at the `VIRTUAL_ENV` environment variable
+    # because we might be in a `uvx` or `pipx` virtual environment.
+    # Those environments help us stay isolated, but they don't set
+    # this environment variable.
+    return ENV.get("VIRTUAL_ENV", "")
 
 
 def venv_activate_cmd(venv: Path) -> str:
-    """Return command for activating a .venv"""
-    # linux / macos
+    """Return command for activating a .venv
+
+    See: https://docs.python.org/3/library/venv.html#how-venvs-work
+    """
+    # Detecting PowerShell is not great.
+    # See: https://stackoverflow.com/a/55598796/
+    is_powershell = len(ENV.get("PSModulePath", "").split(os.pathsep)) >= 3
+
+    # POSIX
     shell = ENV.get("SHELL", "")
     default = f"source {venv / 'bin' / 'activate'};"
     if "bash" in shell or "zsh" in shell:  # most common
         return default
-    if "csh" in shell:
-        return f"source {venv / 'bin' / 'activate.csh'};"
     if "fish" in shell:
         return f"source {venv / 'bin' / 'activate.fish'};"
+    if "csh" in shell or "tcsh" in shell:
+        return f"source {venv / 'bin' / 'activate.csh'};"
     if sys.platform.startswith("linux") or sys.platform.startswith("darwin"):
+        if is_powershell:  # POSIX
+            return str(venv / "bin" / "Activate.ps1")
         return default
 
     # no cover: start
     log.warning("EXPERIMENTAL: Trying to detect venv activation script.")
 
-    # mixed
-    is_power_shell = len(ENV.get("PSModulePath", "").split(os.pathsep)) >= 3
-    if is_power_shell:
-        return str(venv / "Scripts" / "activate.ps1")
-
     # windows
     is_cmd_prompt = "cmd.exe" in ENV.get("ComSpec", "")
     if is_cmd_prompt:
         return str(venv / "Scripts" / "activate")
+    if is_powershell:
+        return str(venv / "Scripts" / "Activate.ps1")
 
     return default
     # no cover: stop
@@ -127,38 +134,51 @@ class Runner:
     def find_project(self, task: Task, override: Task) -> Task:
         """Find project-specific dependencies."""
         if self.args.no_project:
+            log.debug(
+                "Not searching for project dependencies. "
+                "To enable: remove --no-project."
+            )
             return override
 
-        result = dataclasses.replace(override)  # make a copy
-        combined_env = {**ENV, **override.env}
+        log.info("Searching for project dependencies. To disable: add --no-project")
+        found, to_find = {}, {}
 
-        found, to_find = {}, [".venv", "node_modules"]
-        for item in walk_parents(Path(), to_find):
-            name = item.name
-            if name not in found:
-                found[name] = item
-            if len(found) == len(to_find):
+        # python
+        if venv := get_venv():
+            log.debug(f"[python] venv detected: {venv}")
+        else:
+            log.debug("[python] No venv detected; searching for */pyvenv.cfg")
+            to_find["python_venv"] = "*/pyvenv.cfg"
+
+        # node
+        if task.origin and task.origin.name == "package.json":
+            log.debug("[node] Using package.json; searching for node_modules/.bin")
+            to_find["node_modules"] = "node_modules/.bin"
+        else:
+            log.debug("[node] Not in package.json; not searching for node_modules/.bin")
+
+        # ready to search
+        for key, item in glob_parents(Path(), to_find):
+            if key not in found:  # don't overwrite
+                found[key] = item
+            if len(found) == len(to_find):  # can end early
                 break
-        # maybe found them all
+        # done searching
+
+        result = dataclasses.replace(override)  # make a copy
+
+        # python
+        if venv := found.get("python_venv"):
+            venv = venv.parent
+            log.debug(f"[python] found: {venv}")
+            result.cmd = f"{venv_activate_cmd(venv)}\n{override.cmd}"
 
         # node
         if node_bin := found.get("node_modules"):
-            node_bin = node_bin / ".bin"
-            if node_bin.exists():
-                log.debug(f"found node_modules = {node_bin}")
-                prev_path = combined_env.get("PATH", "")
-                if prev_path:
-                    prev_path = f"{os.pathsep}{prev_path}"
-                result._env["PATH"] = f"{node_bin}{prev_path}"
-
-        # python
-        if in_venv():
-            log.debug("we are in a .venv")
-            return result
-
-        if venv := found.get(".venv"):
-            log.debug(f"found .venv: {venv}")
-            result.cmd = f"{venv_activate_cmd(venv)}\n{override.cmd}"
+            log.debug(f"[node] found: {node_bin}")
+            combined_env = {**ENV, **override.env}
+            prev = combined_env.get("PATH", "")
+            result._env["PATH"] = f"{node_bin}{os.pathsep if prev else ''}{prev}"
 
         return result
 
