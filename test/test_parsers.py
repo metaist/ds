@@ -9,7 +9,7 @@ from shlex import split
 import pytest
 
 # pkg
-from ds.parsers import makefile_loads
+from ds.parsers import makefile
 from ds.parsers import parse_tasks
 from ds.symbols import TASK_COMPOSITE
 from ds.symbols import TASK_DISABLED
@@ -200,36 +200,36 @@ def test_bad_loop() -> None:
 def test_makefile_loads() -> None:
     """Parse basic `Makefile`."""
     # empty
-    assert makefile_loads("", debug=True) == {"Makefile": {}}
+    assert makefile.loads("", debug=True) == {"Makefile": {}}
 
     # not supported: variables
-    assert makefile_loads("foo = bar", debug=True) == {"Makefile": {}}
+    assert makefile.loads("foo = bar", debug=True) == {"Makefile": {}}
 
     # comments
-    assert makefile_loads("# Commented Line") == {"Makefile": {}}
-    assert makefile_loads("\n\n") == {"Makefile": {}}
+    assert makefile.loads("# Commented Line") == {"Makefile": {}}
+    assert makefile.loads("\n\n") == {"Makefile": {}}
 
     # empty target
-    assert makefile_loads("target:") == {
+    assert makefile.loads("target:") == {
         "Makefile": {"target": {"composite": [], "shell": "", "verbatim": True}}
     }
 
     # has prerequisites, no recipe
-    assert makefile_loads("target: pre1 pre2") == {
+    assert makefile.loads("target: pre1 pre2") == {
         "Makefile": {
             "target": {"composite": ["pre1", "pre2"], "shell": "", "verbatim": True}
         }
     }
 
     # no prerequisites, has recipe
-    assert makefile_loads("target:\n\techo Works") == {
+    assert makefile.loads("target:\n\techo Works") == {
         "Makefile": {
             "target": {"composite": [], "shell": "echo Works\n", "verbatim": True}
         }
     }
 
     # has prerequisites and recipe
-    assert makefile_loads("target : pre1 pre2\n\techo Works") == {
+    assert makefile.loads("target : pre1 pre2\n\techo Works") == {
         "Makefile": {
             "target": {
                 "composite": ["pre1", "pre2"],
@@ -240,7 +240,7 @@ def test_makefile_loads() -> None:
     }
 
     # has prerequisites and recipe starting on same line
-    assert makefile_loads("target : pre1 -pre2 ;echo Hello\n\techo world") == {
+    assert makefile.loads("target : pre1 -pre2 ;echo Hello\n\techo world") == {
         "Makefile": {
             "target": {
                 "composite": ["pre1", "+pre2"],
@@ -251,7 +251,7 @@ def test_makefile_loads() -> None:
     }
 
     # no prerequisites, but recipe starting on same line
-    assert makefile_loads("target : ;echo Hello\n\t-echo world") == {
+    assert makefile.loads("target : ;echo Hello\n\t-echo world") == {
         "Makefile": {
             "target": {
                 "composite": [],
