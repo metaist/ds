@@ -1,4 +1,4 @@
-"""Test `npm` parser."""
+"""Test `package.json` parser."""
 
 # std
 from dataclasses import replace
@@ -10,25 +10,24 @@ from typing import Dict
 import pytest
 
 # pkg
+from . import EXAMPLE_FORMATS
+from . import EXAMPLE_WORKSPACE
 from ds.args import Args
 from ds.parsers import Config
 from ds.parsers.package_json import loads
 from ds.parsers.package_json import parse_tasks
 from ds.parsers.package_json import parse_workspace
-from ds.tasks import Task
 from ds.symbols import TASK_COMPOSITE
 from ds.symbols import TASK_KEEP_GOING
+from ds.tasks import Task
 
-EXAMPLES = Path(__file__).parent.parent.parent / "examples"
-EXAMPLE_WORKSPACE = EXAMPLES / "workspace"
-EXAMPLE_FORMATS = EXAMPLES / "formats"
 
 TASK = Task(origin=Path("package.json"), origin_key="scripts")
-"""Default task to manipulate."""
+"""Default task data."""
 
 
 def test_workspace() -> None:
-    """End-to-end test of workspace."""
+    """End-to-end test of workspace config."""
     args = Args(file=EXAMPLE_WORKSPACE / "package.json")
     config = Config(args.file, loads(args.file.read_text()))
     expected = {
