@@ -5,6 +5,7 @@
     "akefile",
     "capsys",
     "codeql",
+    "COMSPEC",
     "docopt",
     "doctest",
     "doctests",

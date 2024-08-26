@@ -197,7 +197,7 @@ class Runner:
             text=True,
             cwd=resolved.cwd,
             env=combined_env,
-            executable=combined_env.get("SHELL"),
+            executable=combined_env.get("SHELL", combined_env.get("COMSPEC")),
         )
 
         resolved.code = proc.returncode
