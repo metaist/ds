@@ -12,9 +12,10 @@ from . import Config
 from . import Membership
 from ..args import Args
 from ..env import RE_ARGS
-from ..searchers import glob_apply
 from ..searchers import glob_names
+from ..searchers import glob_paths
 from ..symbols import GLOB_DELIMITER
+from ..symbols import KEY_MISSING
 from ..symbols import TASK_COMPOSITE
 from ..symbols import TASK_DISABLED
 from ..symbols import TASK_KEEP_GOING
@@ -28,7 +29,7 @@ loads = json.loads
 """Standard `json` parser."""
 
 
-def parse_workspace(config: Config) -> Membership:
+def parse_workspace(config: Config, key: str = "workspaces") -> Membership:
     """`package.json` workspaces are in `workspaces`.
 
     - [npm](https://docs.npmjs.com/cli/v10/using-npm/workspaces)
@@ -36,23 +37,30 @@ def parse_workspace(config: Config) -> Membership:
     - [bun](https://bun.sh/docs/install/workspaces)
     - Not Supported: [pnpm](https://pnpm.io/workspaces): `pnpm-workspace.yaml`
     """
-    members: Membership = {}
-    if "workspaces" not in config.data:
-        raise KeyError(f"Missing 'workspaces' key in {config.path}")
+    data = config.data.get(key, KEY_MISSING)
+    if data is KEY_MISSING:
+        raise KeyError(f"Missing '{key}' key in {config.path}")
 
     # SUPPORTED: package.json: workspaces
     # https://docs.npmjs.com/cli/v10/configuring-npm/package-json#workspaces
     # It can describe either the direct paths of the folders to be used as
     # workspaces or it can define globs that will resolve to these same
     # folders.
+    members: Membership = {}
 
     # NON-STANDARD: We support glob exclusions. This is like what
     # `pnpm` does in `pnpm-workspace.yaml` and what `bun` hopes to implement.
-    members = glob_apply(config.path.parent, config.data["workspaces"])
+    members = glob_paths(
+        config.path.parent,
+        data,
+        allow_all=False,
+        allow_excludes=True,  # Non-standard, but there's no other exclusion.
+        allow_new=True,
+    )
     return members
 
 
-def parse_tasks(args: Args, config: Config) -> Tasks:
+def parse_tasks(args: Args, config: Config, key: str = "scripts") -> Tasks:
     """`package.json` tasks are in `scripts`.
 
     - [npm](https://docs.npmjs.com/cli/v10/using-npm/scripts)
@@ -70,12 +78,12 @@ def parse_tasks(args: Args, config: Config) -> Tasks:
     - Not Supported: `task.env` - environments
     - Not Supported: `task.keep_going` - error suppression
     """
-    tasks: Tasks = {}
-    if "scripts" not in config.data:
-        raise KeyError(f"Missing 'scripts' key in {config.path}")
+    data = config.data.get(key, KEY_MISSING)
+    if data is KEY_MISSING:
+        raise KeyError(f"Missing '{key}' key in {config.path}")
 
-    scripts = config.data["scripts"]
-    for name, cmd in scripts.items():
+    tasks: Tasks = {}
+    for name, cmd in data.items():
         # Non-standard: disabled task
         if name.startswith(TASK_DISABLED):
             continue
@@ -96,11 +104,11 @@ def parse_tasks(args: Args, config: Config) -> Tasks:
 
         tasks[name] = Task(
             origin=config.path,
-            origin_key="scripts",
+            origin_key=key,
             name=name,
             cmd=cmd,
             # Non-standard: `task.help`
-            help=scripts.get(f"{TASK_DISABLED}{name}", ""),
+            help=data.get(f"{TASK_DISABLED}{name}", ""),
         )
 
     # Non-standard: task reference
