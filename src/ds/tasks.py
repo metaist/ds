@@ -8,6 +8,7 @@ from os.path import relpath
 from pathlib import Path
 from shlex import join
 from shlex import split
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -22,9 +23,12 @@ else:  # pragma: no cover
     import graphlib  # type: ignore
 
 # pkg
+from .env import read_env
 from .env import wrap_cmd
+from .symbols import starts
 from .symbols import TASK_COMPOSITE
 from .symbols import TASK_KEEP_GOING
+
 
 log = logging.getLogger(__name__)
 
@@ -151,3 +155,88 @@ def print_tasks(path: Path, tasks: Tasks) -> None:
     print(f"# Found {count} task{plural} in {location}\n")
     for task in tasks.values():
         task.pprint()
+
+
+def parse_task(config: Any, origin: Optional[Path] = None, key: str = "") -> Task:
+    """Parse a config into a `Task`."""
+    task = Task(origin=origin, origin_key=key)
+    if isinstance(config, list):
+        for item in config:
+            parsed = parse_task(item, origin, key)
+            parsed.name = TASK_COMPOSITE
+            task.depends.append(parsed)
+
+    elif isinstance(config, str):
+        task.keep_going, task.cmd = starts(config, TASK_KEEP_GOING)
+
+    elif isinstance(config, Dict):
+        if "verbatim" in config:
+            task.verbatim = config["verbatim"]
+        if "help" in config:
+            task.help = config["help"]
+
+        if "keep_going" in config:
+            task.keep_going = config["keep_going"]
+
+        # Working directory
+        if "cwd" in config:  # `working_dir` alias (ds)
+            assert origin is not None
+            task.cwd = origin.parent / config["cwd"]
+        elif "working_dir" in config:  # `cwd` alias (pdm)
+            assert origin is not None
+            task.cwd = origin.parent / config["working_dir"]
+
+        # Environment File
+        if "env_file" in config:  # `env-file` alias (pdm)
+            assert origin is not None
+            task.env.update(read_env((origin.parent / config["env_file"]).read_text()))
+        elif "env-file" in config:  # `env_file` alias (rye)
+            assert origin is not None
+            task.env.update(read_env((origin.parent / config["env-file"]).read_text()))
+
+        # Environment Variables
+        if "env" in config:
+            assert isinstance(config["env"], dict)
+            task.env.update(config["env"])
+
+        found = False
+        # Composite Task
+        if "composite" in config:  # `chain` alias
+            found = True
+            assert isinstance(config["composite"], list)
+            parsed = parse_task(config["composite"], origin, key)
+            task.name = parsed.name
+            task.cmd = parsed.cmd
+            task.depends = parsed.depends
+        elif "chain" in config:  # `composite` alias
+            found = True
+            assert isinstance(config["chain"], list)
+            parsed = parse_task(config["chain"], origin, key)
+            task.name = parsed.name
+            task.cmd = parsed.cmd
+            task.depends = parsed.depends
+
+        # Basic Task
+        if "shell" in config:
+            found = True
+            parsed = parse_task(str(config["shell"]), origin, key)
+            task.cmd = parsed.cmd
+            task.keep_going = parsed.keep_going
+        elif "cmd" in config:
+            found = True
+            cmd = config["cmd"]
+            parsed = parse_task(
+                " ".join(cmd) if isinstance(cmd, list) else str(cmd),
+                origin,
+                key,
+            )
+            task.cmd = parsed.cmd
+            task.keep_going = parsed.keep_going
+
+        if not found:
+            if "call" in config:
+                raise ValueError(f"`call` commands not supported: {config}")
+            raise TypeError(f"Unknown task type: {config}")
+    else:
+        raise TypeError(f"Unknown task type: {config}")
+    return task

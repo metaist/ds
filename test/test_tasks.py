@@ -9,8 +9,8 @@ import pytest
 
 # pkg
 from ds.args import Args
-from ds.parsers import parse_task
 from ds.runner import Runner
+from ds.tasks import parse_task
 from ds.tasks import print_tasks
 from ds.tasks import Task
 from ds.tasks import Tasks

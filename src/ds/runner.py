@@ -1,8 +1,10 @@
 """Run tasks."""
 
 # std
+from dataclasses import replace
 from os import environ as ENV
 from pathlib import Path
+from shlex import split
 from typing import Dict
 from typing import Tuple
 import dataclasses
@@ -72,7 +74,7 @@ class Runner:
 
     def run(self, task: Task, override: Task) -> int:
         """Run a `task` overriding parts given `override`."""
-        resolved = dataclasses.replace(
+        resolved = replace(
             override,
             cmd=task.cmd,
             args=task.args + override.args,
@@ -108,7 +110,8 @@ class Runner:
         if not task.name == TASK_COMPOSITE:
             return ran, code
 
-        others = glob_names(self.tasks.keys(), task.cmd.split(GLOB_DELIMITER))
+        cmd, *args = split(task.cmd)
+        others = glob_names(self.tasks.keys(), cmd.split(GLOB_DELIMITER))
         for name in others:
             other = self.tasks.get(name)
             # - name is of another task
@@ -116,7 +119,7 @@ class Runner:
             # - task is not in the other's dependencies
             if other and other != task and task not in other.depends:
                 ran = True
-                code = self.run(other, override)
+                code = self.run(other, replace(override, args=override.args + args))
             # in all other cases, we're going to run this in the shell
         return ran, code
 
@@ -130,7 +133,7 @@ class Runner:
             return override
 
         log.info("Searching for project dependencies. To disable: add --no-project")
-        result = dataclasses.replace(override)  # make a copy
+        result = replace(override)  # make a copy
         to_find: Dict[str, str] = {}
         found: Dict[str, Path] = {}
 

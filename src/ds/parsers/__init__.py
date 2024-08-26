@@ -4,16 +4,17 @@
 from __future__ import annotations
 from fnmatch import fnmatch
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Tuple
 from typing import Optional
+from typing import Tuple
+import dataclasses
 import json
 import logging
 import sys
-import dataclasses
 
 # Coverage disabled to cover all python versions.
 # TODO 2026-10-04 [3.10 EOL]: remove conditional
@@ -23,26 +24,27 @@ else:  # pragma: no cover
     import tomli as toml
 
 # pkg
-from . import makefile
-from ..env import read_env
 from ..searchers import get_key
 from ..searchers import glob_apply
 from ..searchers import glob_parents
 from ..searchers import GlobMatches
 from ..symbols import GLOB_EXCLUDE
 from ..symbols import KEY_DELIMITER
-from ..symbols import starts
-from ..symbols import TASK_COMPOSITE
 from ..symbols import TASK_DISABLED
-from ..symbols import TASK_KEEP_GOING
-from ..tasks import Task
 from ..tasks import Tasks
+from ..tasks import parse_task
 
 log = logging.getLogger(__name__)
 
 
 Loader = Callable[[str], Dict[str, Any]]
 """A loader takes text and returns a mapping of strings to values."""
+
+FILE_LOADERS: Dict[str, ModuleType] = {}
+"""Mapping of file pattern to module that handles that pattern."""
+
+Membership = Dict[Path, bool]
+"""Mapping of paths to whether they are members."""
 
 # NOTE: Used by cog in README.md
 SEARCH_FILES = [
@@ -78,13 +80,6 @@ SEARCH_KEYS_WORKSPACE = [
 ]
 """Search for workspace configuration keys."""
 
-LOADERS: Dict[str, Loader] = {
-    "*.json": json.loads,
-    "*.toml": toml.loads,
-    "*[Mm]akefile": makefile.loads,
-}
-"""Mapping of file patterns to load functions."""
-
 
 @dataclasses.dataclass
 class Config:
@@ -93,7 +88,7 @@ class Config:
     path: Path
     """Path to the configuration file."""
 
-    config: Dict[str, Any]
+    data: Dict[str, Any]
     """Configuration data."""
 
     tasks: Tasks = dataclasses.field(default_factory=dict)
@@ -123,11 +118,11 @@ class Config:
 
     def parse(self, require_workspace: bool = False) -> Config:
         """Parse a configuration file."""
-        found, self.members = parse_workspace(self.path.parent, self.config)
+        found, self.members = parse_workspace(self.path.parent, self.data)
         if require_workspace and not found:
             raise LookupError("Could not find workspace configuration.")
 
-        found, self.tasks = parse_tasks(self.config, self.path)
+        found, self.tasks = parse_tasks(self.data, self.path)
         if not require_workspace and not found:
             raise LookupError("Could not find task configuration.")
 
@@ -194,86 +189,16 @@ def parse_tasks(
     return found, tasks
 
 
-def parse_task(config: Any, origin: Optional[Path] = None, key: str = "") -> Task:
-    """Parse a config into a `Task`."""
-    task = Task(origin=origin, origin_key=key)
-    if isinstance(config, list):
-        for item in config:
-            parsed = parse_task(item, origin, key)
-            parsed.name = TASK_COMPOSITE
-            task.depends.append(parsed)
+from . import makefile  # noqa: E402
+from . import package_json  # noqa: E402
 
-    elif isinstance(config, str):
-        task.keep_going, task.cmd = starts(config, TASK_KEEP_GOING)
+FILE_LOADERS["package.json"] = package_json
+FILE_LOADERS["[Mm]akefile"] = makefile
 
-    elif isinstance(config, Dict):
-        if "verbatim" in config:
-            task.verbatim = config["verbatim"]
-        if "help" in config:
-            task.help = config["help"]
 
-        if "keep_going" in config:
-            task.keep_going = config["keep_going"]
-
-        # Working directory
-        if "cwd" in config:  # `working_dir` alias (ds)
-            assert origin is not None
-            task.cwd = origin.parent / config["cwd"]
-        elif "working_dir" in config:  # `cwd` alias (pdm)
-            assert origin is not None
-            task.cwd = origin.parent / config["working_dir"]
-
-        # Environment File
-        if "env_file" in config:  # `env-file` alias (pdm)
-            assert origin is not None
-            task.env.update(read_env((origin.parent / config["env_file"]).read_text()))
-        elif "env-file" in config:  # `env_file` alias (rye)
-            assert origin is not None
-            task.env.update(read_env((origin.parent / config["env-file"]).read_text()))
-
-        # Environment Variables
-        if "env" in config:
-            assert isinstance(config["env"], dict)
-            task.env.update(config["env"])
-
-        found = False
-        # Composite Task
-        if "composite" in config:  # `chain` alias
-            found = True
-            assert isinstance(config["composite"], list)
-            parsed = parse_task(config["composite"], origin, key)
-            task.name = parsed.name
-            task.cmd = parsed.cmd
-            task.depends = parsed.depends
-        elif "chain" in config:  # `composite` alias
-            found = True
-            assert isinstance(config["chain"], list)
-            parsed = parse_task(config["chain"], origin, key)
-            task.name = parsed.name
-            task.cmd = parsed.cmd
-            task.depends = parsed.depends
-
-        # Basic Task
-        if "shell" in config:
-            found = True
-            parsed = parse_task(str(config["shell"]), origin, key)
-            task.cmd = parsed.cmd
-            task.keep_going = parsed.keep_going
-        elif "cmd" in config:
-            found = True
-            cmd = config["cmd"]
-            parsed = parse_task(
-                " ".join(cmd) if isinstance(cmd, list) else str(cmd),
-                origin,
-                key,
-            )
-            task.cmd = parsed.cmd
-            task.keep_going = parsed.keep_going
-
-        if not found:
-            if "call" in config:
-                raise ValueError(f"`call` commands not supported: {config}")
-            raise TypeError(f"Unknown task type: {config}")
-    else:
-        raise TypeError(f"Unknown task type: {config}")
-    return task
+LOADERS: Dict[str, Loader] = {
+    "*.json": json.loads,
+    "*.toml": toml.loads,
+    "*[Mm]akefile": makefile.loads,
+}
+"""Mapping of file patterns to load functions."""

@@ -98,7 +98,10 @@ def glob_apply(
     result = {} if not matches else matches.copy()
     for pattern in patterns:
         exclude, pattern = starts(pattern, GLOB_EXCLUDE)
-        for match in sorted(path.glob(pattern)):
+        hits = sorted(path.glob(pattern))
+        if not hits:
+            log.warning(f"No results for {pattern} in {path}")
+        for match in hits:
             result[match] = not exclude
     return result
 

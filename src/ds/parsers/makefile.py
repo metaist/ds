@@ -8,6 +8,8 @@ from typing import Tuple
 import logging
 
 # pkg
+# from . import Config
+from . import Membership
 from ..symbols import SHELL_CONTINUE
 from ..symbols import starts
 
@@ -15,6 +17,16 @@ log = logging.getLogger(__name__)
 
 NestedDict = Dict[str, Dict[str, Any]]
 """Generic mapping of a nested dict object."""
+
+
+def parse_workspace(*_: Any, **__: Any) -> Membership:
+    """`Makefile` does not support workspaces."""
+    raise NotImplementedError("`Makefile` does not support workspaces.")
+
+
+# def parse_tasks(config: Config) -> Tasks:
+#     # TODO: Use `ds_toml.parse_tasks`
+#     pass
 
 
 def loads(text: str, debug: bool = False) -> NestedDict:

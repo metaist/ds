@@ -16,8 +16,10 @@ from .env import read_env
 from .symbols import ARG_BEG
 from .symbols import ARG_END
 from .symbols import ARG_OPTION
+from .tasks import parse_task
 from .tasks import Task
-from .parsers import parse_task
+
+# from .parsers import parse_task
 
 # NOTE: Used by cog in README.md
 USAGE = """ds: Run dev scripts.
@@ -167,6 +169,12 @@ class Args:
 
     workspace: List[str] = field(default_factory=list)
     """List of workspace patterns to run tasks in."""
+
+    pre: bool = False
+    """EXPERIMENTAL: Whether to run pre- tasks."""
+
+    post: bool = False
+    """EXPERIMENTAL: Whether to run post- tasks."""
 
     task: Task = field(default_factory=Task)
     """A composite task for the tasks given on the command-line."""
