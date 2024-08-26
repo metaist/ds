@@ -1,20 +1,18 @@
 """`pyproject.toml` parser for `poetry`."""
 
 # std
-from pathlib import Path
 import logging
 
 # pkg
+from . import cargo_toml
 from . import Config
 from . import Membership
 from . import toml
 from ..args import Args
+from ..searchers import get_key
+from ..symbols import KEY_MISSING
 from ..tasks import Task
 from ..tasks import Tasks
-from ..searchers import get_key
-from ..searchers import glob_paths
-from ..symbols import GLOB_EXCLUDE
-from ..symbols import KEY_MISSING
 
 
 log = logging.getLogger(__name__)
@@ -28,7 +26,7 @@ PYTHON_CALL = "python -c 'import sys; import {pkg} as _1; sys.exit(_1.{fn}())'"
 
 
 def parse_workspace(config: Config, key: str = "tool.poetry.workspace") -> Membership:
-    """`poetry` does not officially define workspaces.
+    """Workspaces are not officially defined for `poetry`.
 
     There are two plugins that have two different patterns:
     - https://github.com/jacksmith15/poetry-workspace-plugin
@@ -42,23 +40,9 @@ def parse_workspace(config: Config, key: str = "tool.poetry.workspace") -> Membe
     members: Membership = {}
     if "include" in data:
         # https://pypi.org/project/poetry-workspace-plugin2/
-        members = glob_paths(
-            config.path.parent,
-            data["include"],
-            allow_all=False,
-            allow_excludes=False,
-            allow_new=True,
-        )
-        if "exclude" in data:
-            patterns = [f"{GLOB_EXCLUDE}{p}" for p in data["exclude"]]
-            members = glob_paths(
-                config.path.parent,
-                patterns,
-                previous=members,
-                allow_all=False,
-                allow_excludes=True,
-                allow_new=False,
-            )
+        # Cargo-style (include + exclude)
+        data["members"] = data["include"]
+        members = cargo_toml.parse_workspace(config, key)
     else:
         # https://github.com/jacksmith15/poetry-workspace-plugin
         for path in data.values():

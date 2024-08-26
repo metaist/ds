@@ -1,5 +1,6 @@
-"""Test `pyproject.toml` using `poetry` parser."""
+"""Test `pyproject.toml` parser using `poetry`."""
 
+# std
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -25,8 +26,8 @@ TASK = Task(origin=Path("pyproject.toml"), origin_key="tool.poetry.scripts")
 
 def test_workspace() -> None:
     """End-to-end test of workspace config."""
-    args = Args(file=EXAMPLE_WORKSPACE / "pyproject-poetry1.toml")
-    config = Config(args.file, loads(args.file.read_text()))
+    path = EXAMPLE_WORKSPACE / "pyproject-poetry1.toml"
+    config = Config(path, loads(path.read_text()))
     expected = {
         EXAMPLE_WORKSPACE / "members" / "a": True,
         EXAMPLE_WORKSPACE / "members" / "b": True,
@@ -34,8 +35,8 @@ def test_workspace() -> None:
     }
     assert parse_workspace(config) == expected
 
-    args = Args(file=EXAMPLE_WORKSPACE / "pyproject-poetry2.toml")
-    config = Config(args.file, loads(args.file.read_text()))
+    path = EXAMPLE_WORKSPACE / "pyproject-poetry2.toml"
+    config = Config(path, loads(path.read_text()))
     expected = {
         EXAMPLE_WORKSPACE / "members" / "a": True,
         EXAMPLE_WORKSPACE / "members" / "b": True,
@@ -92,9 +93,7 @@ def test_workspace_basic2() -> None:
     assert parse_workspace(Config(path, data)) == expected
 
     # no exclude key
-    data: Dict[str, Any] = {
-        "tool": {"poetry": {"workspace": {"include": ["members/*"]}}}
-    }
+    data = {"tool": {"poetry": {"workspace": {"include": ["members/*"]}}}}
     expected = {
         path.parent / "members" / "a": True,
         path.parent / "members" / "b": True,
@@ -105,8 +104,9 @@ def test_workspace_basic2() -> None:
 
 def test_format() -> None:
     """End-to-end test of the format."""
-    args = Args(file=EXAMPLE_FORMATS / "pyproject-poetry.toml")
-    config = Config(args.file, loads(args.file.read_text()))
+    path = EXAMPLE_FORMATS / "pyproject-poetry.toml"
+    args = Args(file=path)
+    config = Config(path, loads(path.read_text()))
     tasks = parse_tasks(args, config)
     assert tasks
 
