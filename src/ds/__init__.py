@@ -25,7 +25,7 @@ from .args import USAGE
 from .env import TempEnv
 from .parsers import Config
 from .runner import Runner
-from .searchers import glob_refine
+from .searchers import glob_paths
 from .tasks import check_cycles
 from .tasks import CycleError
 from .tasks import print_tasks
@@ -102,7 +102,13 @@ def load_config(args: Args) -> Config:
 def run_workspace(args: Args, config: Config) -> None:
     """Run tasks in the context of each member."""
     members = {m: False for m, i in config.members.items() if i}  # reset
-    members = glob_refine(config.path.parent, args.workspace, members)
+    members = glob_paths(
+        config.path.parent,
+        args.workspace,
+        allow_all=True,
+        allow_excludes=True,
+        allow_new=False,
+    )
     for member, include in members.items():
         if not include:
             continue
