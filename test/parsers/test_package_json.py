@@ -12,6 +12,7 @@ import pytest
 # pkg
 from ds.args import Args
 from ds.parsers import Config
+from ds.parsers.package_json import loads
 from ds.parsers.package_json import parse_tasks
 from ds.parsers.package_json import parse_workspace
 from ds.tasks import Task
@@ -20,10 +21,22 @@ from ds.symbols import TASK_KEEP_GOING
 
 EXAMPLES = Path(__file__).parent.parent.parent / "examples"
 EXAMPLE_WORKSPACE = EXAMPLES / "workspace"
-EXAMPLE_FORMAT = EXAMPLES / "formats" / "package.json"
+EXAMPLE_FORMATS = EXAMPLES / "formats"
 
 TASK = Task(origin=Path("package.json"), origin_key="scripts")
 """Default task to manipulate."""
+
+
+def test_workspace() -> None:
+    """End-to-end test of workspace."""
+    args = Args(file=EXAMPLE_WORKSPACE / "package.json")
+    config = Config(args.file, loads(args.file.read_text()))
+    expected = {
+        EXAMPLE_WORKSPACE / "members" / "a": True,
+        EXAMPLE_WORKSPACE / "members" / "b": True,
+        EXAMPLE_WORKSPACE / "members" / "x": False,  # members/x is excluded
+    }
+    assert parse_workspace(config) == expected
 
 
 def test_workspace_missing() -> None:
@@ -60,6 +73,14 @@ def test_workspace_glob() -> None:
         path.parent / "members" / "x": False,  # members/x is excluded
     }
     assert parse_workspace(Config(path, data)) == expected
+
+
+def test_format() -> None:
+    """End-to-end test of the format."""
+    args = Args(file=EXAMPLE_FORMATS / "package.json")
+    config = Config(args.file, loads(args.file.read_text()))
+    tasks = parse_tasks(args, config)
+    assert tasks
 
 
 def test_tasks_missing() -> None:
