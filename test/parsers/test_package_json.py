@@ -28,8 +28,8 @@ TASK = Task(origin=Path("package.json"), origin_key="scripts")
 
 def test_workspace() -> None:
     """End-to-end test of workspace config."""
-    args = Args(file=EXAMPLE_WORKSPACE / "package.json")
-    config = Config(args.file, loads(args.file.read_text()))
+    path = EXAMPLE_WORKSPACE / "package.json"
+    config = Config(path, loads(path.read_text()))
     expected = {
         EXAMPLE_WORKSPACE / "members" / "a": True,
         EXAMPLE_WORKSPACE / "members" / "b": True,
@@ -76,8 +76,9 @@ def test_workspace_glob() -> None:
 
 def test_format() -> None:
     """End-to-end test of the format."""
-    args = Args(file=EXAMPLE_FORMATS / "package.json")
-    config = Config(args.file, loads(args.file.read_text()))
+    path = EXAMPLE_FORMATS / "package.json"
+    args = Args(file=path)
+    config = Config(path, loads(path.read_text()))
     tasks = parse_tasks(args, config)
     assert tasks
 
