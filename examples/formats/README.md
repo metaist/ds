@@ -15,6 +15,7 @@ This folder contains minimal examples of supported configuration file formats.
 - `ds`: [`pyproject.toml`](./pyproject-ds.toml)
 - `pdm`: [`pyproject.toml`](./pyproject-pdm.toml)
 - `rye`: [`pyproject.toml`](./pyproject-rye.toml)
+- `poetry`: [`pyproject.toml`](./pyproject-poetry.toml)
 
 ## Rust
 

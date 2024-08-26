@@ -30,6 +30,9 @@ GLOB_DELIMITER = ";"
 KEY_DELIMITER = "."
 """Separator between key parts."""
 
+KEY_MISSING = object()
+"""Sentinel for missing key."""
+
 SHELL_CONTINUE = "\\\n"
 """Line continuation."""
 

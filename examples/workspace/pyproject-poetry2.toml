@@ -1,0 +1,5 @@
+# Example: `pyproject.toml` workspace configuration using `poetry` with `poetry-workspace-plugin2`
+
+[tool.poetry.workspace]
+include = ["members/*"]
+exclude = ["members/x"]
