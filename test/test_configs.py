@@ -8,8 +8,7 @@ import pytest
 
 # pkg
 from ds.parsers import Config
-from ds.searchers import glob_apply
-from ds.searchers import glob_refine
+from ds.searchers import glob_paths
 from ds.symbols import GLOB_EXCLUDE
 
 EXAMPLES = Path("examples")
@@ -84,33 +83,71 @@ def test_glob_apply() -> None:
     """Apply globs."""
     m = WORKSPACE / "members"
 
-    got = glob_apply(WORKSPACE, ["*"])
+    got = glob_paths(
+        WORKSPACE, ["*"], allow_all=False, allow_excludes=True, allow_new=True
+    )
     want = {p: True for p in WORKSPACE.glob("*")}
     assert got == want
 
-    got = glob_apply(WORKSPACE, [f"{GLOB_EXCLUDE}*"])
+    got = glob_paths(
+        WORKSPACE,
+        [f"{GLOB_EXCLUDE}*"],
+        allow_all=False,
+        allow_excludes=True,
+        allow_new=True,
+    )
     want = {p: False for p in WORKSPACE.glob("*")}
     assert got == want
 
-    got = glob_apply(WORKSPACE, ["members/*", "!members/x"])
+    got = glob_paths(
+        WORKSPACE,
+        ["members/*", "!members/x"],
+        allow_all=False,
+        allow_excludes=True,
+        allow_new=True,
+    )
     want = {m / "a": True, m / "b": True, m / "x": False}
     assert got == want
 
 
-def test_glob_refine() -> None:
+def test_glob_paths() -> None:
     """Constrain some values."""
     m = WORKSPACE / "members"
 
     start = {m / "a": False, m / "b": False, m / "x": False}
-    assert glob_refine(WORKSPACE, ["members/a"], start) == {**start, **{m / "a": True}}
-    assert glob_refine(WORKSPACE, ["**/b", "!*", "*/x"], start) == {
+    assert glob_paths(
+        WORKSPACE,
+        ["members/a"],
+        previous=start,
+        allow_all=True,
+        allow_excludes=True,
+        allow_new=False,
+    ) == {**start, **{m / "a": True}}
+    assert glob_paths(
+        WORKSPACE,
+        ["**/b", "!*", "*/x"],
+        previous=start,
+        allow_all=True,
+        allow_excludes=True,
+        allow_new=False,
+    ) == {
         **start,
         **{m / "x": True},
     }
 
     # prevent new entries
     start = {m / "a": False, m / "b": False}
-    assert glob_refine(WORKSPACE, ["members/x"], start) == start
+    assert (
+        glob_paths(
+            WORKSPACE,
+            ["members/x"],
+            previous=start,
+            allow_all=True,
+            allow_excludes=True,
+            allow_new=False,
+        )
+        == start
+    )
 
 
 def test_load_no_workspace() -> None:

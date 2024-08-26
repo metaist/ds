@@ -91,32 +91,37 @@ def glob_names(names: Iterable[str], patterns: List[str]) -> List[str]:
     return [name for name, include in result.items() if include]
 
 
-def glob_apply(
-    path: Path, patterns: List[str], matches: Optional[GlobMatches] = None
+def glob_paths(
+    path: Path,
+    patterns: List[str],
+    *,
+    allow_all: bool = False,  # special all pattern
+    allow_excludes: bool = False,  # special exclude prefix
+    allow_new: bool = False,  # expand the set
+    previous: Optional[GlobMatches] = None,
 ) -> GlobMatches:
     """Apply glob `patterns` to `path`."""
-    result = {} if not matches else matches.copy()
+    result = previous.copy() if previous else {}
     for pattern in patterns:
-        exclude, pattern = starts(pattern, GLOB_EXCLUDE)
-        hits = sorted(path.glob(pattern))
-        if not hits:
-            log.warning(f"No results for {pattern} in {path}")
-        for match in hits:
-            result[match] = not exclude
-    return result
+        exclude = False
 
+        # extension: special exclusion prefix
+        if allow_excludes:
+            exclude, pattern = starts(pattern, GLOB_EXCLUDE)
 
-def glob_refine(path: Path, patterns: List[str], matches: GlobMatches) -> GlobMatches:
-    """Apply glob-like `patterns` to `path` to refine `matches`."""
-    result = matches.copy()
-    for pattern in patterns:
-        exclude, pattern = starts(pattern, GLOB_EXCLUDE)
-        if pattern == GLOB_ALL:
+        # extension: special all pattern
+        if allow_all and pattern == GLOB_ALL:
             for match in result:
                 result[match] = not exclude
             continue
 
-        for match in sorted(path.glob(pattern)):
-            if match in result:  # no new entries
+        hits = sorted(path.glob(pattern))
+        if not hits:
+            log.warning(f"No results for {pattern} in {path}")
+
+        for match in hits:
+            if allow_new or match in result:
+                # Either new entries are allowed,
+                # or this entry was already there.
                 result[match] = not exclude
     return result
