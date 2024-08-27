@@ -34,6 +34,7 @@ Usage: ds [--help | --version] [--debug]
           [--env-file PATH]
           [(--env NAME=VALUE)...]
           [--workspace GLOB]...
+          [--pre][--post]
           [<task>...]
 
 Options:
@@ -84,6 +85,9 @@ Options:
 
     Read more about configuring workspaces:
     https://github.com/metaist/ds#workspaces
+
+  --pre, --post
+    EXPERIMENTAL: Run tasks with pre- and post- names.
 
   <task>
     One or more tasks to run with task-specific arguments.
@@ -195,6 +199,8 @@ class Args:
             "--dry-run",
             "--no-config",
             "--no-project",
+            "--pre",
+            "--post",
         ]:
             if getattr(self, _opt_prop(option)):
                 result.append(option)
@@ -241,6 +247,8 @@ class Args:
                     "--dry-run",
                     "--no-config",
                     "--no-project",
+                    "--pre",
+                    "--post",
                 ]:
                     attr = _opt_prop(arg)
                     setattr(args, attr, True)

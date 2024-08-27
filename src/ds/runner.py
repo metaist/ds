@@ -91,6 +91,8 @@ class Runner:
             keep_going=override.keep_going or task.keep_going,
         )
 
+        self.run_pre_post(task, resolved, "pre")
+
         for dep in task.depends:
             # NOTE: we do not save the return code of any dependencies
             # because they will fail on their own merits.
@@ -98,19 +100,19 @@ class Runner:
         # dependencies ran
 
         if not task.cmd.strip():  # nothing to do
-            return 0
+            return self.run_pre_post(task, resolved, "post")
         # handled dependency-only tasks
 
         ran, code = self.run_composite(task, resolved)
         if ran:
-            return code
+            return code or self.run_pre_post(task, resolved, "post")
         # composite tasks handled
 
         # task needs to go into shell
         resolved.cmd = interpolate_args(resolved.cmd, resolved.args)
         resolved = self.find_project(task, resolved)  # add dependencies
         resolved = self.run_in_shell(task, resolved)  # run in shell
-        return resolved.code
+        return resolved.code or self.run_pre_post(task, resolved, "post")
 
     def run_composite(self, task: Task, override: Task) -> Tuple[bool, int]:
         """Run a composite task."""
@@ -130,6 +132,21 @@ class Runner:
                 code = self.run(other, replace(override, args=override.args + args))
             # in all other cases, we're going to run this in the shell
         return ran, code
+
+    def run_pre_post(self, task: Task, override: Task, pre_post: str = "pre") -> int:
+        """Run pre- or post- task."""
+        name = task.name
+        if not name or name == TASK_COMPOSITE or not getattr(self.args, pre_post):
+            return 0
+
+        for check in [f"{pre_post}{name}", f"{pre_post}_{name}", f"{pre_post}-{name}"]:
+            log.debug(f"check {check}")
+            if sub_task := self.tasks.get(check):
+                log.debug(f"EXPERIMENTAL: Running --{pre_post} task {check}")
+                return self.run(sub_task, override)
+
+        # no task found
+        return 0
 
     def find_project(self, task: Task, override: Task) -> Task:
         """Find project-specific dependencies."""
