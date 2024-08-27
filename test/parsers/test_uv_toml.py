@@ -17,16 +17,16 @@ from ds.parsers.uv_toml import parse_tasks
 from ds.parsers.uv_toml import parse_workspace
 
 
-# def test_workspace() -> None:
-#     """End-to-end test of workspace config."""
-#     path = EXAMPLE_WORKSPACE / "pyproject-uv.toml"
-#     config = Config(path, loads(path.read_text()))
-#     expected = {
-#         EXAMPLE_WORKSPACE / "members" / "a": True,
-#         EXAMPLE_WORKSPACE / "members" / "b": True,
-#         EXAMPLE_WORKSPACE / "members" / "x": False,  # members/x is excluded
-#     }
-#     assert parse_workspace(config) == expected
+def test_workspace() -> None:
+    """End-to-end test of workspace config."""
+    path = EXAMPLE_WORKSPACE / "pyproject-uv.toml"
+    config = Config(path, loads(path.read_text()))
+    expected = {
+        EXAMPLE_WORKSPACE / "members" / "a": True,
+        EXAMPLE_WORKSPACE / "members" / "b": True,
+        EXAMPLE_WORKSPACE / "members" / "x": False,  # members/x is excluded
+    }
+    assert parse_workspace(config) == expected
 
 
 def test_workspace_missing() -> None:

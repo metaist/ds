@@ -124,22 +124,4 @@ def parse_tasks(args: Args, config: Config, key: str = "scripts") -> Tasks:
                     f'Did you mean: "{name}": "ds {task.cmd}"'
                 )
 
-    if args.pre or args.post:
-        log.warning("EXPERIMENTAL: --pre and --post flags are experimental.")
-        for name, task in tasks.items():
-            pre = f"pre{name}" if args.pre and tasks.get(f"pre{name}") else None
-            post = f"post{name}" if args.post and tasks.get(f"post{name}") else None
-            if not pre and not post:
-                continue
-
-            depends = []
-            task_copy = replace(task, name=TASK_COMPOSITE)
-            if pre:
-                depends.append(replace(task_copy, cmd=pre))
-            depends.append(replace(task_copy))
-            if post:
-                depends.append(replace(task_copy, cmd=post))
-            task.depends = depends
-            task.cmd = ""
-
     return tasks

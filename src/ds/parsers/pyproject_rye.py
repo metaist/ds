@@ -112,7 +112,7 @@ def parse_tasks(args: Args, config: Config, key="tool.rye.scripts") -> Tasks:
             # [...] can be set instead of `cmd`` to make a command invoke
             # python functions or modules
             elif call := item.get("call"):
-                task.cmd = format_call(call)
+                task.cmd = python_call(call)
 
             # `chain`: https://rye.astral.sh/guide/pyproject/#chain
             # [...] can be set instead of `cmd` to make a command invoke
@@ -156,18 +156,18 @@ def parse_tasks(args: Args, config: Config, key="tool.rye.scripts") -> Tasks:
     return tasks
 
 
-def format_call(call: str) -> str:
+def python_call(call: str) -> str:
     """Return a formatted `call` string.
 
     See: https://rye.astral.sh/guide/pyproject/#call
 
-    >>> format_call("http.server")
+    >>> python_call("http.server")
     'python -m http.server'
 
-    >>> format_call("builtins:help") == PYTHON_CALL.format(pkg="builtins", fn="help()")
+    >>> python_call("builtins:help") == PYTHON_CALL.format(pkg="builtins", fn="help()")
     True
 
-    >>> format_call("builtins:print('Hello World!')") == PYTHON_CALL.format(
+    >>> python_call("builtins:print('Hello World!')") == PYTHON_CALL.format(
     ...     pkg="builtins", fn="print('Hello World!')")
     True
     """

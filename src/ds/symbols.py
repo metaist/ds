@@ -51,6 +51,9 @@ TASK_DISABLED = "#"
 TASK_KEEP_GOING = "+"
 """Prefix of an error-suppressed task."""
 
+TASK_SHARED = "_"
+"""Shared options task name."""
+
 
 def starts(haystack: str, needle: str) -> Tuple[bool, str]:
     """Return whether `haystack` starts with `needle` and a stripped version.

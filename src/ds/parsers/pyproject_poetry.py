@@ -13,16 +13,13 @@ from ..searchers import get_key
 from ..symbols import KEY_MISSING
 from ..tasks import Task
 from ..tasks import Tasks
+from .pyproject_rye import PYTHON_CALL
 
 
 log = logging.getLogger(__name__)
 
 loads = toml.loads
 """Standard `toml` parser."""
-
-
-PYTHON_CALL = "python -c 'import sys; import {pkg} as _1; sys.exit(_1.{fn}())'"
-"""Format for a python call."""
 
 
 def parse_workspace(config: Config, key: str = "tool.poetry.workspace") -> Membership:
@@ -81,7 +78,7 @@ def parse_tasks(_: Args, config: Config, key: str = "tool.poetry.scripts") -> Ta
             origin=config.path,
             origin_key=key,
             name=name,
-            cmd=PYTHON_CALL.format(pkg=pkg, fn=fn),
+            cmd=PYTHON_CALL.format(pkg=pkg, fn=f"{fn}()"),
         )
 
     return tasks

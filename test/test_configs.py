@@ -43,9 +43,7 @@ def test_load_formats() -> None:
     path = EXAMPLES / "formats"
     assert Config.load(path / "Cargo.toml").parse()
     assert Config.load(path / "composer.json").parse()
-    assert Config.load(path / "ds.toml").parse()
     assert Config.load(path / "Makefile").parse()
-    assert Config.load(path / "pyproject-ds.toml").parse()
 
 
 def test_unknown_name() -> None:

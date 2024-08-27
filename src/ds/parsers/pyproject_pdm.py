@@ -10,13 +10,13 @@ from . import toml
 from ..args import Args
 from ..searchers import get_key
 from ..searchers import glob_paths
-from ..symbols import KEY_DELIMITER
 from ..symbols import KEY_MISSING
 from ..symbols import TASK_COMPOSITE
 from ..symbols import TASK_DISABLED
+from ..symbols import TASK_SHARED
 from ..tasks import Task
 from ..tasks import Tasks
-from .pyproject_rye import format_call
+from .pyproject_rye import python_call
 
 
 log = logging.getLogger(__name__)
@@ -94,7 +94,7 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.pdm.scripts") -> Ta
             # `call`: https://pdm-project.org/latest/usage/scripts/#call
             elif call := item.get("call"):
                 # Non-standard: support `module.name`
-                task.cmd = format_call(call)
+                task.cmd = python_call(call)
 
             # `composite`: https://pdm-project.org/latest/usage/scripts/#composite
             elif composite := item.get("composite"):
@@ -143,7 +143,7 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.pdm.scripts") -> Ta
                 f"Unknown type: {type(item)} for '{name}' in {config.path}"
             )
 
-        if name == "_":
+        if name == TASK_SHARED:
             common = task
         else:
             tasks[task.name] = task
