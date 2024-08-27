@@ -133,6 +133,6 @@ def test_task_cmd() -> None:
         Path("pyproject.toml"), {"tool": {"poetry": {"scripts": {"a": "pkg:func"}}}}
     )
     expected = {
-        "a": replace(TASK, name="a", cmd=PYTHON_CALL.format(pkg="pkg", fn="func"))
+        "a": replace(TASK, name="a", cmd=PYTHON_CALL.format(pkg="pkg", fn="func()"))
     }
     assert parse_tasks(args, config) == expected

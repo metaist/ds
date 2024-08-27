@@ -84,7 +84,7 @@ def test_format() -> None:
 
 
 def test_tasks_missing() -> None:
-    """File without scripts."""
+    """Missing tasks."""
     args = Args()
     config = Config(Path("package.json"), {})
     with pytest.raises(KeyError):
@@ -92,7 +92,7 @@ def test_tasks_missing() -> None:
 
 
 def test_tasks_empty() -> None:
-    """Empty scripts."""
+    """Empty tasks."""
     args = Args()
     config = Config(Path("package.json"), {"scripts": {}})
     assert parse_tasks(args, config) == {}
@@ -143,6 +143,7 @@ def test_task_args() -> None:
 
 
 def test_task_pre() -> None:
+    """Pre-tasks."""
     args = Args(pre=True)
     config = Config(
         Path("package.json"),
@@ -185,6 +186,7 @@ def test_task_pre() -> None:
 
 
 def test_task_post() -> None:
+    """Post-tasks."""
     args = Args(post=True)
     config = Config(
         Path("package.json"),
