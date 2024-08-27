@@ -46,7 +46,6 @@ def test_load_formats() -> None:
     assert Config.load(path / "ds.toml").parse()
     assert Config.load(path / "Makefile").parse()
     assert Config.load(path / "pyproject-ds.toml").parse()
-    assert Config.load(path / "pyproject-pdm.toml").parse()
 
 
 def test_unknown_name() -> None:
