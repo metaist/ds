@@ -42,7 +42,7 @@ def test_parse_options() -> None:
     assert Args.parse(split("--env-file ./examples/formats/.env")) == Args(
         list_=True,
         env_file=Path("examples/formats/.env").resolve(),
-        task=Task(env={"IN_DOT_ENV": "yes"}),
+        task=Task(env_file=Path("examples/formats/.env").resolve()),
     )
     assert Args.parse(split("-e VAR=VAL")) == Args(
         list_=True, env={"VAR": "VAL"}, task=Task(env={"VAR": "VAL"})

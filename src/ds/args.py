@@ -296,10 +296,8 @@ class Args:
         args.task = parse_task(tasks)
         args.task.cwd = args.cwd
 
-        env = args.env
-        if args.env_file:
-            env = {**read_env(args.env_file.read_text()), **args.env}
-        args.task.env = env
+        args.task.env = args.env
+        args.task.env_file = args.env_file
 
         if not args.help and not args.version and not args.task.depends:
             # default action

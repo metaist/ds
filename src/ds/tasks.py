@@ -4,6 +4,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
+from dataclasses import replace
 from os.path import relpath
 from pathlib import Path
 from shlex import join
@@ -85,43 +86,55 @@ class Task:
     _env: Dict[str, str] = field(default_factory=dict)
     """Hidden environment variables."""
 
+    env_file: Optional[Path] = None
+    """Path to an environment file to load."""
+
     keep_going: bool = False
     """Ignore a non-zero return code."""
 
-    def pprint(self) -> None:
-        """Pretty-print a representation of this task."""
-        if self.help:
-            print("#", self.help)
-        print(">", wrap_cmd(self.as_args()))
-        if self.depends:
+    def pprint(self, override: Optional[Task] = None, dry_run: bool = False) -> None:
+        """Print a representation of this task."""
+        is_run = override or dry_run
+        display = self
+        if override:
+            display = replace(self, cmd=override.cmd, keep_going=override.keep_going)
+
+        print()
+
+        if dry_run:
+            print("[DRY RUN]")
+        if display.help:
+            print("#", display.help)
+        print(">", wrap_cmd(self.as_args(override)))
+
+        if not is_run and display.depends:
             print(
                 [
                     f"{TASK_KEEP_GOING if t.keep_going else ''}{t.cmd}"
-                    for t in self.depends
+                    for t in display.depends
                 ]
             )
-        if self.cmd:
-            if self.verbatim:
-                print("$", self.cmd.strip().replace("\n", "\n$ "))
-            else:
-                print(f"$ {wrap_cmd(self.cmd)}")
-        print()
 
-    def as_args(
-        self,
-        cwd: Optional[Path] = None,
-        env: Optional[Dict[str, str]] = None,
-        keep_going: bool = False,
-    ) -> str:
+        if display.cmd:
+            if display.verbatim:
+                print("$", display.cmd.strip().replace("\n", "\n$ "))
+            else:
+                print(f"$ {wrap_cmd(display.cmd)}")
+
+    def as_args(self, override: Optional[Task] = None) -> str:
         """Return a shell representation of running this task."""
+        override = override or Task()
+
         args = ["ds"]
-        if cwd or self.cwd:
-            args.extend(["--cwd", str(cwd or self.cwd)])
-        for key, val in (env or self.env or {}).items():
+        if self.cwd:
+            args.extend(["--cwd", str(self.cwd)])
+        if self.env_file:
+            args.extend(["--env-file", str(self.env_file)])
+        for key, val in (self.env or {}).items():
             args.extend(["-e", f"{key}={val}"])
 
         prefix = ""
-        if keep_going or self.keep_going:
+        if self.keep_going or override.keep_going:
             prefix = TASK_KEEP_GOING
         if self.name == TASK_COMPOSITE:
             args.append(f"{prefix}{self.cmd}")
@@ -152,7 +165,7 @@ def print_tasks(path: Path, tasks: Tasks) -> None:
     path_rel = relpath(path, ORIGINAL_CWD)
     location = path_abs if len(path_abs) < len(path_rel) else path_rel
 
-    print(f"# Found {count} task{plural} in {location}\n")
+    print(f"# Found {count} task{plural} in {location}")
     for task in tasks.values():
         task.pprint()
 

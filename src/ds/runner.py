@@ -16,6 +16,7 @@ import sys
 # pkg
 from .args import Args
 from .env import interpolate_args
+from .env import read_env
 from .env import wrap_cmd
 from .searchers import glob_names
 from .searchers import glob_parents
@@ -74,12 +75,19 @@ class Runner:
 
     def run(self, task: Task, override: Task) -> int:
         """Run a `task` overriding parts given `override`."""
+        env_from_file = {}
+        if task.env_file:
+            log.debug(f"Reading env-file: {task.env_file}")
+            env_from_file = read_env(task.env_file.read_text())
+
         resolved = replace(
             override,
             cmd=task.cmd,
             args=task.args + override.args,
             cwd=override.cwd or task.cwd,
             env={**override.env, **task.env},
+            _env={**override._env, **override.env, **env_from_file, **task.env},
+            env_file=override.env_file or task.env_file,  # for printing
             keep_going=override.keep_going or task.keep_going,
         )
 
@@ -170,24 +178,16 @@ class Runner:
         if node_bin := found.get("node_modules"):
             log.debug(f"[node] found: {node_bin}")
             prev = {**ENV, **result.env}.get("PATH", "")
-            result._env["PATH"] = f"{node_bin}{os.pathsep if prev else ''}{prev}"
+            if str(node_bin) not in prev:
+                result._env["PATH"] = f"{node_bin}{os.pathsep if prev else ''}{prev}"
 
         return result
 
     def run_in_shell(self, task: Task, resolved: Task) -> Task:
         """Run the resolved task in the shell."""
-        # TODO: refactor printing task with --list
-        dry_prefix = "[DRY RUN]\n" if self.args.dry_run else ""
-        print(
-            f"\n{dry_prefix}>",
-            wrap_cmd(task.as_args(resolved.cwd, resolved.env, resolved.keep_going)),
-        )
-        if task.verbatim:
-            print("$", resolved.cmd.strip().replace("\n", "\n$ "))
-        else:
-            print(f"$ {wrap_cmd(resolved.cmd)}")
-
-        if self.args.dry_run:  # do not actually run the command
+        dry_run = self.args.dry_run
+        task.pprint(resolved, dry_run)
+        if dry_run:  # do not actually run the command
             return resolved
 
         combined_env = {**ENV, **resolved.env, **resolved._env}
