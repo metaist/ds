@@ -12,6 +12,7 @@ from . import Config
 from . import Membership
 from ..args import Args
 from ..env import RE_ARGS
+from ..searchers import get_key
 from ..searchers import glob_names
 from ..searchers import glob_paths
 from ..symbols import GLOB_DELIMITER
@@ -37,7 +38,7 @@ def parse_workspace(config: Config, key: str = "workspaces") -> Membership:
     - [bun](https://bun.sh/docs/install/workspaces)
     - Not Supported: [pnpm](https://pnpm.io/workspaces): `pnpm-workspace.yaml`
     """
-    data = config.data.get(key, KEY_MISSING)
+    data = get_key(config.data, key, KEY_MISSING)
     if data is KEY_MISSING:
         raise KeyError(f"Missing '{key}' key in {config.path}")
 
@@ -78,7 +79,7 @@ def parse_tasks(args: Args, config: Config, key: str = "scripts") -> Tasks:
     - Not Supported: `task.env` - environments
     - Not Supported: `task.keep_going` - error suppression
     """
-    data = config.data.get(key, KEY_MISSING)
+    data = get_key(config.data, key, KEY_MISSING)
     if data is KEY_MISSING:
         raise KeyError(f"Missing '{key}' key in {config.path}")
 
