@@ -91,62 +91,11 @@ def parse_tasks(config: Config, key: str = "scripts") -> Tasks:
         if name.startswith(TASK_DISABLED):
             continue
 
-        task = Task(origin=config.path, origin_key=key, name=name)
-        if isinstance(item, str):
-            task.keep_going, task.cmd = starts(item, TASK_KEEP_GOING)
-        elif isinstance(item, list):
-            parse_composite(task, item)
-        elif isinstance(item, dict):
-            try:
-                rename_aliases(item, PROPERTY_ALIASES)
-            except KeyError as e:
-                src, dest = e.args
-                raise SyntaxError(
-                    f"{name} cannot contain '{dest}' and its alias '{src}': {config.path}"
-                )
-
-            if help := item.get("help"):
-                task.help = help
-
-            # unlike pdm or rye, we allow `composite` + `cmd`
-            if composite := item.get("composite"):
-                parse_composite(task, composite)
-
-            if cmd := item.get("cmd"):
-                task.cmd = " ".join(cmd) if isinstance(cmd, list) else cmd
-                task.keep_going, task.cmd = starts(task.cmd, TASK_KEEP_GOING)
-            elif call := item.get("call"):
-                if config.path.name != "pyproject.toml":
-                    raise SyntaxError(
-                        f"'{name}' uses `call` task outside of `pyproject.toml`: {config.path}"
-                    )
-                task.cmd = python_call(call)
-
-            # internal
-            if verbatim := item.get("verbatim"):
-                task.verbatim = verbatim
-
-            # since keep_going might have been set elsewhere
-            if keep_going := item.get("keep_going", KEY_MISSING) is not KEY_MISSING:
-                task.keep_going = keep_going
-
-            if env := item.get("env"):
-                assert isinstance(env, dict)
-                task.env = {k: str(v) for k, v in env.items()}
-
-            base = config.path.parent if config.path else Path.cwd()
-            if env_file := item.get("env_file"):
-                task.env_file = (base / env_file).resolve()
-
-            if cwd := item.get("cwd"):
-                task.cwd = (base / cwd).resolve()
-        else:
-            raise TypeError(f"Unknown type: {type(item)} for '{name}' in {config.path}")
-
+        task = parse_task(item, name, config.path, key)
         if name == TASK_SHARED:
             common = task
         else:
-            tasks[task.name] = task
+            tasks[name] = task
 
     if common:
         for task in tasks.values():
@@ -205,4 +154,64 @@ def parse_composite(task: Task, item: List[str]) -> Task:
             replace(task, name=TASK_COMPOSITE, cmd=cmd, keep_going=keep_going)
         )
     task.depends = depends
+    return task
+
+
+def parse_task(
+    item: Any, name: str = "", path: Optional[Path] = None, key: str = ""
+) -> Task:
+    """Parse a task."""
+
+    task = Task(origin=path, origin_key=key, name=name)
+    if isinstance(item, str):
+        task.keep_going, task.cmd = starts(item, TASK_KEEP_GOING)
+    elif isinstance(item, list):
+        parse_composite(task, item)
+    elif isinstance(item, dict):
+        try:
+            rename_aliases(item, PROPERTY_ALIASES)
+        except KeyError as e:
+            src, dest = e.args
+            raise SyntaxError(
+                f"{name} cannot contain '{dest}' and its alias '{src}': {path or 'CLI'}"
+            )
+
+        if help := item.get("help"):
+            task.help = help
+
+        # unlike pdm or rye, we allow `composite` + `cmd`
+        if composite := item.get("composite"):
+            parse_composite(task, composite)
+
+        if cmd := item.get("cmd"):
+            task.cmd = " ".join(cmd) if isinstance(cmd, list) else cmd
+            task.keep_going, task.cmd = starts(task.cmd, TASK_KEEP_GOING)
+        elif call := item.get("call"):
+            if not path or not path.name.startswith("pyproject"):
+                raise SyntaxError(
+                    f"'{name}' uses `call` task outside of `pyproject.toml`: {path or 'CLI'}"
+                )
+            task.cmd = python_call(call)
+
+        # internal
+        if verbatim := item.get("verbatim"):
+            task.verbatim = verbatim
+
+        # since keep_going might have been set elsewhere
+        if keep_going := item.get("keep_going", KEY_MISSING) is not KEY_MISSING:
+            task.keep_going = keep_going
+
+        if env := item.get("env"):
+            assert isinstance(env, dict)
+            task.env = {k: str(v) for k, v in env.items()}
+
+        base = path.parent if path else Path.cwd()
+        if env_file := item.get("env_file"):
+            task.env_file = (base / env_file).resolve()
+
+        if cwd := item.get("cwd"):
+            task.cwd = (base / cwd).resolve()
+    else:
+        raise TypeError(f"Unknown type: {type(item)} for '{name}' in {path or 'CLI'}")
+
     return task

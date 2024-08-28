@@ -10,10 +10,10 @@ import pytest
 # pkg
 from ds.args import Args
 from ds.runner import Runner
-from ds.tasks import parse_task
 from ds.tasks import print_tasks
 from ds.tasks import Task
 from ds.tasks import Tasks
+from ds.parsers.ds_toml import parse_task
 
 
 def _run(task: Task, tasks: Optional[Tasks] = None) -> int:
@@ -24,6 +24,9 @@ def test_print() -> None:
     """Print tasks."""
     # long task
     task = parse_task("echo " * 100)
+    task.pprint()
+
+    task.verbatim = True
     task.pprint()
 
     print_tasks(Path(), {})
@@ -45,6 +48,9 @@ def test_as_args() -> None:
 
     task = Task(name="run", env=dict(VAR="value"))
     assert task.as_args() == "ds -e VAR=value run"
+
+    task = Task(name="run", env_file=Path(".env"))
+    assert task.as_args() == "ds --env-file .env run"
 
 
 def test_missing() -> None:
