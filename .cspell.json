@@ -27,6 +27,7 @@
     "prebuild",
     "pushd",
     "putenv",
+    "pwsh",
     "pypa",
     "pypi",
     "pyproject",
