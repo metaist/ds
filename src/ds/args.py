@@ -12,7 +12,6 @@ from typing import Optional
 import dataclasses
 
 # pkg
-from .env import read_env
 from .symbols import ARG_BEG
 from .symbols import ARG_END
 from .symbols import ARG_OPTION
