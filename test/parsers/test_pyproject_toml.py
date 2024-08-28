@@ -38,10 +38,10 @@ def test_tasks() -> None:
     args = Args()
     path = EXAMPLE_FORMATS / "pyproject-ds.toml"
     config = Config(path, loads(path.read_text()))
-    assert parse_tasks(args, config)
+    assert parse_tasks(config)
 
     # using a non-task file
     path = EXAMPLE_WORKSPACE / "pyproject-uv.toml"
     config = Config(path, loads(path.read_text()))
     with pytest.raises(KeyError):
-        parse_tasks(args, config)
+        parse_tasks(config)

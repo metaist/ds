@@ -104,20 +104,20 @@ def test_format() -> None:
     """End-to-end test of the format."""
     path = EXAMPLE_FORMATS / "pyproject-poetry.toml"
     config = Config(path, loads(path.read_text()))
-    tasks = parse_tasks(Args(file=path), config)
+    tasks = parse_tasks(config)
     assert tasks
 
 
 def test_tasks_missing() -> None:
     """File without scripts."""
     with pytest.raises(KeyError):
-        parse_tasks(Args(), Config(PATH, {}))
+        parse_tasks(Config(PATH, {}))
 
 
 def test_tasks_empty() -> None:
     """Empty scripts."""
     data = nest(KEY, {})
-    assert parse_tasks(Args(), Config(PATH, data)) == {}
+    assert parse_tasks(Config(PATH, data)) == {}
 
 
 def test_task_cmd() -> None:
@@ -126,4 +126,4 @@ def test_task_cmd() -> None:
     expected = {
         "a": replace(TASK, name="a", cmd=PYTHON_CALL.format(pkg="pkg", fn="func()"))
     }
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected

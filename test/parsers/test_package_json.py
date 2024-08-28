@@ -81,40 +81,40 @@ def test_format() -> None:
     """End-to-end test of the format."""
     path = EXAMPLE_FORMATS / "package.json"
     config = Config(path, loads(path.read_text()))
-    tasks = parse_tasks(Args(file=path), config)
+    tasks = parse_tasks(config)
     assert tasks
 
 
 def test_tasks_missing() -> None:
     """Missing tasks."""
     with pytest.raises(KeyError):
-        parse_tasks(Args(), Config(PATH, {}))
+        parse_tasks(Config(PATH, {}))
 
 
 def test_tasks_empty() -> None:
     """Empty tasks."""
     data = nest(KEY, {})
-    assert parse_tasks(Args(), Config(PATH, data)) == {}
+    assert parse_tasks(Config(PATH, data)) == {}
 
 
 def test_task_disabled() -> None:
     """Disabled task."""
     data = nest(KEY, {"#a": "b"})
-    assert parse_tasks(Args(), Config(PATH, data)) == {}
+    assert parse_tasks(Config(PATH, data)) == {}
 
 
 def test_task_help() -> None:
     """Task help."""
     data = nest(KEY, {"#a": "run things", "a": "b"})
     expected = {"a": replace(TASK, name="a", cmd="b", help="run things")}
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
 
 def test_task_cmd() -> None:
     """Basic task."""
     data = nest(KEY, {"a": "b"})
     expected = {"a": replace(TASK, name="a", cmd="b")}
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
 
 def test_task_args() -> None:
@@ -125,7 +125,7 @@ def test_task_args() -> None:
         "a": replace(TASK, name="a", cmd="ls"),
         "b": replace(TASK, name="b", cmd="a -lah"),
     }
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
     # argument interpolation: via CLI
     data = nest(KEY, {"a": "ls $1", "b": "a -lah"})
@@ -133,7 +133,7 @@ def test_task_args() -> None:
         "a": replace(TASK, name="a", cmd="ls $1"),
         "b": replace(TASK, name="b", cmd="a -lah"),
     }
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
 
 def test_task_reference() -> None:
@@ -141,7 +141,7 @@ def test_task_reference() -> None:
     # task reference: apparent self-reference (but actually ok)
     data = nest(KEY, {"ls": "ls"})
     expected = {"ls": replace(TASK, name="ls", cmd="ls")}
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
     # task reference: loop (not ok)
     data = nest(KEY, {"a": "b", "b": "a"})
@@ -149,7 +149,7 @@ def test_task_reference() -> None:
         "a": replace(TASK, name="a", cmd="b"),
         "b": replace(TASK, name="b", cmd="a"),
     }
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
 
 def test_keep_going() -> None:
@@ -157,4 +157,4 @@ def test_keep_going() -> None:
     data = nest(KEY, {"a": f"{TASK_KEEP_GOING}b"})
     expected = {"a": replace(TASK, name="a", cmd=f"{TASK_KEEP_GOING}b")}
     # NOTE: `keep_going` NOT set
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected

@@ -10,7 +10,6 @@ import pytest
 # pkg
 from . import EXAMPLE_FORMATS
 from . import nest
-from ds.args import Args
 from ds.parsers import Config
 from ds.parsers.makefile import loads
 from ds.parsers.makefile import parse_tasks
@@ -37,7 +36,7 @@ def test_format() -> None:
     """End-to-end test of the format."""
     path = EXAMPLE_FORMATS / "Makefile"
     config = Config(path, loads(path.read_text()))
-    tasks = parse_tasks(Args(file=path), config)
+    tasks = parse_tasks(config)
     assert tasks
 
 
@@ -45,7 +44,7 @@ def test_tasks_basic() -> None:
     """Basic task."""
     data = nest(KEY, {"a": {"composite": [], "shell": "b", "verbatim": True}})
     expected = {"a": replace(TASK, name="a", cmd="b", verbatim=True)}
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
 
 def test_makefile_loads() -> None:
@@ -114,19 +113,22 @@ def test_makefile_loads() -> None:
     }
 
     # line continuation & .RECIPEPREFIX
-    assert loads(
-        """
+    assert (
+        loads(
+            """
 .RECIPEPREFIX=>
 target:
 >echo "Hello \\
 >world"
 """
-    ) == {
-        "recipes": {
-            "target": {
-                "composite": [],
-                "shell": 'echo "Hello \\\nworld"\n',
-                "verbatim": True,
+        )
+        == {
+            "recipes": {
+                "target": {
+                    "composite": [],
+                    "shell": 'echo "Hello \\\nworld"\n',
+                    "verbatim": True,
+                }
             }
         }
-    }
+    )

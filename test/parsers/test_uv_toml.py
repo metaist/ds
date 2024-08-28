@@ -74,4 +74,4 @@ def test_tasks_not_implemented() -> None:
     args = Args()
     config = Config(Path("pyproject.toml"), {})
     with pytest.raises(NotImplementedError):
-        parse_tasks(args, config)
+        parse_tasks(config)

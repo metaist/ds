@@ -65,7 +65,7 @@ def test_tasks_missing() -> None:
     args = Args()
     config = Config(PATH, {})
     with pytest.raises(KeyError):
-        parse_tasks(args, config)
+        parse_tasks(config)
 
 
 def test_tasks() -> None:
@@ -75,11 +75,11 @@ def test_tasks() -> None:
     expected = {
         "a": replace(TASK, origin_key="workspace.metadata.scripts", name="a", cmd="b")
     }
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(config) == expected
 
     args = Args()
     config = Config(PATH, nest("package.metadata.scripts", {"a": "b"}))
     expected = {
         "a": replace(TASK, origin_key="package.metadata.scripts", name="a", cmd="b")
     }
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(config) == expected

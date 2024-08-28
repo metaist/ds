@@ -86,55 +86,55 @@ def test_format() -> None:
     """End-to-end test of the format."""
     path = EXAMPLE_FORMATS / "pyproject-rye.toml"
     config = Config(path, loads(path.read_text()))
-    tasks = parse_tasks(Args(file=path), config)
+    tasks = parse_tasks(config)
     assert tasks
 
 
 def test_tasks_missing() -> None:
     """Missing tasks."""
     with pytest.raises(KeyError):
-        parse_tasks(Args(), Config(PATH, {}))
+        parse_tasks(Config(PATH, {}))
 
 
 def test_tasks_empty() -> None:
     """Empty tasks."""
     data = nest(KEY, {})
-    assert parse_tasks(Args(), Config(PATH, data)) == {}
+    assert parse_tasks(Config(PATH, data)) == {}
 
 
 def test_task_disabled() -> None:
     """Disabled task."""
     data = nest(KEY, {"#a": "b"})
-    assert parse_tasks(Args(), Config(PATH, data)) == {}
+    assert parse_tasks(Config(PATH, data)) == {}
 
 
 def test_task_help() -> None:
     """Task help."""
     data = nest(KEY, {"a": {"cmd": "b", "help": "run things"}})
     expected = {"a": replace(TASK, name="a", cmd="b", help="run things")}
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
 
 def test_task_cmd() -> None:
     """`cmd` task."""
     data = nest(KEY, {"a": "b"})
     expected = {"a": replace(TASK, name="a", cmd="b")}
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
     data = nest(KEY, {"a": ["ls", "-lah"]})
     expected = {"a": replace(TASK, name="a", cmd="ls -lah")}
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
     data = nest(KEY, {"a": {"cmd": ["ls", "-lah"]}})
     expected = {"a": replace(TASK, name="a", cmd="ls -lah")}
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
 
 def test_task_call() -> None:
     """`call` task."""
     data = nest(KEY, {"a": {"call": "http.server"}})
     expected = {"a": replace(TASK, name="a", cmd="python -m http.server")}
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
 
 def test_task_chain() -> None:
@@ -152,7 +152,7 @@ def test_task_chain() -> None:
             ],
         ),
     }
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
 
 def test_task_env() -> None:
@@ -163,7 +163,7 @@ def test_task_env() -> None:
     expected = {
         "a": replace(TASK, name="a", cmd="flask $PORT", env={"PORT": "8080"}),
     }
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
 
 def test_task_env_file() -> None:
@@ -179,7 +179,7 @@ def test_task_env_file() -> None:
             env_file=EXAMPLE_FORMATS / ".env",
         ),
     }
-    assert parse_tasks(Args(), Config(path, data)) == expected
+    assert parse_tasks(Config(path, data)) == expected
 
     # with missing file
     data = nest(KEY, {"a": {"cmd": "flask $PORT", "env-file": ".env"}})
@@ -191,15 +191,15 @@ def test_task_env_file() -> None:
             env_file=Path(".env").resolve(),
         ),
     }
-    assert parse_tasks(Args(), Config(PATH, data)) == expected
+    assert parse_tasks(Config(PATH, data)) == expected
 
 
 def test_bad_syntax() -> None:
     """Syntax errors."""
     data = nest(KEY, {"a": False})
-    with pytest.raises(SyntaxError):
-        parse_tasks(Args(), Config(PATH, data))
+    with pytest.raises(TypeError):
+        parse_tasks(Config(PATH, data))
 
     data = nest(KEY, {"a": {"unknown": "missing required keys"}})
     with pytest.raises(SyntaxError):
-        parse_tasks(Args(), Config(PATH, data))
+        parse_tasks(Config(PATH, data))
