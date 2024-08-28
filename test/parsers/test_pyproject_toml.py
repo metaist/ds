@@ -8,8 +8,7 @@ import pytest
 from . import EXAMPLE_FORMATS
 from . import EXAMPLE_WORKSPACE
 
-from ds.args import Args
-from ds.parsers import Config
+from ds.configs import Config
 from ds.parsers.pyproject_toml import loads
 from ds.parsers.pyproject_toml import parse_tasks
 from ds.parsers.pyproject_toml import parse_workspace
@@ -35,7 +34,6 @@ def test_workspace() -> None:
 
 def test_tasks() -> None:
     """Load tasks."""
-    args = Args()
     path = EXAMPLE_FORMATS / "pyproject-ds.toml"
     config = Config(path, loads(path.read_text()))
     assert parse_tasks(config)

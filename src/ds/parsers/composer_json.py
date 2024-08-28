@@ -6,9 +6,8 @@ import logging
 import re
 
 # pkg
-from . import Config
-from . import Membership
-from ..args import Args
+from ..configs import Config
+from ..configs import Membership
 from ..searchers import get_key
 from ..symbols import KEY_MISSING
 from ..symbols import TASK_DISABLED

@@ -6,10 +6,9 @@ from typing import Optional
 import logging
 
 # pkg
-from . import Config
-from . import Membership
+from ..configs import Config
+from ..configs import Membership
 from . import toml
-from ..args import Args
 from ..searchers import get_key
 from ..searchers import glob_paths
 from ..symbols import KEY_MISSING

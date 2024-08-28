@@ -9,8 +9,7 @@ import pytest
 # pkg
 from . import EXAMPLE_WORKSPACE
 from . import nest
-from ds.args import Args
-from ds.parsers import Config
+from ds.configs import Config
 from ds.parsers.uv_toml import loads
 from ds.parsers.uv_toml import parse_tasks
 from ds.parsers.uv_toml import parse_workspace
@@ -71,7 +70,6 @@ def test_workspace_basic2() -> None:
 
 def test_tasks_not_implemented() -> None:
     """Tasks are not implemented."""
-    args = Args()
     config = Config(Path("pyproject.toml"), {})
     with pytest.raises(NotImplementedError):
         parse_tasks(config)

@@ -1,4 +1,4 @@
-"""Find directories, files, file sections."""
+"""Find keys, names, directories and files."""
 
 # std
 from fnmatch import fnmatch

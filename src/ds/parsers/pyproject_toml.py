@@ -7,15 +7,14 @@ from typing import Dict
 import logging
 
 # pkg
-from . import Config
+from ..configs import Config
 from . import ds_toml
-from . import Membership
+from ..configs import Membership
 from . import pyproject_pdm
 from . import pyproject_poetry
 from . import pyproject_rye
 from . import toml
 from . import uv_toml
-from ..args import Args
 from ..tasks import Tasks
 
 log = logging.getLogger(__name__)
@@ -33,7 +32,7 @@ WORKSPACE_PARSERS: Dict[str, Callable[[Config, str], Membership]] = {
 }
 """Locations of workspace parsers in `pyproject.toml`."""
 
-TASK_PARSERS: Dict[str, Callable[[Args, Config, str], Tasks]] = {
+TASK_PARSERS: Dict[str, Callable[[Config, str], Tasks]] = {
     "tool.ds.scripts": ds_toml.parse_tasks,
     "tool.rye.scripts": pyproject_rye.parse_tasks,
     "tool.pdm.scripts": pyproject_pdm.parse_tasks,

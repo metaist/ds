@@ -11,8 +11,7 @@ import pytest
 from . import EXAMPLE_FORMATS
 from . import EXAMPLE_WORKSPACE
 from . import nest
-from ds.args import Args
-from ds.parsers import Config
+from ds.configs import Config
 from ds.parsers.pyproject_poetry import loads
 from ds.parsers.pyproject_poetry import parse_tasks
 from ds.parsers.pyproject_poetry import parse_workspace

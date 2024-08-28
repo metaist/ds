@@ -7,9 +7,8 @@ import json
 import logging
 
 # pkg
-from . import Config
-from . import Membership
-from ..args import Args
+from ..configs import Config
+from ..configs import Membership
 from ..env import RE_ARGS
 from ..searchers import get_key
 from ..searchers import glob_names

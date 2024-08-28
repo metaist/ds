@@ -5,136 +5,24 @@ from __future__ import annotations
 from fnmatch import fnmatch
 from pathlib import Path
 from types import ModuleType
-from typing import Any
-from typing import Callable
 from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-import dataclasses
-import json
 import logging
-import types
 
 # pkg
-from . import toml
-from ..searchers import get_key
+from . import cargo_toml
+from . import composer_json
+from . import ds_toml
+from . import makefile
+from . import package_json
+from . import pyproject_toml
+from . import uv_toml
+from ..configs import Config
 from ..searchers import glob_parents
-from ..searchers import glob_paths
-from ..searchers import GlobMatches
-from ..symbols import GLOB_EXCLUDE
-from ..symbols import KEY_DELIMITER
-from ..symbols import TASK_DISABLED
-from ..tasks import parse_task
-from ..tasks import Tasks
+
 
 log = logging.getLogger(__name__)
 
-
-Loader = Callable[[str], Dict[str, Any]]
-"""A loader takes text and returns a mapping of strings to values."""
-
-FILE_LOADERS: Dict[str, ModuleType] = {}
-"""Mapping of file pattern to module that handles that pattern."""
-
-Membership = Dict[Path, bool]
-"""Mapping of paths to whether they are members."""
-
-# NOTE: Used by cog in README.md
-SEARCH_FILES = [
-    "ds.toml",
-    "pyproject.toml",  # python
-    "package.json",  # node
-    "Cargo.toml",  # rust
-    "composer.json",  # php
-    "[Mm]akefile",
-    ".ds.toml",
-]
-"""Search order for configuration file names."""
-
-# NOTE: Used by cog in README.md
-SEARCH_KEYS_TASKS = [
-    "scripts",  # ds.toml, .ds.toml, package.json, composer.json
-    "tool.ds.scripts",  # pyproject.toml
-    "tool.pdm.scripts",  # pyproject.toml
-    "tool.rye.scripts",  # pyproject.toml
-    "package.metadata.scripts",  # Cargo.toml
-    "workspace.metadata.scripts",  # Cargo.toml
-    "Makefile",  # Makefile
-]
-"""Search order for configuration keys."""
-
-# NOTE: Used by cog in README.md
-SEARCH_KEYS_WORKSPACE = [
-    "workspace.members",  # ds.toml, .ds.toml, Cargo.toml
-    "tool.ds.workspace.members",  # project.toml
-    "tool.rye.workspace.members",  # pyproject.toml
-    "tool.uv.workspace.members",  # pyproject.toml
-    "workspaces",  # package.json
-]
-"""Search for workspace configuration keys."""
-
-
-@dataclasses.dataclass
-class Config:
-    """ds configuration."""
-
-    path: Path
-    """Path to the configuration file."""
-
-    data: Dict[str, Any]
-    """Configuration data."""
-
-    tasks: Tasks = dataclasses.field(default_factory=dict)
-    """Task definitions."""
-
-    members: GlobMatches = dataclasses.field(default_factory=dict)
-    """Workspace members mapped to `True` for active members."""
-
-    @staticmethod
-    def find(start: Path, require_workspace: bool = False) -> Config:
-        """Return the config file in `start` or its parents."""
-        log.debug(f"require_workspace={require_workspace}")
-        for _, check in glob_parents(start, {v: v for v in SEARCH_FILES}):
-            try:
-                return Config.load(check).parse(require_workspace)
-            except LookupError:
-                continue  # No valid sections.
-        raise FileNotFoundError("No valid configuration file found.")
-
-    @staticmethod
-    def load(path: Path) -> Config:
-        """Try to load a configuration file."""
-        for pattern, loader in LOADERS.items():
-            if fnmatch(path.name, pattern):
-                return Config(path, loader(path.read_text()))
-        raise LookupError(f"Not sure how to read file: {path}")
-
-    def parse(self, require_workspace: bool = False) -> Config:
-        """Parse a configuration file."""
-        found, self.members = parse_workspace(self)
-        if require_workspace and not found:
-            raise LookupError("Could not find workspace configuration.")
-
-        found, self.tasks = parse_tasks(self)
-        if not require_workspace and not found:
-            raise LookupError("Could not find task configuration.")
-
-        return self
-
-
-from . import cargo_toml  # noqa: E402
-from . import composer_json  # noqa: E402
-from . import ds_toml  # noqa: E402
-from . import makefile  # noqa: E402
-from . import package_json  # noqa: E402
-from . import pyproject_toml  # noqa: E402
-from . import pyproject_poetry  # noqa: E402
-from . import pyproject_pdm  # noqa: E402
-from . import pyproject_rye  # noqa: E402
-from . import uv_toml  # noqa: E402
-
-PARSERS: Dict[str, ModuleType] = {
+PARSERS_CORE: Dict[str, ModuleType] = {
     "ds.toml": ds_toml,
     "pyproject.toml": pyproject_toml,
     "uv.toml": uv_toml,
@@ -142,44 +30,58 @@ PARSERS: Dict[str, ModuleType] = {
     "Cargo.toml": cargo_toml,
     "composer.json": composer_json,
     "[Mm]akefile": makefile,
-    # for testing
-    "pyproject-ds*.toml": ds_toml,
-    "pyproject-pdm*.toml": pyproject_pdm,
-    "pyproject-poetry*.toml": pyproject_poetry,
-    "pyproject-rye*.toml": pyproject_rye,
-    "pyproject-uv*.toml": uv_toml,
-    # default parsers
+}
+"""Parsers for specific file names."""
+
+PARSERS_GENERIC: Dict[str, ModuleType] = {
     "*.toml": ds_toml,
     "*.json": package_json,
 }
+"""Generic parsers."""
 
-LOADERS: Dict[str, Loader] = {
-    "*.json": json.loads,
-    "*.toml": toml.loads,
-    "*[Mm]akefile": makefile.loads,
-}
-"""Mapping of file patterns to load functions."""
+PARSERS = {**PARSERS_CORE, **PARSERS_GENERIC}
+"""Combined parsers."""
 
 
-def parse_workspace(config: Config) -> Tuple[bool, Membership]:
-    """Parse workspace config."""
+def parse(path: Path, require_workspace: bool = False) -> Config:
+    """Parse a config file."""
+    text = path.read_text()
+    config = Config(path, {})
+    is_loaded = False
     for pattern, parser in PARSERS.items():
-        if not fnmatch(config.path.name, pattern):
+        if not fnmatch(path.name, pattern):
             continue
+
+        config.data = parser.loads(text)
+        is_loaded = True
+        # properly parsed data
+
         try:
-            return True, parser.parse_workspace(config)
-        except (KeyError, NotImplementedError):
-            continue
-    return False, {}
+            config.members = parser.parse_workspace(config)
+        except (NotImplementedError, KeyError, TypeError):
+            if require_workspace:
+                raise LookupError(f"No workspace found in: {path}")
+        # have workspace or don't need it
+
+        try:
+            config.tasks = parser.parse_tasks(config)
+        except (NotImplementedError, KeyError, TypeError):
+            if not require_workspace:
+                raise LookupError(f"No tasks found in: {path}")
+        # have tasks or don't need them
+        break  # don't try other patterns
+
+    if not is_loaded:
+        raise LookupError(f"No parser found for: {path}")
+
+    return config
 
 
-def parse_tasks(config: Config) -> Tuple[bool, Tasks]:
-    """Parse workspace config."""
-    for pattern, parser in PARSERS.items():
-        if not fnmatch(config.path.name, pattern):
-            continue
+def find_and_parse(start: Path, require_workspace: bool = False) -> Config:
+    """Return the config file in `start` or its parents."""
+    for _, check in glob_parents(start, {pattern: pattern for pattern in PARSERS}):
         try:
-            return True, parser.parse_tasks(config)
-        except (KeyError, NotImplementedError):
-            continue
-    return False, {}
+            return parse(check, require_workspace)
+        except LookupError:
+            continue  # No valid sections.
+    raise FileNotFoundError("No valid configuration file found.")

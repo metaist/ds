@@ -5,10 +5,9 @@ import logging
 
 # pkg
 from . import cargo_toml
-from . import Config
-from . import Membership
+from ..configs import Config
+from ..configs import Membership
 from . import toml
-from ..args import Args
 from ..searchers import get_key
 from ..symbols import KEY_MISSING
 from ..tasks import Task

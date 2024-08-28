@@ -20,10 +20,11 @@ import os
 import sys
 
 # pkg
+from . import parsers
 from .args import Args
 from .args import USAGE
+from .configs import Config
 from .env import TempEnv
-from .parsers import Config
 from .runner import Runner
 from .searchers import glob_paths
 from .tasks import check_cycles
@@ -76,10 +77,10 @@ def load_config(args: Args) -> Config:
         if args.file:
             if not args.file.exists():
                 raise FileNotFoundError(f"Cannot find file: {args.file}")
-            config = Config.load(args.file).parse(require_workspace)
+            config = parsers.parse(args.file, require_workspace)
         else:
             # search for a valid config
-            config = Config.find(Path.cwd(), require_workspace)
+            config = parsers.find_and_parse(Path.cwd(), require_workspace)
             args.file = config.path
         # config loaded
 

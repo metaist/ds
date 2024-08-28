@@ -7,9 +7,8 @@ from pathlib import Path
 import pytest
 
 # pkg
-from ds.parsers import Config
-from ds.searchers import glob_paths
-from ds.symbols import GLOB_EXCLUDE
+from ds.parsers import find_and_parse
+from ds.parsers import parse
 
 EXAMPLES = Path("examples")
 """Path to examples."""
@@ -21,126 +20,55 @@ WORKSPACE = EXAMPLES / "workspace"
 def test_no_config() -> None:
     """Fail to find a config."""
     with pytest.raises(FileNotFoundError):
-        assert Config.find(Path("/")) is None
+        assert find_and_parse(Path("/"))
 
 
 def test_config_find() -> None:
-    """Successfully find a config."""
-    assert Config.find(Path(__file__)) is not None
+    """Find a config."""
+    assert find_and_parse(Path(__file__)) is not None
+
+
+def test_no_section() -> None:
+    """Skip files without scripts."""
+    assert find_and_parse(EXAMPLES / "misc")
 
 
 def test_load_readme() -> None:
     """Load README examples."""
     path = EXAMPLES / "readme"
-    assert Config.load(path / "basic.toml").parse()
-    assert Config.load(path / "composite.toml").parse()
-    assert Config.load(path / "error-suppression.toml").parse()
-    assert Config.load(path / "example.toml").parse()
+    assert parse(path / "basic.toml")
+    assert parse(path / "composite.toml")
+    assert parse(path / "error-suppression.toml")
+    assert parse(path / "example.toml")
 
 
 def test_unknown_name() -> None:
     """Try to parse a file with an unknown file name."""
-    assert Config.load(EXAMPLES / "misc" / "unknown.json").parse()
+    assert parse(EXAMPLES / "misc" / "unknown.json")
 
 
 def test_unknown_suffix() -> None:
     """Try to read a file with an unknown suffix."""
     with pytest.raises(LookupError):
-        Config.load(Path("unknown-suffix.txt"))
-
-
-def test_no_section() -> None:
-    """Try to parse a file with no scripts."""
-    assert Config.find(EXAMPLES / "misc")
+        parse(EXAMPLES / "misc" / "unknown-suffix.txt")
 
 
 def test_bad_key() -> None:
     """Try to parse a file with an unknown format."""
     with pytest.raises(LookupError):
-        Config.load(EXAMPLES / "misc" / "bad-key.toml").parse()
+        parse(EXAMPLES / "misc" / "bad-key.toml")
 
 
 def test_bad_value() -> None:
     """Try to parse a file with an invalid type."""
-    with pytest.raises(TypeError):
-        Config.load(EXAMPLES / "misc" / "bad-value.toml").parse()
-
-
-def test_glob_apply() -> None:
-    """Apply globs."""
-    m = WORKSPACE / "members"
-
-    got = glob_paths(
-        WORKSPACE, ["*"], allow_all=False, allow_excludes=True, allow_new=True
-    )
-    want = {p: True for p in WORKSPACE.glob("*")}
-    assert got == want
-
-    got = glob_paths(
-        WORKSPACE,
-        [f"{GLOB_EXCLUDE}*"],
-        allow_all=False,
-        allow_excludes=True,
-        allow_new=True,
-    )
-    want = {p: False for p in WORKSPACE.glob("*")}
-    assert got == want
-
-    got = glob_paths(
-        WORKSPACE,
-        ["members/*", "!members/x"],
-        allow_all=False,
-        allow_excludes=True,
-        allow_new=True,
-    )
-    want = {m / "a": True, m / "b": True, m / "x": False}
-    assert got == want
-
-
-def test_glob_paths() -> None:
-    """Constrain some values."""
-    m = WORKSPACE / "members"
-
-    start = {m / "a": False, m / "b": False, m / "x": False}
-    assert glob_paths(
-        WORKSPACE,
-        ["members/a"],
-        previous=start,
-        allow_all=True,
-        allow_excludes=True,
-        allow_new=False,
-    ) == {**start, **{m / "a": True}}
-    assert glob_paths(
-        WORKSPACE,
-        ["**/b", "!*", "*/x"],
-        previous=start,
-        allow_all=True,
-        allow_excludes=True,
-        allow_new=False,
-    ) == {
-        **start,
-        **{m / "x": True},
-    }
-
-    # prevent new entries
-    start = {m / "a": False, m / "b": False}
-    assert (
-        glob_paths(
-            WORKSPACE,
-            ["members/x"],
-            previous=start,
-            allow_all=True,
-            allow_excludes=True,
-            allow_new=False,
-        )
-        == start
-    )
+    with pytest.raises(LookupError):
+        parse(EXAMPLES / "misc" / "bad-value.toml")
 
 
 def test_load_no_workspace() -> None:
     """Try loading when there's no workspace config."""
     with pytest.raises(LookupError):
-        Config.load(WORKSPACE / "members" / "a" / "Cargo.toml").parse(True)
+        parse(WORKSPACE / "members" / "a" / "Cargo.toml", require_workspace=True)
 
 
 def test_load_workspace() -> None:
@@ -148,20 +76,20 @@ def test_load_workspace() -> None:
     pkgs = WORKSPACE / "members"
     expected = {pkgs / "a": True, pkgs / "b": True, pkgs / "x": False}
 
-    config = Config.load(WORKSPACE / "Cargo.toml").parse(True)
+    config = parse(WORKSPACE / "Cargo.toml", True)
     assert config.members == expected
 
-    config = Config.load(WORKSPACE / "ds.toml").parse(True)
+    config = parse(WORKSPACE / "ds.toml", True)
     assert config.members == expected
 
-    config = Config.load(WORKSPACE / "package.json").parse(True)
+    config = parse(WORKSPACE / "package.json", True)
     assert config.members == expected
 
-    config = Config.load(WORKSPACE / "pyproject-ds.toml").parse(True)
+    config = parse(WORKSPACE / "pyproject-ds.toml", True)
     assert config.members == expected
 
-    config = Config.load(WORKSPACE / "pyproject-rye.toml").parse(True)
+    config = parse(WORKSPACE / "pyproject-rye.toml", True)
     assert config.members == {**{WORKSPACE.resolve(): True}, **expected}
 
-    config = Config.load(WORKSPACE / "pyproject-uv.toml").parse(True)
+    config = parse(WORKSPACE / "pyproject-uv.toml", True)
     assert config.members == expected

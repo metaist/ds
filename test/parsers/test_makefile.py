@@ -10,7 +10,7 @@ import pytest
 # pkg
 from . import EXAMPLE_FORMATS
 from . import nest
-from ds.parsers import Config
+from ds.configs import Config
 from ds.parsers.makefile import loads
 from ds.parsers.makefile import parse_tasks
 from ds.parsers.makefile import parse_workspace
@@ -113,22 +113,19 @@ def test_makefile_loads() -> None:
     }
 
     # line continuation & .RECIPEPREFIX
-    assert (
-        loads(
-            """
+    assert loads(
+        """
 .RECIPEPREFIX=>
 target:
 >echo "Hello \\
 >world"
 """
-        )
-        == {
-            "recipes": {
-                "target": {
-                    "composite": [],
-                    "shell": 'echo "Hello \\\nworld"\n',
-                    "verbatim": True,
-                }
+    ) == {
+        "recipes": {
+            "target": {
+                "composite": [],
+                "shell": 'echo "Hello \\\nworld"\n',
+                "verbatim": True,
             }
         }
-    )
+    }

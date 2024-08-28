@@ -10,8 +10,7 @@ import pytest
 # pkg
 from . import EXAMPLE_WORKSPACE
 from . import nest
-from ds.args import Args
-from ds.parsers import Config
+from ds.configs import Config
 from ds.parsers.cargo_toml import loads
 from ds.parsers.cargo_toml import parse_tasks
 from ds.parsers.cargo_toml import parse_workspace
@@ -62,7 +61,6 @@ def test_workspace_basic() -> None:
 
 def test_tasks_missing() -> None:
     """Missing tasks."""
-    args = Args()
     config = Config(PATH, {})
     with pytest.raises(KeyError):
         parse_tasks(config)
@@ -70,14 +68,12 @@ def test_tasks_missing() -> None:
 
 def test_tasks() -> None:
     """Test parsing tasks."""
-    args = Args()
     config = Config(PATH, nest("workspace.metadata.scripts", {"a": "b"}))
     expected = {
         "a": replace(TASK, origin_key="workspace.metadata.scripts", name="a", cmd="b")
     }
     assert parse_tasks(config) == expected
 
-    args = Args()
     config = Config(PATH, nest("package.metadata.scripts", {"a": "b"}))
     expected = {
         "a": replace(TASK, origin_key="package.metadata.scripts", name="a", cmd="b")

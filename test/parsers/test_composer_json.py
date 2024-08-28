@@ -10,8 +10,7 @@ import pytest
 # pkg
 from . import EXAMPLE_FORMATS
 from . import nest
-from ds.args import Args
-from ds.parsers import Config
+from ds.configs import Config
 from ds.parsers.composer_json import loads
 from ds.parsers.composer_json import parse_tasks
 from ds.parsers.composer_json import parse_workspace
@@ -39,7 +38,6 @@ def test_workspace() -> None:
 def test_format() -> None:
     """End-to-end test of the format."""
     path = EXAMPLE_FORMATS / "composer.json"
-    args = Args(file=path)
     config = Config(path, loads(path.read_text()))
     tasks = parse_tasks(config)
     assert tasks
