@@ -1,7 +1,6 @@
 """`composer.json` parser."""
 
 # std
-from dataclasses import replace
 import json
 import logging
 import re

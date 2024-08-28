@@ -1,15 +1,27 @@
 {
   "scripts": {
     "#disabled": "this task doesn't run",
-    "basic1": "ls -la",
-    "basic2": "touch foo.txt",
-    "composite": "ds basic1 basic2",
-    "ruff": "ruff check $1 ${@:-}",
-    "args": "ds ruff: . --fix",
-    "serve": "flask run --debug",
-    "env": "ds -e FLASK_PORT=8080 serve",
-    "will_fail": "exit 1",
-    "keep_going": "ds +will_fail",
-    "working": "ds --cwd test basic1"
+    "phpstan": "phpstan",
+    "test": [
+      "Composer\\Config::disableProcessTimeout",
+      "@clearCache",
+      "@php script.php",
+      "phpunit"
+    ],
+    "clearCache": "rm -rf cache/*",
+    "testsVerbose": "@tests -vvv",
+    "install-phpstan": [
+      "@putenv COMPOSER=phpstan-composer.json",
+      "@composer install --prefer-dist"
+    ]
+  },
+  "scripts-aliases": {
+    "phpstan": [
+      "stan",
+      "analyze"
+    ]
+  },
+  "scripts-descriptions": {
+    "test": "Run all tests!"
   }
 }
