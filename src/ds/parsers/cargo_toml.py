@@ -13,6 +13,7 @@ from ..searchers import glob_paths
 from ..symbols import GLOB_EXCLUDE
 from ..symbols import KEY_MISSING
 from ..tasks import Tasks
+from . import ds_toml
 
 
 log = logging.getLogger(__name__)
@@ -53,7 +54,17 @@ def parse_workspace(config: Config, key: str = "workspace") -> Membership:
     return members
 
 
-def parse_tasks(args: Args, config: Config) -> Tasks:
-    """Tasks are not officially defined `Cargo.toml`."""
-    tasks: Tasks = {}
-    return tasks
+def parse_tasks(
+    args: Args, config: Config, key: str = "workspace.metadata.scripts"
+) -> Tasks:
+    """Tasks are not officially defined `Cargo.toml`.
+
+    However, we'll look at:
+    - `workspace.metadata.scripts`
+    - `package.metadata.scripts`
+    """
+    if get_key(config.data, key, KEY_MISSING) is KEY_MISSING:
+        key = "package.metadata.scripts"
+        if get_key(config.data, key, KEY_MISSING) is KEY_MISSING:
+            raise KeyError(f"Missing '{key}' key in {config.path}")
+    return ds_toml.parse_tasks(args, config, key)
