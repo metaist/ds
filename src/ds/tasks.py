@@ -9,7 +9,6 @@ from os.path import relpath
 from pathlib import Path
 from shlex import join
 from shlex import split
-from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -24,9 +23,7 @@ else:  # pragma: no cover
     import graphlib  # type: ignore
 
 # pkg
-from .env import read_env
 from .env import wrap_cmd
-from .symbols import starts
 from .symbols import TASK_COMPOSITE
 from .symbols import TASK_KEEP_GOING
 

@@ -47,7 +47,7 @@ def venv_activate_cmd(venv: Path) -> str:
         return f"source {venv / 'bin' / 'activate.csh'};"
     if sys.platform.startswith("linux") or sys.platform.startswith("darwin"):
         if is_powershell:  # POSIX
-            return f"source {venv / "bin" / "Activate.ps1"};"
+            return f"source {venv / 'bin' / 'Activate.ps1'};"
         return default
 
     # no cover: start
@@ -56,9 +56,9 @@ def venv_activate_cmd(venv: Path) -> str:
     # windows
     is_cmd_prompt = "cmd.exe" in ENV.get("ComSpec", "")
     if is_cmd_prompt:
-        return str(venv / "Scripts" / "activate")
+        return str(venv / "Scripts" / "activate.bat") + ";"
     if is_powershell:
-        return str(venv / "Scripts" / "Activate.ps1")
+        return str(venv / "Scripts" / "Activate.ps1") + ";"
 
     return default
     # no cover: stop
