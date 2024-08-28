@@ -130,7 +130,8 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.ds.scripts") -> Tas
                 task.keep_going = keep_going
 
             if env := item.get("env"):
-                task.env = env
+                assert isinstance(env, dict)
+                task.env = {k: str(v) for k, v in env.items()}
 
             if env_file := item.get("env_file"):
                 task.env_file = (config.path.parent / env_file).resolve()

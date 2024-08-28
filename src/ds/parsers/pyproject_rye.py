@@ -135,7 +135,8 @@ def parse_tasks(args: Args, config: Config, key="tool.rye.scripts") -> Tasks:
 
             # `env`: https://rye.astral.sh/guide/pyproject/#env
             if env := item.get("env"):
-                task.env = env
+                assert isinstance(env, dict)
+                task.env = {k: str(v) for k, v in env.items()}
 
             # `env-file`: https://rye.astral.sh/guide/pyproject/#env-file
             # [...] points to a file that should be loaded (relative to the

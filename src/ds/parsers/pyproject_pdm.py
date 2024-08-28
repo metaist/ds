@@ -120,7 +120,8 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.pdm.scripts") -> Ta
 
             # `env`: https://pdm-project.org/latest/usage/scripts/#env
             if env := item.get("env"):
-                task.env = env
+                assert isinstance(env, dict)
+                task.env = {k: str(v) for k, v in env.items()}
 
             # `env_file`: https://pdm-project.org/latest/usage/scripts/#env_file
             if env_file := item.get("env_file"):
