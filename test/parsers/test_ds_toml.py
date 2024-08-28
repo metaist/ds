@@ -156,9 +156,9 @@ def test_task_cmd() -> None:
 
     config = Config(
         Path("pyproject.toml"),
-        {"tool": {"ds": {"scripts": {"a": {"shell": "ls -lah"}}}}},
+        {"tool": {"ds": {"scripts": {"a": {"shell": "ls -lah", "verbatim": True}}}}},
     )
-    expected = {"a": replace(TASK, name="a", cmd="ls -lah")}
+    expected = {"a": replace(TASK, name="a", cmd="ls -lah", verbatim=True)}
     assert parse_tasks(args, config) == expected
 
 

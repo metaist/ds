@@ -121,6 +121,10 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.ds.scripts") -> Tas
                     )
                 task.cmd = python_call(call)
 
+            # internal
+            if verbatim := item.get("verbatim"):
+                task.verbatim = verbatim
+
             # since keep_going might have been set elsewhere
             if keep_going := item.get("keep_going", KEY_MISSING) is not KEY_MISSING:
                 task.keep_going = keep_going

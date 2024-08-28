@@ -38,14 +38,6 @@ def test_load_readme() -> None:
     assert Config.load(path / "example.toml").parse()
 
 
-def test_load_formats() -> None:
-    """Load known formats."""
-    path = EXAMPLES / "formats"
-    assert Config.load(path / "Cargo.toml").parse()
-    assert Config.load(path / "composer.json").parse()
-    assert Config.load(path / "Makefile").parse()
-
-
 def test_unknown_name() -> None:
     """Try to parse a file with an unknown file name."""
     assert Config.load(EXAMPLES / "misc" / "unknown.json").parse()

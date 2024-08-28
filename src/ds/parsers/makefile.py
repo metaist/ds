@@ -8,10 +8,13 @@ from typing import Tuple
 import logging
 
 # pkg
-# from . import Config
+from . import Config
+from . import ds_toml
 from . import Membership
+from ..args import Args
 from ..symbols import SHELL_CONTINUE
 from ..symbols import starts
+from ..tasks import Tasks
 
 log = logging.getLogger(__name__)
 
@@ -19,20 +22,20 @@ NestedDict = Dict[str, Dict[str, Any]]
 """Generic mapping of a nested dict object."""
 
 
-def parse_workspace(*_: Any, **__: Any) -> Membership:
+def parse_workspace(config: Config, key: str = "") -> Membership:
     """`Makefile` does not support workspaces."""
     raise NotImplementedError("`Makefile` does not support workspaces.")
 
 
-# def parse_tasks(config: Config) -> Tasks:
-#     # TODO: Use `ds_toml.parse_tasks`
-#     pass
+def parse_tasks(args: Args, config: Config, key="recipes") -> Tasks:
+    """Tasks are defined in `recipes`."""
+    return ds_toml.parse_tasks(args, config, key)
 
 
 def loads(text: str, debug: bool = False) -> NestedDict:
     """Load a `Makefile`."""
     # debug = True
-    log.warning("EXPERIMENTAL: Trying to parse simplified Makefile format.")
+    log.warning("EXPERIMENTAL: Parsing simplified `Makefile` format.")
 
     result: NestedDict = {}
     prefix = "\t"
@@ -168,4 +171,4 @@ def loads(text: str, debug: bool = False) -> NestedDict:
         rule["shell"] = cmd
 
     # print(result)
-    return {"Makefile": result}
+    return {"recipes": result}
