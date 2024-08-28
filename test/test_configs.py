@@ -161,7 +161,7 @@ def test_load_workspace() -> None:
     assert config.members == expected
 
     config = Config.load(WORKSPACE / "pyproject-rye.toml").parse(True)
-    assert config.members == expected
+    assert config.members == {**{WORKSPACE.resolve(): True}, **expected}
 
     config = Config.load(WORKSPACE / "pyproject-uv.toml").parse(True)
     assert config.members == expected

@@ -14,6 +14,7 @@ from typing import Tuple
 import dataclasses
 import json
 import logging
+import types
 
 # pkg
 from . import toml
@@ -111,7 +112,7 @@ class Config:
 
     def parse(self, require_workspace: bool = False) -> Config:
         """Parse a configuration file."""
-        found, self.members = parse_workspace(self.path.parent, self.data)
+        found, self.members = parse_workspace(self)
         if require_workspace and not found:
             raise LookupError("Could not find workspace configuration.")
 
@@ -120,42 +121,6 @@ class Config:
             raise LookupError("Could not find task configuration.")
 
         return self
-
-
-def parse_workspace(
-    path: Path, config: Dict[str, Any]
-) -> Tuple[bool, Dict[Path, bool]]:
-    """Parse workspace configurations."""
-    found = False
-    members: Dict[Path, bool] = {}
-    key = ""
-    patterns: List[str] = []
-    for key in SEARCH_KEYS_WORKSPACE:
-        patterns = get_key(config, key)
-        if patterns is not None:
-            found = True
-            break
-    if not found:
-        return found, members
-
-    members = glob_paths(
-        path, patterns, allow_all=False, allow_excludes=True, allow_new=True
-    )
-
-    # special case: Cargo.toml exclude patterns
-    if KEY_DELIMITER in key:
-        patterns = get_key(config, key.split(KEY_DELIMITER)[:-1] + ["exclude"])
-        if patterns:  # remove all of these
-            patterns = [f"{GLOB_EXCLUDE}{p}" for p in patterns]
-            members = glob_paths(
-                path,
-                patterns,
-                allow_all=True,
-                allow_excludes=True,
-                allow_new=False,
-                previous=members,
-            )
-    return found, members
 
 
 def parse_tasks(
@@ -197,9 +162,12 @@ from . import ds_toml  # noqa: E402
 from . import makefile  # noqa: E402
 from . import package_json  # noqa: E402
 from . import pyproject_toml  # noqa: E402
+from . import pyproject_poetry  # noqa: E402
+from . import pyproject_pdm  # noqa: E402
+from . import pyproject_rye  # noqa: E402
 from . import uv_toml  # noqa: E402
 
-PARSERS = {
+PARSERS: Dict[str, ModuleType] = {
     "ds.toml": ds_toml,
     "pyproject.toml": pyproject_toml,
     "uv.toml": uv_toml,
@@ -207,6 +175,15 @@ PARSERS = {
     "Cargo.toml": cargo_toml,
     "composer.json": composer_json,
     "[Mm]akefile": makefile,
+    # for testing
+    "pyproject-ds*.toml": ds_toml,
+    "pyproject-pdm*.toml": pyproject_pdm,
+    "pyproject-poetry*.toml": pyproject_poetry,
+    "pyproject-rye*.toml": pyproject_rye,
+    "pyproject-uv*.toml": uv_toml,
+    # default parsers
+    "*.toml": ds_toml,
+    "*.json": package_json,
 }
 
 LOADERS: Dict[str, Loader] = {
@@ -215,3 +192,15 @@ LOADERS: Dict[str, Loader] = {
     "*[Mm]akefile": makefile.loads,
 }
 """Mapping of file patterns to load functions."""
+
+
+def parse_workspace(config: Config) -> Tuple[bool, Membership]:
+    """Parse workspace config."""
+    for pattern, parser in PARSERS.items():
+        if not fnmatch(config.path.name, pattern):
+            continue
+        try:
+            return True, parser.parse_workspace(config)
+        except (KeyError, NotImplementedError):
+            continue
+    return False, {}
