@@ -40,7 +40,7 @@ def parse_workspace(config: Config, key: str = "") -> Membership:
     raise NotImplementedError("composer.json does not support workspaces.")
 
 
-def parse_tasks(args: Args, config: Config, key: str = "scripts") -> Tasks:
+def parse_tasks(config: Config, key: str = "scripts") -> Tasks:
     """Tasks are defined in `scripts`.
 
     See: https://getcomposer.org/doc/articles/scripts.md#writing-custom-commands
@@ -103,9 +103,7 @@ def parse_tasks(args: Args, config: Config, key: str = "scripts") -> Tasks:
                     sub = Task(origin=config.path, origin_key=key, name=TASK_COMPOSITE)
                     task.depends.append(parse_cmd(sub, step))
         else:
-            raise SyntaxError(
-                f"Unknown type: {type(item)} for '{name}' in {config.path}"
-            )
+            raise TypeError(f"Unknown type: {type(item)} for '{name}' in {config.path}")
 
         tasks[task.name] = task
 

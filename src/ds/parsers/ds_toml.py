@@ -34,10 +34,10 @@ loads = toml.loads
 """Standard `toml` parser."""
 
 
-def parse_workspace(config: Config, key: str = "tool.ds.workspace") -> Membership:
-    """Workspaces are in `tool.ds.workspace` (pyproject.toml) or `workspace` (ds.toml)."""
-    if config.path.name == "ds.toml" and key == "tool.ds.workspace":
-        key = "workspace"
+def parse_workspace(config: Config, key: str = "workspace") -> Membership:
+    """Workspaces are in `workspace` (ds.toml) or `tool.ds.workspace` (pyproject.toml)."""
+    if config.path.name.startswith("pyproject") and key == "workspace":
+        key = "tool.ds.workspace"
 
     data = get_key(config.data, key, KEY_MISSING)
     if data is KEY_MISSING:
@@ -66,8 +66,8 @@ def parse_workspace(config: Config, key: str = "tool.ds.workspace") -> Membershi
     return members
 
 
-def parse_tasks(args: Args, config: Config, key: str = "tool.ds.scripts") -> Tasks:
-    """Tasks in `scripts`.
+def parse_tasks(config: Config, key: str = "scripts") -> Tasks:
+    """Tasks in `scripts` (`ds.toml`) or `tool.ds.scripts` (`pyproject.toml`).
 
     Features:
     - **Supported**: disabled task
@@ -79,8 +79,8 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.ds.scripts") -> Tas
     - **Supported**: `task.env` - environments
     - **Supported**: `task.keep_going` - error suppression
     """
-    if config.path.name == "ds.toml" and key == "tool.ds.scripts":
-        key = "scripts"
+    if config.path.name.startswith("pyproject") and key == "scripts":
+        key = "tool.ds.scripts"
 
     data = get_key(config.data, key, KEY_MISSING)
     if data is KEY_MISSING:
@@ -142,9 +142,7 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.ds.scripts") -> Tas
             if cwd := item.get("cwd"):
                 task.cwd = (base / cwd).resolve()
         else:
-            raise SyntaxError(
-                f"Unknown type: {type(item)} for '{name}' in {config.path}"
-            )
+            raise TypeError(f"Unknown type: {type(item)} for '{name}' in {config.path}")
 
         if name == TASK_SHARED:
             common = task

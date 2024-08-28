@@ -50,7 +50,7 @@ def parse_workspace(config: Config, key: str = "tool.poetry.workspace") -> Membe
     return members
 
 
-def parse_tasks(_: Args, config: Config, key: str = "tool.poetry.scripts") -> Tasks:
+def parse_tasks(config: Config, key: str = "tool.poetry.scripts") -> Tasks:
     """`poetry` only supports a `call` script.
 
     https://python-poetry.org/docs/cli/#run

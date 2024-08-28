@@ -27,9 +27,9 @@ def parse_workspace(config: Config, key: str = "") -> Membership:
     raise NotImplementedError("`Makefile` does not support workspaces.")
 
 
-def parse_tasks(args: Args, config: Config, key: str = "recipes") -> Tasks:
+def parse_tasks(config: Config, key: str = "recipes") -> Tasks:
     """Tasks are defined in `recipes`."""
-    return ds_toml.parse_tasks(args, config, key)
+    return ds_toml.parse_tasks(config, key)
 
 
 def loads(text: str, debug: bool = False) -> NestedDict:

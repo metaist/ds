@@ -53,12 +53,12 @@ def parse_workspace(config: Config) -> Membership:
     raise KeyError(f"Missing workspace key in {config.path}")
 
 
-def parse_tasks(args: Args, config: Config) -> Tasks:
+def parse_tasks(config: Config) -> Tasks:
     """`pyproject.toml` tasks are tool-specific."""
     for key, parser in TASK_PARSERS.items():
         log.debug(f"Trying to find {key} in {config.path}")
         try:
-            return parser(args, config, key)
+            return parser(config, key)
         except (KeyError, NotImplementedError):
             continue
     raise KeyError(f"Missing tasks key in {config.path}")

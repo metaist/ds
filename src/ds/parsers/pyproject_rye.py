@@ -65,7 +65,7 @@ def parse_workspace(config: Config, key: str = "tool.rye.workspace") -> Membersh
     return members
 
 
-def parse_tasks(args: Args, config: Config, key: str = "tool.rye.scripts") -> Tasks:
+def parse_tasks(config: Config, key: str = "tool.rye.scripts") -> Tasks:
     """Tasks are in `tool.rye.scripts`.
 
     See:
@@ -145,9 +145,7 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.rye.scripts") -> Ta
                 task.env_file = (config.path.parent / env_file).resolve()
 
         else:
-            raise SyntaxError(
-                f"Unknown type: {type(item)} for '{name}' in {config.path}"
-            )
+            raise TypeError(f"Unknown type: {type(item)} for '{name}' in {config.path}")
         tasks[task.name] = task
 
     return tasks

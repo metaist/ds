@@ -116,44 +116,11 @@ class Config:
         if require_workspace and not found:
             raise LookupError("Could not find workspace configuration.")
 
-        found, self.tasks = parse_tasks(self.data, self.path)
+        found, self.tasks = parse_tasks(self)
         if not require_workspace and not found:
             raise LookupError("Could not find task configuration.")
 
         return self
-
-
-def parse_tasks(
-    config: Dict[str, Any], origin: Optional[Path] = None
-) -> Tuple[bool, Tasks]:
-    """Parse task configurations."""
-    found = False
-    tasks: Tasks = {}
-    key, section = "", {}
-    for key in SEARCH_KEYS_TASKS:
-        section = get_key(config, key)
-        if section is not None:
-            found = True
-            break
-
-    if not found:
-        return found, tasks
-
-    assert isinstance(section, Dict)
-    for name, cmd in section.items():
-        name = str(name).strip()
-        if not name or name.startswith(TASK_DISABLED):
-            continue
-
-        # special case: rye bare cmd as list
-        if key == "tool.rye.scripts" and isinstance(cmd, list):
-            cmd = {"cmd": cmd}
-
-        task = parse_task(cmd, origin, key)
-        task.name = name
-        tasks[name] = task
-
-    return found, tasks
 
 
 from . import cargo_toml  # noqa: E402
@@ -201,6 +168,18 @@ def parse_workspace(config: Config) -> Tuple[bool, Membership]:
             continue
         try:
             return True, parser.parse_workspace(config)
+        except (KeyError, NotImplementedError):
+            continue
+    return False, {}
+
+
+def parse_tasks(config: Config) -> Tuple[bool, Tasks]:
+    """Parse workspace config."""
+    for pattern, parser in PARSERS.items():
+        if not fnmatch(config.path.name, pattern):
+            continue
+        try:
+            return True, parser.parse_tasks(config)
         except (KeyError, NotImplementedError):
             continue
     return False, {}

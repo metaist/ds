@@ -34,6 +34,6 @@ def parse_workspace(config: Config, key: str = "tool.uv.workspace") -> Membershi
     return cargo_toml.parse_workspace(config, key)
 
 
-def parse_tasks(args: Args, config: Config) -> Tasks:
+def parse_tasks(config: Config) -> Tasks:
     """`uv` does not define tasks."""
     raise NotImplementedError("`uv` does not support tasks.")

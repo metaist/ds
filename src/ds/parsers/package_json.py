@@ -59,7 +59,7 @@ def parse_workspace(config: Config, key: str = "workspaces") -> Membership:
     return members
 
 
-def parse_tasks(args: Args, config: Config, key: str = "scripts") -> Tasks:
+def parse_tasks(config: Config, key: str = "scripts") -> Tasks:
     """`package.json` tasks are in `scripts`.
 
     - [npm](https://docs.npmjs.com/cli/v10/using-npm/scripts)

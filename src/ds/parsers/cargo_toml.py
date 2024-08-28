@@ -54,9 +54,7 @@ def parse_workspace(config: Config, key: str = "workspace") -> Membership:
     return members
 
 
-def parse_tasks(
-    args: Args, config: Config, key: str = "workspace.metadata.scripts"
-) -> Tasks:
+def parse_tasks(config: Config, key: str = "workspace.metadata.scripts") -> Tasks:
     """Tasks are not officially defined `Cargo.toml`.
 
     However, we'll look at:
@@ -67,4 +65,4 @@ def parse_tasks(
         key = "package.metadata.scripts"
         if get_key(config.data, key, KEY_MISSING) is KEY_MISSING:
             raise KeyError(f"Missing '{key}' key in {config.path}")
-    return ds_toml.parse_tasks(args, config, key)
+    return ds_toml.parse_tasks(config, key)

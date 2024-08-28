@@ -51,7 +51,7 @@ def parse_workspace(config: Config, key: str = "tool.pdm.workspace") -> Membersh
     return members
 
 
-def parse_tasks(args: Args, config: Config, key: str = "tool.pdm.scripts") -> Tasks:
+def parse_tasks(config: Config, key: str = "tool.pdm.scripts") -> Tasks:
     """Tasks are in `tool.pdm.scripts`.
 
     See: https://pdm-project.org/latest/usage/scripts/#user-scripts
@@ -140,9 +140,7 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.pdm.scripts") -> Ta
             # Not Supported: `site_packages`
 
         else:
-            raise SyntaxError(
-                f"Unknown type: {type(item)} for '{name}' in {config.path}"
-            )
+            raise TypeError(f"Unknown type: {type(item)} for '{name}' in {config.path}")
 
         if name == TASK_SHARED:
             common = task
