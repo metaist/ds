@@ -100,7 +100,17 @@ def glob_paths(
     allow_new: bool = False,  # expand the set
     previous: Optional[GlobMatches] = None,
 ) -> GlobMatches:
-    """Apply glob `patterns` to `path`."""
+    """Apply glob `patterns` to `path`.
+
+    >>> here = Path(__file__).resolve()
+    >>> members = {here: False}
+    >>> glob_paths(
+    ...     here.parent,
+    ...     ["*.py"],
+    ...     allow_new=False,
+    ...     previous=members) == {here: True}
+    True
+    """
     result = previous.copy() if previous else {}
     for pattern in patterns:
         exclude = False

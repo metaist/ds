@@ -109,6 +109,7 @@ def run_workspace(args: Args, config: Config) -> None:
         allow_all=True,
         allow_excludes=True,
         allow_new=False,
+        previous=members,
     )
     for member, include in members.items():
         if not include:

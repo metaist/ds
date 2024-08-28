@@ -12,13 +12,11 @@ from typing import Optional
 import dataclasses
 
 # pkg
+from .parsers.ds_toml import parse_composite
 from .symbols import ARG_BEG
 from .symbols import ARG_END
 from .symbols import ARG_OPTION
-from .tasks import parse_task
 from .tasks import Task
-
-# from .parsers import parse_task
 
 # NOTE: Used by cog in README.md
 USAGE = """ds: Run dev scripts.
@@ -232,9 +230,9 @@ class Args:
         """Parse command-line arguments in a docopt-like way."""
         args = Args()
         tasks: List[str] = []
-        task = ""
+        task_cmd = ""
         is_ours = True
-        is_task = False
+        is_task_arg = False
         while argv:
             arg = argv.pop(0)
             if is_ours:
@@ -278,31 +276,30 @@ class Args:
                 continue  # processed
             # our args processed
 
-            if task and arg == ARG_BEG:  # explicit arg start
-                is_task = True
+            if task_cmd and arg == ARG_BEG:  # explicit arg start
+                is_task_arg = True
                 continue  # not an argument
 
             if arg == ARG_END:  # explicit arg end
-                task, is_task = "", False
+                task_cmd, is_task_arg = "", False
                 continue  # not an argument
 
-            if task and arg.startswith(ARG_OPTION):  # implicit arg start
-                is_task = True
+            if task_cmd and arg.startswith(ARG_OPTION):  # implicit arg start
+                is_task_arg = True
 
-            if is_task:  # append task args
+            if is_task_arg:  # append task args
                 tasks[-1] += f" {arg}"
                 continue  # processed
 
             if arg.endswith(ARG_BEG):  # task name + explicit arg start
                 arg = arg[: -len(ARG_BEG)]
-                is_task = True
+                is_task_arg = True
 
-            task = arg
-            tasks.append(task)
+            task_cmd = arg
+            tasks.append(task_cmd)
 
-        args.task = parse_task(tasks)
+        args.task = parse_composite(args.task, tasks)
         args.task.cwd = args.cwd
-
         args.task.env = args.env
         args.task.env_file = args.env_file
 
