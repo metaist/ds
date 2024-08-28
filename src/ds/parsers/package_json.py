@@ -17,7 +17,6 @@ from ..searchers import glob_names
 from ..searchers import glob_paths
 from ..symbols import GLOB_DELIMITER
 from ..symbols import KEY_MISSING
-from ..symbols import TASK_COMPOSITE
 from ..symbols import TASK_DISABLED
 from ..symbols import TASK_KEEP_GOING
 from ..tasks import Task

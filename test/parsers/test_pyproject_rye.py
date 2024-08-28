@@ -3,8 +3,6 @@
 # std
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
-from typing import Dict
 
 # lib
 import pytest
@@ -12,6 +10,7 @@ import pytest
 # pkg
 from . import EXAMPLE_FORMATS
 from . import EXAMPLE_WORKSPACE
+from . import nest
 from ds.args import Args
 from ds.parsers import Config
 from ds.parsers.pyproject_rye import loads
@@ -20,7 +19,13 @@ from ds.parsers.pyproject_rye import parse_workspace
 from ds.symbols import TASK_COMPOSITE
 from ds.tasks import Task
 
-TASK = Task(origin=Path("pyproject.toml"), origin_key="tool.rye.scripts")
+PATH = Path("pyproject.toml")
+"""Default path."""
+
+KEY = "tool.rye.scripts"
+"""Default key."""
+
+TASK = Task(origin=PATH, origin_key=KEY)
 """Default task data."""
 
 
@@ -40,40 +45,34 @@ def test_workspace() -> None:
 def test_workspace_missing() -> None:
     """Missing workspace."""
     with pytest.raises(KeyError):
-        parse_workspace(Config(Path(), {}))
+        parse_workspace(Config(PATH, {}))
 
 
 def test_workspace_empty() -> None:
     """Empty workspace."""
-    data: Dict[str, Any] = {"tool": {"rye": {"workspace": {}}}}
+    path = EXAMPLE_WORKSPACE / "pyproject-rye.toml"
+    data = nest("tool.rye.workspace", {})
     expected = {
         EXAMPLE_WORKSPACE: True,  # rye includes the root folder
         EXAMPLE_WORKSPACE / "members" / "x": True,
         # members/x is the only folder with a pyproject.toml
     }
-    assert (
-        parse_workspace(Config(EXAMPLE_WORKSPACE / "pyproject-rye.toml", data))
-        == expected
-    )
+    assert parse_workspace(Config(path, data)) == expected
 
     # tool.rye.virtual can prevent the root from being included
-    data = {"tool": {"rye": {"virtual": True, "workspace": {}}}}
+    path = EXAMPLE_WORKSPACE / "pyproject-rye.toml"
+    data = nest("tool.rye", {"virtual": True, "workspace": {}})
     expected = {
         EXAMPLE_WORKSPACE / "members" / "x": True,
         # members/x is the only folder with a pyproject.toml
     }
-    assert (
-        parse_workspace(Config(EXAMPLE_WORKSPACE / "pyproject-rye.toml", data))
-        == expected
-    )
+    assert parse_workspace(Config(path, data)) == expected
 
 
 def test_workspace_basic() -> None:
     """Workspace members."""
     path = EXAMPLE_WORKSPACE / "pyproject.toml"
-    data: Dict[str, Any] = {
-        "tool": {"rye": {"workspace": {"members": ["members/*", "!members/x"]}}}
-    }
+    data = nest("tool.rye.workspace.members", ["members/*", "!members/x"])
     expected = {
         path.parent: True,
         path.parent / "members" / "a": True,
@@ -86,88 +85,61 @@ def test_workspace_basic() -> None:
 def test_format() -> None:
     """End-to-end test of the format."""
     path = EXAMPLE_FORMATS / "pyproject-rye.toml"
-    args = Args(file=path)
     config = Config(path, loads(path.read_text()))
-    tasks = parse_tasks(args, config)
+    tasks = parse_tasks(Args(file=path), config)
     assert tasks
 
 
 def test_tasks_missing() -> None:
     """Missing tasks."""
-    args = Args()
-    config = Config(Path("pyproject.json"), {})
     with pytest.raises(KeyError):
-        parse_tasks(args, config)
+        parse_tasks(Args(), Config(PATH, {}))
 
 
 def test_tasks_empty() -> None:
     """Empty tasks."""
-    args = Args()
-    config = Config(Path("pyproject.toml"), {"tool": {"rye": {"scripts": {}}}})
-    assert parse_tasks(args, config) == {}
+    data = nest(KEY, {})
+    assert parse_tasks(Args(), Config(PATH, data)) == {}
 
 
 def test_task_disabled() -> None:
     """Disabled task."""
-    args = Args()
-    config = Config(Path("pyproject.toml"), {"tool": {"rye": {"scripts": {"#a": "b"}}}})
-    assert parse_tasks(args, config) == {}
+    data = nest(KEY, {"#a": "b"})
+    assert parse_tasks(Args(), Config(PATH, data)) == {}
 
 
 def test_task_help() -> None:
     """Task help."""
-    args = Args()
-    config = Config(
-        Path("pyproject.toml"),
-        {"tool": {"rye": {"scripts": {"a": {"cmd": "b", "help": "run things"}}}}},
-    )
+    data = nest(KEY, {"a": {"cmd": "b", "help": "run things"}})
     expected = {"a": replace(TASK, name="a", cmd="b", help="run things")}
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(Args(), Config(PATH, data)) == expected
 
 
 def test_task_cmd() -> None:
     """`cmd` task."""
-    args = Args()
-    config = Config(Path("pyproject.toml"), {"tool": {"rye": {"scripts": {"a": "b"}}}})
+    data = nest(KEY, {"a": "b"})
     expected = {"a": replace(TASK, name="a", cmd="b")}
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(Args(), Config(PATH, data)) == expected
 
-    config = Config(
-        Path("pyproject.toml"), {"tool": {"rye": {"scripts": {"a": ["ls", "-lah"]}}}}
-    )
+    data = nest(KEY, {"a": ["ls", "-lah"]})
     expected = {"a": replace(TASK, name="a", cmd="ls -lah")}
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(Args(), Config(PATH, data)) == expected
 
-    config = Config(
-        Path("pyproject.toml"),
-        {"tool": {"rye": {"scripts": {"a": {"cmd": ["ls", "-lah"]}}}}},
-    )
+    data = nest(KEY, {"a": {"cmd": ["ls", "-lah"]}})
     expected = {"a": replace(TASK, name="a", cmd="ls -lah")}
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(Args(), Config(PATH, data)) == expected
 
 
 def test_task_call() -> None:
     """`call` task."""
-    args = Args()
-    config = Config(
-        Path("pyproject.toml"),
-        {"tool": {"rye": {"scripts": {"a": {"call": "http.server"}}}}},
-    )
+    data = nest(KEY, {"a": {"call": "http.server"}})
     expected = {"a": replace(TASK, name="a", cmd="python -m http.server")}
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(Args(), Config(PATH, data)) == expected
 
 
 def test_task_chain() -> None:
     """`chain` task."""
-    args = Args()
-    config = Config(
-        Path("pyproject.toml"),
-        {
-            "tool": {
-                "rye": {"scripts": {"a": "b", "c": "d", "e": {"chain": ["a", "c"]}}}
-            }
-        },
-    )
+    data = nest(KEY, {"a": "b", "c": "d", "e": {"chain": ["a", "c"]}})
     expected = {
         "a": replace(TASK, name="a", cmd="b"),
         "c": replace(TASK, name="c", cmd="d"),
@@ -180,38 +152,24 @@ def test_task_chain() -> None:
             ],
         ),
     }
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(Args(), Config(PATH, data)) == expected
 
 
 def test_task_env() -> None:
     """`env` option."""
-    args = Args()
-    config = Config(
-        Path("pyproject.toml"),
-        {
-            "tool": {
-                "rye": {"scripts": {"a": {"cmd": "flask $PORT", "env": {"PORT": 8080}}}}
-            }
-        },
+    data = nest(
+        "tool.rye.scripts", {"a": {"cmd": "flask $PORT", "env": {"PORT": 8080}}}
     )
     expected = {
-        "a": replace(TASK, name="a", cmd="flask $PORT", env={"PORT": 8080}),
+        "a": replace(TASK, name="a", cmd="flask $PORT", env={"PORT": "8080"}),
     }
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(Args(), Config(PATH, data)) == expected
 
 
 def test_task_env_file() -> None:
     """`env_file` option."""
     path = EXAMPLE_FORMATS / "pyproject.toml"
-    args = Args()
-    config = Config(
-        path,
-        {
-            "tool": {
-                "rye": {"scripts": {"a": {"cmd": "flask $PORT", "env-file": ".env"}}}
-            }
-        },
-    )
+    data = nest(KEY, {"a": {"cmd": "flask $PORT", "env-file": ".env"}})
     expected = {
         "a": replace(
             TASK,
@@ -221,18 +179,10 @@ def test_task_env_file() -> None:
             env_file=EXAMPLE_FORMATS / ".env",
         ),
     }
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(Args(), Config(path, data)) == expected
 
     # with missing file
-    args = Args()
-    config = Config(
-        Path("pyproject.toml"),
-        {
-            "tool": {
-                "rye": {"scripts": {"a": {"cmd": "flask $PORT", "env-file": ".env"}}}
-            }
-        },
-    )
+    data = nest(KEY, {"a": {"cmd": "flask $PORT", "env-file": ".env"}})
     expected = {
         "a": replace(
             TASK,
@@ -241,22 +191,15 @@ def test_task_env_file() -> None:
             env_file=Path(".env").resolve(),
         ),
     }
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(Args(), Config(PATH, data)) == expected
 
 
 def test_bad_syntax() -> None:
     """Syntax errors."""
-    args = Args()
-    config = Config(
-        Path("pyproject.toml"),
-        {"tool": {"rye": {"scripts": {"a": False}}}},
-    )
+    data = nest(KEY, {"a": False})
     with pytest.raises(SyntaxError):
-        parse_tasks(args, config)
+        parse_tasks(Args(), Config(PATH, data))
 
-    config = Config(
-        Path("pyproject.toml"),
-        {"tool": {"rye": {"scripts": {"a": {"unknown": "missing required keys"}}}}},
-    )
+    data = nest(KEY, {"a": {"unknown": "missing required keys"}})
     with pytest.raises(SyntaxError):
-        parse_tasks(args, config)
+        parse_tasks(Args(), Config(PATH, data))

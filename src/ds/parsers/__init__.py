@@ -191,12 +191,23 @@ def parse_tasks(
     return found, tasks
 
 
+from . import cargo_toml  # noqa: E402
+from . import composer_json  # noqa: E402
+from . import ds_toml  # noqa: E402
 from . import makefile  # noqa: E402
 from . import package_json  # noqa: E402
+from . import pyproject_toml  # noqa: E402
+from . import uv_toml  # noqa: E402
 
-FILE_LOADERS["package.json"] = package_json
-FILE_LOADERS["[Mm]akefile"] = makefile
-
+PARSERS = {
+    "ds.toml": ds_toml,
+    "pyproject.toml": pyproject_toml,
+    "uv.toml": uv_toml,
+    "package.json": package_json,
+    "Cargo.toml": cargo_toml,
+    "composer.json": composer_json,
+    "[Mm]akefile": makefile,
+}
 
 LOADERS: Dict[str, Loader] = {
     "*.json": json.loads,

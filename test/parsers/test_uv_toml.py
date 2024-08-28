@@ -10,6 +10,7 @@ import pytest
 
 # pkg
 from . import EXAMPLE_WORKSPACE
+from . import nest
 from ds.args import Args
 from ds.parsers import Config
 from ds.parsers.uv_toml import loads
@@ -37,21 +38,19 @@ def test_workspace_missing() -> None:
 
 def test_workspace_empty() -> None:
     """Empty workspace."""
-    data: Dict[str, Any] = {"tool": {"uv": {"workspace": {}}}}
+    data = nest("tool.uv.workspace", {})
     assert parse_workspace(Config(Path("pyproject.toml"), data)) == {}
 
-    data = {"workspace": {}}
+    data = nest("workspace", {})
     assert parse_workspace(Config(Path("uv.toml"), data)) == {}
 
 
 def test_workspace_basic1() -> None:
     """Workspace members using `pyproject.toml` style."""
     path = EXAMPLE_WORKSPACE / "pyproject.toml"
-    data: Dict[str, Any] = {
-        "tool": {
-            "uv": {"workspace": {"members": ["members/*"], "exclude": ["members/x"]}}
-        }
-    }
+    data = nest(
+        "tool.uv.workspace", {"members": ["members/*"], "exclude": ["members/x"]}
+    )
     expected = {
         path.parent / "members" / "a": True,
         path.parent / "members" / "b": True,
@@ -63,9 +62,7 @@ def test_workspace_basic1() -> None:
 def test_workspace_basic2() -> None:
     """Workspace members using `uv.toml` style."""
     path = EXAMPLE_WORKSPACE / "uv.toml"
-    data: Dict[str, Any] = {
-        "workspace": {"members": ["members/*"], "exclude": ["members/x"]}
-    }
+    data = nest("workspace", {"members": ["members/*"], "exclude": ["members/x"]})
     expected = {
         path.parent / "members" / "a": True,
         path.parent / "members" / "b": True,

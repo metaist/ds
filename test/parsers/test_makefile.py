@@ -11,6 +11,7 @@ import pytest
 
 # pkg
 from . import EXAMPLE_FORMATS
+from . import nest
 from ds.args import Args
 from ds.parsers import Config
 from ds.parsers.makefile import loads
@@ -18,34 +19,35 @@ from ds.parsers.makefile import parse_tasks
 from ds.parsers.makefile import parse_workspace
 from ds.tasks import Task
 
-TASK = Task(origin=Path("Makefile"), origin_key="recipes")
+PATH = Path("Makefile")
+"""Default path."""
+
+KEY = "recipes"
+"""Default key."""
+
+TASK = Task(origin=PATH, origin_key=KEY)
 """Default task data."""
 
 
 def test_workspace() -> None:
     """Workspace not implemented."""
     with pytest.raises(NotImplementedError):
-        parse_workspace(Config(Path("Makefile"), {}))
+        parse_workspace(Config(PATH, {}))
 
 
 def test_format() -> None:
     """End-to-end test of the format."""
     path = EXAMPLE_FORMATS / "Makefile"
-    args = Args(file=path)
     config = Config(path, loads(path.read_text()))
-    tasks = parse_tasks(args, config)
+    tasks = parse_tasks(Args(file=path), config)
     assert tasks
 
 
 def test_tasks_basic() -> None:
     """Basic task."""
-    args = Args()
-    config = Config(
-        Path("Makefile"),
-        {"recipes": {"a": {"composite": [], "shell": "b", "verbatim": True}}},
-    )
+    data = nest(KEY, {"a": {"composite": [], "shell": "b", "verbatim": True}})
     expected = {"a": replace(TASK, name="a", cmd="b", verbatim=True)}
-    assert parse_tasks(args, config) == expected
+    assert parse_tasks(Args(), Config(PATH, data)) == expected
 
 
 def test_makefile_loads() -> None:

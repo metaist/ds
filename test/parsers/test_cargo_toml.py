@@ -11,6 +11,7 @@ import pytest
 
 # pkg
 from . import EXAMPLE_WORKSPACE
+from . import nest
 from ds.args import Args
 from ds.parsers import Config
 from ds.parsers.cargo_toml import loads
@@ -18,8 +19,10 @@ from ds.parsers.cargo_toml import parse_tasks
 from ds.parsers.cargo_toml import parse_workspace
 from ds.tasks import Task
 
+PATH = Path("Cargo.toml")
+"""Default path."""
 
-TASK = Task(origin=Path("Cargo.toml"), origin_key="package.metadata.scripts")
+TASK = Task(origin=PATH, origin_key="package.metadata.scripts")
 """Default task data."""
 
 
@@ -38,21 +41,19 @@ def test_workspace() -> None:
 def test_workspace_missing() -> None:
     """Missing workspace."""
     with pytest.raises(KeyError):
-        parse_workspace(Config(Path("Cargo.toml"), {}))
+        parse_workspace(Config(PATH, {}))
 
 
 def test_workspace_empty() -> None:
     """Empty workspace."""
-    data: Dict[str, Any] = {"workspace": {}}
-    assert parse_workspace(Config(Path("Cargo.toml"), data)) == {}
+    data = nest("workspace", {})
+    assert parse_workspace(Config(PATH, data)) == {}
 
 
 def test_workspace_basic() -> None:
     """Workspace members."""
     path = EXAMPLE_WORKSPACE / "Cargo.toml"
-    data: Dict[str, Any] = {
-        "workspace": {"members": ["members/*"], "exclude": ["members/x"]}
-    }
+    data = nest("workspace", {"members": ["members/*"], "exclude": ["members/x"]})
     expected = {
         path.parent / "members" / "a": True,
         path.parent / "members" / "b": True,
@@ -64,7 +65,7 @@ def test_workspace_basic() -> None:
 def test_tasks_missing() -> None:
     """Missing tasks."""
     args = Args()
-    config = Config(Path("Cargo.toml"), {})
+    config = Config(PATH, {})
     with pytest.raises(KeyError):
         parse_tasks(args, config)
 
@@ -72,18 +73,14 @@ def test_tasks_missing() -> None:
 def test_tasks() -> None:
     """Test parsing tasks."""
     args = Args()
-    config = Config(
-        Path("Cargo.toml"), {"workspace": {"metadata": {"scripts": {"a": "b"}}}}
-    )
+    config = Config(PATH, nest("workspace.metadata.scripts", {"a": "b"}))
     expected = {
         "a": replace(TASK, origin_key="workspace.metadata.scripts", name="a", cmd="b")
     }
     assert parse_tasks(args, config) == expected
 
     args = Args()
-    config = Config(
-        Path("Cargo.toml"), {"package": {"metadata": {"scripts": {"a": "b"}}}}
-    )
+    config = Config(PATH, nest("package.metadata.scripts", {"a": "b"}))
     expected = {
         "a": replace(TASK, origin_key="package.metadata.scripts", name="a", cmd="b")
     }
