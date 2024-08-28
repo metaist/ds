@@ -119,9 +119,11 @@ uv tool install ds-run
 You can also [download a Cosmopolitan binary](https://github.com/metaist/ds/releases/latest/download/ds) which runs on Windows, macOS, and Linux:
 
 ```bash
-wget -N https://github.com/metaist/ds/releases/latest/download/ds
-chmod +x ds
-./ds --version
+export LOCAL_BIN=$HOME/.local/bin # or anywhere on your PATH
+mkdir -p $LOCAL_BIN
+wget -O $LOCAL_BIN/ds -N https://github.com/metaist/ds/releases/latest/download/ds
+chmod +x $LOCAL_BIN/ds
+ds --version
 # NOTE: it takes a few seconds the first time you run it
 ```
 
@@ -148,6 +150,7 @@ Usage: ds [--help | --version] [--debug]
           [--env-file PATH]
           [(--env NAME=VALUE)...]
           [--workspace GLOB]...
+          [--pre][--post]
           [<task>...]
 
 Options:
@@ -198,6 +201,9 @@ Options:
 
     Read more about configuring workspaces:
     https://github.com/metaist/ds#workspaces
+
+  --pre, --post
+    EXPERIMENTAL: Run tasks with pre- and post- names.
 
   <task>
     One or more tasks to run with task-specific arguments.
@@ -253,20 +259,20 @@ Read more:
 If you don't provide a config file using the `--file` option, `ds` will search the current directory and all of its parents for files with these names in the following order:
 
 <!--[[[cog
-from ds.parsers import SEARCH_FILES
+from ds.parsers import PARSERS
 cog.outl()
-for key in SEARCH_FILES:
+for key in list(PARSERS)[:-2]:
     cog.outl(f"- `{key}`")
 cog.outl()
 ]]] -->
 
 - `ds.toml`
 - `pyproject.toml`
+- `uv.toml`
 - `package.json`
 - `Cargo.toml`
 - `composer.json`
 - `[Mm]akefile`
-- `.ds.toml`
 
 <!--[[[end]]]-->
 
@@ -288,25 +294,7 @@ If you provide one or more `--workspace` options, `--cwd` is ignored and tasks a
 
 ## Task Keys
 
-`ds` searches configuration files for the following keys, in the following order, to find task definitions. The first key that's found is used and should contain a mapping from [task names](#task-names) to [basic tasks](#basic-task) or [composite tasks](#composite-task).
-
-<!--[[[cog
-from ds.parsers import SEARCH_KEYS_TASKS
-cog.outl()
-for key in SEARCH_KEYS_TASKS:
-    cog.outl(f"- `{key}`")
-cog.outl()
-]]]-->
-
-- `scripts`
-- `tool.ds.scripts`
-- `tool.pdm.scripts`
-- `tool.rye.scripts`
-- `package.metadata.scripts`
-- `workspace.metadata.scripts`
-- `Makefile`
-
-<!--[[[end]]]-->
+`ds` searches configuration files for [tool-specific keys][example-tasks] to find task definitions which should contain a mapping from [task names](#task-names) to [basic tasks](#basic-task) or [composite tasks](#composite-task).
 
 ## Task Names
 
@@ -515,25 +503,9 @@ ds --env-file .env run
 
 ## Workspaces
 
-Workspaces are a way of managing multiple sub-projects from a top-level. `ds` supports `npm`, `rye`, `uv`, and `Cargo` style workspaces (see [examples](https://github.com/metaist/ds/tree/main/examples/workspace)).
+Workspaces are a way of managing multiple sub-projects from a top-level. `ds` supports `npm`, `rye`, `uv`, and `Cargo` style workspaces.
 
-When `ds` is called with the `--workspace` option, the configuration file must have one of the following keys:
-
-<!--[[[cog
-from ds.parsers import SEARCH_KEYS_WORKSPACE
-cog.outl()
-for key in SEARCH_KEYS_WORKSPACE:
-    cog.outl(f"- `{key}`")
-cog.outl()
-]]]-->
-
-- `workspace.members`
-- `tool.ds.workspace.members`
-- `tool.rye.workspace.members`
-- `tool.uv.workspace.members`
-- `workspaces`
-
-<!--[[[end]]]-->
+When `ds` is called with the `--workspace` option, the configuration file must have one of the [tool-specific workspace keys](https://github.com/metaist/ds/tree/main/examples/workspace).
 
 If no configuration file was provided with the `--file` option, search continues up the directory tree.
 
