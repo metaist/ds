@@ -2,8 +2,6 @@
 
 # std
 from pathlib import Path
-from typing import Any
-from typing import Dict
 
 # lib
 import pytest

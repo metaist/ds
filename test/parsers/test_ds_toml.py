@@ -3,8 +3,6 @@
 # std
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
-from typing import Dict
 
 # lib
 import pytest
@@ -98,15 +96,13 @@ def test_workspace_basic2() -> None:
 def test_format() -> None:
     """End-to-end test of the format."""
     path = EXAMPLE_FORMATS / "pyproject-ds.toml"
-    args = Args(file=path)
     config = Config(path, loads(path.read_text()))
-    tasks = parse_tasks(Args(), config)
+    tasks = parse_tasks(Args(file=path), config)
     assert tasks
 
     path = EXAMPLE_FORMATS / "ds.toml"
-    args = Args(file=path)
     config = Config(path, loads(path.read_text()))
-    tasks = parse_tasks(Args(), config)
+    tasks = parse_tasks(Args(file=path), config)
     assert tasks
 
 

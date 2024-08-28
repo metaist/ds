@@ -17,7 +17,6 @@ import sys
 from .args import Args
 from .env import interpolate_args
 from .env import read_env
-from .env import wrap_cmd
 from .searchers import glob_names
 from .searchers import glob_parents
 from .symbols import GLOB_DELIMITER
