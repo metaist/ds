@@ -65,7 +65,7 @@ def parse_workspace(config: Config, key: str = "tool.rye.workspace") -> Membersh
     return members
 
 
-def parse_tasks(args: Args, config: Config, key="tool.rye.scripts") -> Tasks:
+def parse_tasks(args: Args, config: Config, key: str = "tool.rye.scripts") -> Tasks:
     """Tasks are in `tool.rye.scripts`.
 
     See:
@@ -143,10 +143,6 @@ def parse_tasks(args: Args, config: Config, key="tool.rye.scripts") -> Tasks:
             # pyproject.toml)
             if env_file := item.get("env-file"):
                 task.env_file = (config.path.parent / env_file).resolve()
-                if not task.env_file.exists():
-                    log.warning(
-                        f"{name}.env-file does not currently exist: {task.env_file}"
-                    )
 
         else:
             raise SyntaxError(

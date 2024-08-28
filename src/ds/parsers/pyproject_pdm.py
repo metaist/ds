@@ -1,6 +1,8 @@
 """`pyproject.toml` parser for `pdm`."""
 
 # std
+from pathlib import Path
+from typing import Optional
 import logging
 
 # pkg
@@ -68,7 +70,7 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.pdm.scripts") -> Ta
     if data is KEY_MISSING:
         raise KeyError(f"Missing '{key}' key in {config.path}")
 
-    common: Task = None
+    common: Optional[Task] = None
     tasks: Tasks = {}
     for name, item in data.items():
         # Non-standard: disabled tasks
@@ -123,13 +125,11 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.pdm.scripts") -> Ta
                 assert isinstance(env, dict)
                 task.env = {k: str(v) for k, v in env.items()}
 
+            base = config.path.parent if config.path else Path.cwd()
+
             # `env_file`: https://pdm-project.org/latest/usage/scripts/#env_file
             if env_file := item.get("env_file"):
-                task.env_file = (config.path.parent / env_file).resolve()
-                if not task.env_file.exists():
-                    log.warning(
-                        f"{name}.env_file does not currently exist: {task.env_file}"
-                    )
+                task.env_file = (base / env_file).resolve()
                 # Not supported: `env_file.override`
 
             # `working_dir`: https://pdm-project.org/latest/usage/scripts/#working_dir

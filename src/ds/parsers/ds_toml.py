@@ -2,9 +2,11 @@
 
 # std
 from dataclasses import replace
+from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 import logging
 
 # pkg
@@ -84,7 +86,7 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.ds.scripts") -> Tas
     if data is KEY_MISSING:
         raise KeyError(f"Missing '{key}' key in {config.path}")
 
-    common: Task = None
+    common: Optional[Task] = None
     tasks: Tasks = {}
     for name, item in data.items():
         if name.startswith(TASK_DISABLED):
@@ -133,15 +135,12 @@ def parse_tasks(args: Args, config: Config, key: str = "tool.ds.scripts") -> Tas
                 assert isinstance(env, dict)
                 task.env = {k: str(v) for k, v in env.items()}
 
+            base = config.path.parent if config.path else Path.cwd()
             if env_file := item.get("env_file"):
-                task.env_file = (config.path.parent / env_file).resolve()
-                if not task.env_file.exists():
-                    log.warning(
-                        f"{name}.env_file does not currently exist: {task.env_file}"
-                    )
+                task.env_file = (base / env_file).resolve()
 
             if cwd := item.get("cwd"):
-                task.cwd = (config.path.parent / cwd).resolve()
+                task.cwd = (base / cwd).resolve()
         else:
             raise SyntaxError(
                 f"Unknown type: {type(item)} for '{name}' in {config.path}"
