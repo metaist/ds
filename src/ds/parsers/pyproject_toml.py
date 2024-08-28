@@ -16,8 +16,6 @@ from . import pyproject_rye
 from . import toml
 from . import uv_toml
 from ..args import Args
-from ..searchers import get_key
-from ..symbols import KEY_MISSING
 from ..tasks import Tasks
 
 log = logging.getLogger(__name__)
