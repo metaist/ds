@@ -256,12 +256,12 @@ Read more:
 
 ## How does `ds` find my config?
 
-If you don't provide a config file using the `--file` option, `ds` will search the current directory and all of its parents for files with these names in the following order:
+If you don't provide a config file using the `--file` option, `ds` will search the current directory and all of its parents for files with these name patterns in the following order:
 
 <!--[[[cog
 from ds.parsers import PARSERS
 cog.outl()
-for key in list(PARSERS)[:-2]:
+for key in list(PARSERS):
     cog.outl(f"- `{key}`")
 cog.outl()
 ]]] -->

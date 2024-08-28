@@ -22,7 +22,7 @@ from ..searchers import glob_parents
 
 log = logging.getLogger(__name__)
 
-PARSERS_CORE: Dict[str, ModuleType] = {
+PARSERS: Dict[str, ModuleType] = {
     "ds.toml": ds_toml,
     "pyproject.toml": pyproject_toml,
     "uv.toml": uv_toml,
@@ -33,48 +33,30 @@ PARSERS_CORE: Dict[str, ModuleType] = {
 }
 """Parsers for specific file names."""
 
-PARSERS_GENERIC: Dict[str, ModuleType] = {
-    "*.toml": ds_toml,
-    "*.json": package_json,
-}
-"""Generic parsers."""
-
-PARSERS = {**PARSERS_CORE, **PARSERS_GENERIC}
-"""Combined parsers."""
-
 
 def parse(path: Path, require_workspace: bool = False) -> Config:
     """Parse a config file."""
     text = path.read_text()
     config = Config(path, {})
-    is_loaded = False
     for pattern, parser in PARSERS.items():
         if not fnmatch(path.name, pattern):
             continue
 
-        config.data = parser.loads(text)
-        is_loaded = True
-        # properly parsed data
-
+        msg = ""
+        config.data = parser.loads(text)  # allow failure to bubble up
         try:
-            config.members = parser.parse_workspace(config)
-        except (NotImplementedError, KeyError, TypeError):
             if require_workspace:
-                raise LookupError(f"No workspace found in: {path}")
+                msg = f"No workspace found in: {path}"
+                config.members = parser.parse_workspace(config)
+            else:
+                msg = f"No tasks found in: {path}"
+                config.tasks = parser.parse_tasks(config)
+            return config
+        except (NotImplementedError, KeyError, TypeError):
+            raise LookupError(msg)
         # have workspace or don't need it
 
-        try:
-            config.tasks = parser.parse_tasks(config)
-        except (NotImplementedError, KeyError, TypeError):
-            if not require_workspace:
-                raise LookupError(f"No tasks found in: {path}")
-        # have tasks or don't need them
-        break  # don't try other patterns
-
-    if not is_loaded:
-        raise LookupError(f"No parser found for: {path}")
-
-    return config
+    raise LookupError(f"No parser found for: {path}")
 
 
 def find_and_parse(start: Path, require_workspace: bool = False) -> Config:

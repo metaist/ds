@@ -9,9 +9,8 @@ from typing import Dict
 
 # pkg
 from ds.parsers import ds_toml
+from ds.parsers import package_json
 from ds.parsers import PARSERS
-from ds.parsers import PARSERS_CORE
-from ds.parsers import PARSERS_GENERIC
 from ds.parsers import pyproject_pdm
 from ds.parsers import pyproject_poetry
 from ds.parsers import pyproject_rye
@@ -33,11 +32,12 @@ PARSERS_TEST: Dict[str, ModuleType] = {
     "pyproject-poetry*.toml": pyproject_poetry,
     "pyproject-rye*.toml": pyproject_rye,
     "pyproject-uv*.toml": uv_toml,
+    "*.toml": ds_toml,
+    "*.json": package_json,
 }
 """Parsers for test files."""
 
-PARSERS.clear()
-PARSERS.update({**PARSERS_CORE, **PARSERS_TEST, **PARSERS_GENERIC})
+PARSERS.update(PARSERS_TEST)
 
 
 def nest(key: str, value: Any) -> Dict[str, Any]:

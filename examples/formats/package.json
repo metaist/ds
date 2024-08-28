@@ -13,6 +13,6 @@
     "keep_going": "ds +will_fail",
     "working": "ds --cwd test basic1",
     "inside": "echo $DS_INTERNAL__FILE",
-    "outside": "ds -f pyproject-ds.toml outside"
+    "outside": "ds -f ds.toml outside"
   }
 }
