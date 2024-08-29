@@ -70,3 +70,7 @@ test_cmd = { cmd = "pytest", help = "flask db upgrade" }
 pre_compress = "echo 'Run BEFORE the `compress` script'"
 compress = "tar czvf compressed.tar.gz data/"
 post_compress = "echo 'Run AFTER the `compress` script'"
+
+pre_echo = "echo 'About to echo'"
+echo = "echo 'Running echo'"
+post_echo = "echo 'After echo'"

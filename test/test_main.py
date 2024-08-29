@@ -3,6 +3,7 @@
 # std
 from pathlib import Path
 from shlex import split
+import tempfile
 
 # lib
 from _pytest.capture import CaptureFixture
@@ -37,6 +38,20 @@ def test_list() -> None:
         main(split(f"ds {arg}"))
 
 
+def test_pre_post() -> None:
+    """--pre / --post run pre/post tasks"""
+    main(split("ds --pre --post -f examples/formats/pyproject-pdm.toml echo"))
+
+
+def test_env_file() -> None:
+    """--env-file loads an env file"""
+    main(split("ds --env-file examples/formats/.env 'echo $IN_DOT_ENV'"))
+
+    # non-existent .env
+    with pytest.raises(SystemExit):
+        main(split("ds --env-file .env 'echo $IN_DOT_ENV'"))
+
+
 def test_echo() -> None:
     """Just run a command from the top-level."""
     main(split("ds 'echo hello'"))
@@ -51,6 +66,42 @@ def test_no_config() -> None:
 
     with pytest.raises(SystemExit):
         main(split("ds --no-config -w* test"))
+
+
+def test_no_project() -> None:
+    """Run without project."""
+    main(split("ds --no-project 'echo hello'"))
+
+
+def test_project_in_venv() -> None:
+    """Run within an active/inactive .venv."""
+    with TempEnv(VIRTUAL_ENV=str(Path(".venv").resolve())):
+        main(split("ds 'echo hello'"))
+
+    with TempEnv(VIRTUAL_ENV=None):
+        main(split("ds 'echo hello'"))
+
+    main(split("ds --cwd / 'echo hello'"))
+
+
+def test_multiple_results() -> None:
+    """Try finding the same result multiple times."""
+    with tempfile.TemporaryDirectory() as name:
+        root = Path(name)
+        v1 = root / ".venv"
+        v1.mkdir(parents=True, exist_ok=True)
+        (v1 / "pyvenv.cfg").write_text("")
+
+        v2 = root / "nested" / ".venv"
+        v2.mkdir(parents=True, exist_ok=True)
+        (v2 / "pyvenv.cfg").write_text("")
+
+        v3 = root / "node_modules" / ".bin"
+        v3.mkdir(parents=True, exist_ok=True)
+
+        with TempEnv(DS_INTERNAL__FILE=None, VIRTUAL_ENV=None):
+            with pushd(root / "nested"):
+                main(split("ds --debug --no-config 'echo hello'"))
 
 
 def test_good_loop() -> None:

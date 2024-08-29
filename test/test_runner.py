@@ -4,6 +4,9 @@
 from pathlib import Path
 import os
 
+# lib
+import pytest
+
 # pkg
 from ds.args import Args
 from ds.env import TempEnv
@@ -43,3 +46,16 @@ def test_run_composite() -> None:
     """Run a composite test."""
     runner = Runner(Args(), {})
     runner.run(Args.parse(["ls"]).task, Task())
+
+
+def test_run_env_file() -> None:
+    """Load an env-file."""
+    args = Args.parse(["--env-file", "examples/formats/.env", "echo $IN_DOT_ENV"])
+    runner = Runner(args, {})
+    runner.run(args.task, Task())
+
+    # non-existent file
+    with pytest.raises(SystemExit):
+        args = Args.parse(["--env-file", ".env", "echo $IN_DOT_ENV"])
+        runner = Runner(args, {})
+        runner.run(args.task, Task())
