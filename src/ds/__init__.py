@@ -25,12 +25,12 @@ from .args import Args
 from .args import USAGE
 from .configs import Config
 from .env import TempEnv
+from .runner import find_project
 from .runner import Runner
 from .searchers import glob_paths
 from .tasks import check_cycles
 from .tasks import CycleError
 from .tasks import print_tasks
-from .tasks import Task
 
 __version__ = "1.2.0post"
 __pubdate__ = "unpublished"
@@ -187,7 +187,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     try:
         with TempEnv(DS_INTERNAL__FILE=str(args.file)):
             with pushd(args.cwd or Path()):
-                runner.run(args.task, Task())
+                override = find_project(args, args.task)
+                runner.run(args.task, override)
     except KeyboardInterrupt:  # pragma: no cover
         # Not sure how to cover CTRL+C.
         return

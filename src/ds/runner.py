@@ -64,6 +64,58 @@ def venv_activate_cmd(venv: Path) -> str:
     # no cover: stop
 
 
+def find_project(args: Args, task: Task) -> Task:
+    """Find project-specific dependencies."""
+    if args.no_project:
+        log.debug(
+            "Not searching for project dependencies. To enable: remove --no-project."
+        )
+        return task
+
+    log.info("Searching for project dependencies. To disable: add --no-project")
+    result = replace(task)  # make a copy
+    to_find: Dict[str, str] = {}
+    found: Dict[str, Path] = {}
+
+    # python
+    # NOTE: We only look at the `VIRTUAL_ENV` environment variable
+    # because we might be in a `uvx` or `pipx` virtual environment.
+    # Those environments help us stay isolated, but they don't set
+    # this environment variable.
+    if current_venv := ENV.get("VIRTUAL_ENV"):
+        log.debug(f"[python] venv detected: {current_venv}")
+    else:
+        log.debug("[python] No venv detected; searching for */pyvenv.cfg")
+        to_find["python_venv"] = "*/pyvenv.cfg"
+
+    # node
+    log.debug("[node] searching for node_modules/.bin")
+    to_find["node_modules"] = "node_modules/.bin"
+
+    # ready to search
+    for key, item in glob_parents(Path(), to_find):
+        if key not in found:  # don't overwrite
+            found[key] = item
+        if len(found) == len(to_find):  # can end early
+            break
+    # done searching
+
+    # python
+    if venv := found.get("python_venv"):
+        venv = venv.parent
+        log.debug(f"[python] found: {venv}")
+        result.cmd = f"{venv_activate_cmd(venv)}\n{task.cmd}"
+
+    # node
+    if node_bin := found.get("node_modules"):
+        log.debug(f"[node] found: {node_bin}")
+        prev = {**ENV, **result.env}.get("PATH", "")
+        if str(node_bin) not in prev:
+            result._env["PATH"] = f"{node_bin}{os.pathsep if prev else ''}{prev}"
+
+    return result
+
+
 @dataclasses.dataclass
 class Runner:
     args: Args
@@ -85,7 +137,6 @@ class Runner:
 
         resolved = replace(
             override,
-            cmd=task.cmd,
             args=task.args + override.args,
             cwd=override.cwd or task.cwd,
             env={**override.env, **task.env},
@@ -112,8 +163,7 @@ class Runner:
         # composite tasks handled
 
         # task needs to go into shell
-        resolved.cmd = interpolate_args(resolved.cmd, resolved.args)
-        resolved = self.find_project(task, resolved)  # add dependencies
+        resolved.cmd = interpolate_args(override.cmd + task.cmd, resolved.args)
         resolved = self.run_in_shell(task, resolved)  # run in shell
         return resolved.code or self.run_pre_post(task, resolved, "post")
 
@@ -150,58 +200,6 @@ class Runner:
 
         # no task found
         return 0
-
-    def find_project(self, task: Task, override: Task) -> Task:
-        """Find project-specific dependencies."""
-        if self.args.no_project:
-            log.debug(
-                "Not searching for project dependencies. "
-                "To enable: remove --no-project."
-            )
-            return override
-
-        log.info("Searching for project dependencies. To disable: add --no-project")
-        result = replace(override)  # make a copy
-        to_find: Dict[str, str] = {}
-        found: Dict[str, Path] = {}
-
-        # python
-        # NOTE: We only look at the `VIRTUAL_ENV` environment variable
-        # because we might be in a `uvx` or `pipx` virtual environment.
-        # Those environments help us stay isolated, but they don't set
-        # this environment variable.
-        if current_venv := ENV.get("VIRTUAL_ENV"):
-            log.debug(f"[python] venv detected: {current_venv}")
-        else:
-            log.debug("[python] No venv detected; searching for */pyvenv.cfg")
-            to_find["python_venv"] = "*/pyvenv.cfg"
-
-        # node
-        log.debug("[node] searching for node_modules/.bin")
-        to_find["node_modules"] = "node_modules/.bin"
-
-        # ready to search
-        for key, item in glob_parents(Path(), to_find):
-            if key not in found:  # don't overwrite
-                found[key] = item
-            if len(found) == len(to_find):  # can end early
-                break
-        # done searching
-
-        # python
-        if venv := found.get("python_venv"):
-            venv = venv.parent
-            log.debug(f"[python] found: {venv}")
-            result.cmd = f"{venv_activate_cmd(venv)}\n{override.cmd}"
-
-        # node
-        if node_bin := found.get("node_modules"):
-            log.debug(f"[node] found: {node_bin}")
-            prev = {**ENV, **result.env}.get("PATH", "")
-            if str(node_bin) not in prev:
-                result._env["PATH"] = f"{node_bin}{os.pathsep if prev else ''}{prev}"
-
-        return result
 
     def run_in_shell(self, task: Task, resolved: Task) -> Task:
         """Run the resolved task in the shell."""
