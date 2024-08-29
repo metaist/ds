@@ -49,7 +49,13 @@ Update top-most `__init__.py`:
 __version__ = "X.0.1"
 ```
 
-Update `CHANGELOG.md`:
+Update `CHANGELOG.md`. To see recently closed issues run:
+
+```bash
+ds recent-closed
+```
+
+You can also look at the [unreleased](https://github.com/metaist/ds/compare/prod...main) log too.
 
 Sections order is: `Fixed`, `Changed`, `Added`, `Deprecated`, `Removed`, `Security`.
 

@@ -138,29 +138,45 @@ dev-all.shell = """
 
 # Build
 build = ["pip install -e .", "python -m build", "cosmo"]
-cosmo.help = "build cosmopolitan portable executable"
+
+cosmo.help = "build portable executable (cosmopolitan)"
 cosmo.shell = """
   PKG="ds";
   DIR="dist/cosmo";
-  DIR_PKG="Lib/site-packages/$PKG"
-  mkdir -p "$DIR/$DIR_PKG";
-  cp src/$PKG/*.py "$DIR/$DIR_PKG";
+  DIR_SITE="Lib/site-packages";
+  DIR_PKG="$DIR_SITE/$PKG";
+  rm -rf "$DIR/$DIR_SITE" || true;
+  mkdir -p "$DIR/$DIR_SITE";
+  cp -r src/$PKG "$DIR/$DIR_SITE";
   pushd $DIR;
     printf -- "-m\\n$PKG\\n..." > .args;
+
+    echo 'Fetch: python';
     wget -N https://cosmo.zip/pub/cosmos/bin/python;
     chmod +x python;
-    ./python -m compileall -b $DIR_PKG;
-    rm $DIR_PKG/*.py;
     cp python $PKG.zip;
+
+    echo '\n>>> Compile: *.pyc';
+    ./python -m compileall -b $DIR_PKG;
+
+    echo '\n>>> Delete: *.py';
+    find $DIR_PKG -name "*.py" -delete -print;
+
+    echo '\n>>> Zip: add files';
     zip -r $PKG.zip .args Lib;
+
+    echo '\n>>> Zip: delete files';
     zip -d $PKG.zip Lib/site-packages/pip;
     zip -d $PKG.zip 'usr/*';
-    mv $PKG.zip $PKG
 
+    echo '\n>>> JSON: receipt';
+    mv $PKG.zip $PKG
     json=$(jq -n '{algo: "sha256"}')
-    json=$(echo "$json" | jq --arg check "$(sha256sum $PKG | awk '{print $1}')" '. + {check: $check}')
-    json=$(echo "$json" | jq --arg version "$($PKG --version | awk '{print $1}')" '. + {version: $version}')
+    json=$(echo "$json" | jq --arg hash "$(sha256sum $PKG | cut -d ' ' -f 1)" '. + {hash: $hash}')
+    json=$(echo "$json" | jq --arg date "$($PKG --version | cut -d '(' -f 2 | cut -d ')' -f 1)" '. + {date: $date}')
+    json=$(echo "$json" | jq --arg version "$($PKG --version | cut -d ' ' -f 1)" '. + {version: $version}')
     echo "$json" > $PKG.json
+    cat $PKG.json | jq
   popd
 """
 
@@ -175,6 +191,10 @@ clean = """
 """
 
 # Release
+recent.help = "see commits since last tag"
+recent.shell = "git log --oneline --color $(git describe --tags --abbrev=0)..HEAD"
+recent-closed = ["recent | rg 'closes #'"]
+
 release.help = "commit & tag the release"
 release.shell = """
   git commit -am "release: $1";

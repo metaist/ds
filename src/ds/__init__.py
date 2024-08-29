@@ -32,8 +32,8 @@ from .tasks import check_cycles
 from .tasks import CycleError
 from .tasks import print_tasks
 
-__version__ = "1.2.0post"
-__pubdate__ = "unpublished"
+__version__ = "1.3.0"
+__pubdate__ = "2024-08-29T13:08:58Z"
 
 log_normal = "%(levelname)s: %(message)s"
 log_debug = "%(name)s.%(funcName)s: %(levelname)s: %(message)s"

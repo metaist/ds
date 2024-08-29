@@ -86,7 +86,7 @@ test = &quot;&quot;&quot;
 <li><strong>PHP</strong> (<code>composer.json</code>): <a href="https://getcomposer.org/doc/articles/scripts.md#running-scripts-manually"><code>composer run-script</code></a></li>
 <li><strong>Rust</strong> (<code>Cargo.toml</code>): <a href="https://github.com/JoshMcguigan/cargo-run-script/"><code>cargo run-script</code></a></li>
 </ul>
-<p><strong>Experimental</strong>: We also support an extremely small subset of the <a href="./Makefile"><code>Makefile</code></a> format (see <a href="https://github.com/metaist/ds/issues/68">#68</a>).</p>
+<p><strong>Experimental</strong>: We also support an extremely small subset of the <a href="https://github.com/metaist/ds/issues/68"><code>Makefile</code></a> format (see <a href="https://github.com/metaist/ds/issues/68">#68</a>).</p>
 <p>See: <a href="#inspirations">Inspirations</a></p>
 <p>🗂️ <strong>Add monorepo/workspace support anywhere</strong><br />
 Easily <a href="#workspaces">manage monorepos and sub-projects</a>, even if they use different tooling.</p>
@@ -117,6 +117,14 @@ Currently working on removing all of these (see <a href="https://github.com/meta
 # or, if you use uv:
 uv tool install ds-run
 </code></pre>
+<p>You can also <a href="https://github.com/metaist/ds/releases/latest/download/ds">download a Cosmopolitan binary</a> which runs on Windows, macOS, and Linux:</p>
+<pre><code class="language-bash">export LOCAL_BIN=$HOME/.local/bin # or anywhere on your PATH
+mkdir -p $LOCAL_BIN
+wget -O $LOCAL_BIN/ds -N https://github.com/metaist/ds/releases/latest/download/ds
+chmod +x $LOCAL_BIN/ds
+ds --version
+# NOTE: it takes a few seconds the first time you run it
+</code></pre>
 <p>If you just want to try <code><a title="ds" href="#ds">ds</a></code>:</p>
 <pre><code class="language-bash">uvx --from ds-run ds --version
 # or
@@ -126,13 +134,16 @@ pipx run ds-run --version
 <!--[[[cog fenced_block(snip_file("src/ds/args.py", beg="Usage:", end="Examples:")) ]]]-->
 <pre><code class="language-text">Usage: ds [--help | --version] [--debug]
           [--dry-run]
+          [--no-config]
+          [--no-project]
           [--list]
           [--cwd PATH]
           [--file PATH]
           [--env-file PATH]
           [(--env NAME=VALUE)...]
           [--workspace GLOB]...
-          [&lt;task&gt;[: &lt;options&gt;... --]...]
+          [--pre][--post]
+          [&lt;task&gt;...]
 
 Options:
   -h, --help
@@ -168,6 +179,12 @@ Options:
   -l, --list
     List available tasks and exit.
 
+  --no-config
+    Do not search for or load a configuration file. Supersedes `--file`.
+
+  --no-project
+    Do not search for project dependencies, e.g., `.venv`, `node_modules`
+
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.
 
@@ -177,11 +194,19 @@ Options:
     Read more about configuring workspaces:
     https://github.com/metaist/ds#workspaces
 
-  &lt;task&gt;[: &lt;options&gt;... --]
+  --pre, --post
+    EXPERIMENTAL: Run tasks with pre- and post- names.
+
+  &lt;task&gt;
     One or more tasks to run with task-specific arguments.
 
-    Use a colon (`:`) to indicate start of arguments and
-    double-dash (`--`) to indicate the end.
+    The simplest way to pass arguments to tasks is to put them in quotes:
+
+    $ ds 'echo &quot;Hello world&quot;'
+
+    For more complex cases you can use a colon (`:`) to indicate start of arguments and double-dash (`--`) to indicate the end:
+
+    $ ds echo: &quot;Hello from&quot; -- echo: &quot;the world&quot;
 
     If the first &lt;option&gt; starts with a hyphen (`-`), you may omit the
     colon (`:`). If there are no more tasks after the last option, you
@@ -208,30 +233,29 @@ Options:
 <li><strong>Rust</strong>: <code>Cargo.toml</code> under <code>[package.metadata.scripts]</code> or <code>[workspace.metadata.scripts]</code></li>
 <li><strong>Other</strong>: <code>ds.toml</code> under <code>[scripts]</code></li>
 </ul>
-<p><strong>Experimental</strong>: We support an extremely small subset of the <a href="./Makefile"><code>Makefile</code></a> format (see <a href="https://github.com/metaist/ds/issues/68">#68</a>).</p>
+<p><strong>Experimental</strong>: We support an extremely small subset of the <a href="https://github.com/metaist/ds/issues/68"><code>Makefile</code></a> format (see <a href="https://github.com/metaist/ds/issues/68">#68</a>).</p>
 <p>Read more:</p>
 <ul>
 <li><a href="https://github.com/metaist/ds/tree/main/examples/formats">Example configuration files</a></li>
 <li><a href="#workspaces">Workspaces</a></li>
 </ul>
 <h2 id="how-does-ds-find-my-config">How does <code><a title="ds" href="#ds">ds</a></code> find my config?</h2>
-<p>If you don't provide a config file using the <code>--file</code> option, <code><a title="ds" href="#ds">ds</a></code> will search the current directory and all of its parents for files with these names in the following order:</p>
+<p>If you don't provide a config file using the <code>--file</code> option, <code><a title="ds" href="#ds">ds</a></code> will search the current directory and all of its parents for files with these name patterns in the following order:</p>
 <!--[[[cog
-from ds.configs import SEARCH_FILES
+from ds.parsers import PARSERS
 cog.outl()
-for key in SEARCH_FILES:
+for key in list(PARSERS):
 cog.outl(f"- `{key}`")
 cog.outl()
 ]]] -->
 <ul>
 <li><code>ds.toml</code></li>
-<li><code>.ds.toml</code></li>
+<li><code>pyproject.toml</code></li>
+<li><code>uv.toml</code></li>
+<li><code>package.json</code></li>
 <li><code>Cargo.toml</code></li>
 <li><code>composer.json</code></li>
-<li><code>package.json</code></li>
-<li><code>pyproject.toml</code></li>
-<li><code>Makefile</code></li>
-<li><code>makefile</code></li>
+<li><code>[Mm]akefile</code></li>
 </ul>
 <!--[[[end]]]-->
 <p>If you provide one or more <code>--workspace</code> options, the file must contain a <a href="#workspaces">workspace key</a>. Otherwise, then the file must contain a <a href="#task-keys">task key</a>.</p>
@@ -243,24 +267,7 @@ cog.outl()
 <p>If you provide one or more <code>--workspace</code> options, <code>--cwd</code> is ignored and tasks are run in each of the selected workspace members.</p>
 <p><strong>NOTE</strong>: In configuration files, you can use the <code>cwd</code> or <code>working_dir</code> option to specify a working directory for a <em>specific</em> task and that option will be respected even when using <code>--workspace</code> or <code>--cwd</code> from the command line.</p>
 <h2 id="task-keys">Task Keys</h2>
-<p><code><a title="ds" href="#ds">ds</a></code> searches configuration files for the following keys, in the following order, to find task definitions. The first key that's found is used and should contain a mapping from <a href="#task-names">task names</a> to <a href="#basic-task">basic tasks</a> or <a href="#composite-task">composite tasks</a>.</p>
-<!--[[[cog
-from ds.configs import SEARCH_KEYS_TASKS
-cog.outl()
-for key in SEARCH_KEYS_TASKS:
-cog.outl(f"- `{key}`")
-cog.outl()
-]]]-->
-<ul>
-<li><code>scripts</code></li>
-<li><code>tool.ds.scripts</code></li>
-<li><code>tool.pdm.scripts</code></li>
-<li><code>tool.rye.scripts</code></li>
-<li><code>package.metadata.scripts</code></li>
-<li><code>workspace.metadata.scripts</code></li>
-<li><code>Makefile</code></li>
-</ul>
-<!--[[[end]]]-->
+<p><code><a title="ds" href="#ds">ds</a></code> searches configuration files for <a href="https://github.com/metaist/ds/tree/main/examples/formats">tool-specific keys</a> to find task definitions which should contain a mapping from <a href="#task-names">task names</a> to <a href="#basic-task">basic tasks</a> or <a href="#composite-task">composite tasks</a>.</p>
 <h2 id="task-names">Task Names</h2>
 <ul>
 <li>Task names are strings, that are usually short, lowercase, ASCII letters.</li>
@@ -418,23 +425,8 @@ run3 = { composite = [&quot;run&quot;], env = { FLASK_PORT = &quot;8081&quot; } 
 ds --env-file .env run
 </code></pre>
 <h2 id="workspaces">Workspaces</h2>
-<p>Workspaces are a way of managing multiple sub-projects from a top-level. <code><a title="ds" href="#ds">ds</a></code> supports <code>npm</code>, <code>rye</code>, <code>uv</code>, and <code>Cargo</code> style workspaces (see <a href="https://github.com/metaist/ds/tree/main/examples/workspace">examples</a>).</p>
-<p>When <code><a title="ds" href="#ds">ds</a></code> is called with the <code>--workspace</code> option, the configuration file must have one of the following keys:</p>
-<!--[[[cog
-from ds.configs import SEARCH_KEYS_WORKSPACE
-cog.outl()
-for key in SEARCH_KEYS_WORKSPACE:
-cog.outl(f"- `{key}`")
-cog.outl()
-]]]-->
-<ul>
-<li><code>workspace.members</code></li>
-<li><code>tool.ds.workspace.members</code></li>
-<li><code>tool.rye.workspace.members</code></li>
-<li><code>tool.uv.workspace.members</code></li>
-<li><code>workspaces</code></li>
-</ul>
-<!--[[[end]]]-->
+<p>Workspaces are a way of managing multiple sub-projects from a top-level. <code><a title="ds" href="#ds">ds</a></code> supports <code>npm</code>, <code>rye</code>, <code>uv</code>, and <code>Cargo</code> style workspaces.</p>
+<p>When <code><a title="ds" href="#ds">ds</a></code> is called with the <code>--workspace</code> option, the configuration file must have one of the <a href="https://github.com/metaist/ds/tree/main/examples/workspace">tool-specific workspace keys</a>.</p>
 <p>If no configuration file was provided with the <code>--file</code> option, search continues up the directory tree.</p>
 <p><strong>NOTE</strong>: <code>pnpm</code> has its own <a href="https://pnpm.io/pnpm-workspace_yaml"><code>pnpm-workspace.yaml</code></a> format which is not currently supported.</p>
 <h3 id="workspace-members">Workspace Members</h3>
@@ -544,15 +536,27 @@ python -c &quot;import sys; from pkg import main as _1; sys.exit(main('test'))&q
 <dl>
 <dt><code class="name"><a title="ds.args" href="args.html">ds.args</a></code></dt>
 <dd>
-<div class="desc"><p>Parse arguments.</p></div>
+<div class="desc"><p>Parse command-line arguments.</p></div>
 </dd>
 <dt><code class="name"><a title="ds.configs" href="configs.html">ds.configs</a></code></dt>
 <dd>
-<div class="desc"><p>Find and parse configuration files.</p></div>
+<div class="desc"><p>Configs are a path and data.</p></div>
 </dd>
 <dt><code class="name"><a title="ds.env" href="env.html">ds.env</a></code></dt>
 <dd>
 <div class="desc"><p>Shell environment variables.</p></div>
+</dd>
+<dt><code class="name"><a title="ds.parsers" href="parsers/index.html">ds.parsers</a></code></dt>
+<dd>
+<div class="desc"><p>Parsers for supported formats.</p></div>
+</dd>
+<dt><code class="name"><a title="ds.runner" href="runner.html">ds.runner</a></code></dt>
+<dd>
+<div class="desc"><p>Run tasks.</p></div>
+</dd>
+<dt><code class="name"><a title="ds.searchers" href="searchers.html">ds.searchers</a></code></dt>
+<dd>
+<div class="desc"><p>Find keys, names, directories and files.</p></div>
 </dd>
 <dt><code class="name"><a title="ds.symbols" href="symbols.html">ds.symbols</a></code></dt>
 <dd>
@@ -637,6 +641,9 @@ python -c &quot;import sys; from pkg import main as _1; sys.exit(main('test'))&q
 <li><code><a title="ds.args" href="args.html">ds.args</a></code></li>
 <li><code><a title="ds.configs" href="configs.html">ds.configs</a></code></li>
 <li><code><a title="ds.env" href="env.html">ds.env</a></code></li>
+<li><code><a title="ds.parsers" href="parsers/index.html">ds.parsers</a></code></li>
+<li><code><a title="ds.runner" href="runner.html">ds.runner</a></code></li>
+<li><code><a title="ds.searchers" href="searchers.html">ds.searchers</a></code></li>
 <li><code><a title="ds.symbols" href="symbols.html">ds.symbols</a></code></li>
 <li><code><a title="ds.tasks" href="tasks.html">ds.tasks</a></code></li>
 </ul>

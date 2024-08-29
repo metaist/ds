@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.0">
 <title>ds.args API documentation</title>
-<meta name="description" content="Parse arguments.">
+<meta name="description" content="Parse command-line arguments.">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -25,29 +25,20 @@ hljs.highlightAll();
 <h1 class="title">Module <code>ds.args</code></h1>
 </header>
 <section id="section-intro">
-<p>Parse arguments.</p>
+<p>Parse command-line arguments.</p>
 </section>
 <section>
 </section>
 <section>
 </section>
 <section>
-<h2 class="section-title" id="header-functions">Functions</h2>
-<dl>
-<dt id="ds.args.parse_args"><code class="name flex">
-<span>def <span class="ident">parse_args</span></span>(<span>argv: List[str]) ‑> <a title="ds.args.Args" href="#ds.args.Args">Args</a></span>
-</code></dt>
-<dd>
-<div class="desc"><p>Parse command-line arguments in a docopt-like way.</p></div>
-</dd>
-</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
 <dt id="ds.args.Args"><code class="flex name class">
 <span>class <span class="ident">Args</span></span>
-<span>(</span><span>help: bool = False, version: bool = False, debug: bool = False, dry_run: bool = False, list_: bool = False, cwd: Optional[Path] = None, env: Dict[str, str] = &lt;factory&gt;, env_file: Optional[Path] = None, file_: Optional[Path] = None, workspace: List[str] = &lt;factory&gt;, task: Task = &lt;factory&gt;)</span>
+<span>(</span><span>help: bool = False, version: bool = False, debug: bool = False, dry_run: bool = False, no_config: bool = False, no_project: bool = False, list_: bool = False, cwd: Optional[Path] = None, env: Dict[str, str] = &lt;factory&gt;, env_file: Optional[Path] = None, file: Optional[Path] = None, workspace: List[str] = &lt;factory&gt;, pre: bool = False, post: bool = False, task: Task = &lt;factory&gt;)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Type-checked arguments.</p></div>
@@ -71,6 +62,12 @@ class Args:
     dry_run: bool = False
     &#34;&#34;&#34;Whether to skip actually running tasks.&#34;&#34;&#34;
 
+    no_config: bool = False
+    &#34;&#34;&#34;Disable searching for config.&#34;&#34;&#34;
+
+    no_project: bool = False
+    &#34;&#34;&#34;Disable searching for project dependencies (`.venv`, `node_modules`).&#34;&#34;&#34;
+
     list_: bool = False
     &#34;&#34;&#34;Whether to show available tasks&#34;&#34;&#34;
 
@@ -83,11 +80,17 @@ class Args:
     env_file: Optional[Path] = None
     &#34;&#34;&#34;Path to environment variables.&#34;&#34;&#34;
 
-    file_: Optional[Path] = None
+    file: Optional[Path] = None
     &#34;&#34;&#34;Path to task definitions.&#34;&#34;&#34;
 
     workspace: List[str] = field(default_factory=list)
     &#34;&#34;&#34;List of workspace patterns to run tasks in.&#34;&#34;&#34;
+
+    pre: bool = False
+    &#34;&#34;&#34;EXPERIMENTAL: Whether to run pre- tasks.&#34;&#34;&#34;
+
+    post: bool = False
+    &#34;&#34;&#34;EXPERIMENTAL: Whether to run post- tasks.&#34;&#34;&#34;
 
     task: Task = field(default_factory=Task)
     &#34;&#34;&#34;A composite task for the tasks given on the command-line.&#34;&#34;&#34;
@@ -99,33 +102,128 @@ class Args:
     def as_argv(self) -&gt; List[str]:
         &#34;&#34;&#34;Return args as a string.&#34;&#34;&#34;
         result = [&#34;ds&#34;]
-        if self.help:
-            result.append(&#34;--help&#34;)
-        if self.version:
-            result.append(&#34;--version&#34;)
-        if self.debug:
-            result.append(&#34;--debug&#34;)
-        if self.dry_run:
-            result.append(&#34;--dry-run&#34;)
+
+        # bool
+        for option in [
+            &#34;--help&#34;,
+            &#34;--version&#34;,
+            &#34;--debug&#34;,
+            &#34;--dry-run&#34;,
+            &#34;--no-config&#34;,
+            &#34;--no-project&#34;,
+            &#34;--pre&#34;,
+            &#34;--post&#34;,
+        ]:
+            if getattr(self, _opt_prop(option)):
+                result.append(option)
         if self.list_:
             result.append(&#34;--list&#34;)
-        if self.cwd:
-            result.extend([&#34;--cwd&#34;, str(self.cwd)])
-        if self.env_file:
-            result.extend([&#34;--env-file&#34;, str(self.env_file)])
-        if self.file_:
-            result.extend([&#34;--file&#34;, str(self.file_)])
+
+        # path
+        for option in [&#34;--cwd&#34;, &#34;--env-file&#34;, &#34;--file&#34;]:
+            value = getattr(self, _opt_prop(option))
+            if value:
+                result.extend([option, str(value)])
+
+        # workspace
         if self.workspace:
             for w in self.workspace:
                 result.extend([&#34;--workspace&#34;, w])
 
+        # env
         for key, val in self.env.items():
             result.extend([&#34;--env&#34;, f&#34;&#39;{key}={val}&#39;&#34;])
 
+        # tasks
         for t in self.task.depends:
-            parts = split(t.cmd)
-            result.extend([parts[0], ARG_BEG, *parts[1:], ARG_END])
-        return result</code></pre>
+            parts = join([t.cmd, *t.args])
+            result.append(parts)
+        return result
+
+    @staticmethod
+    def parse(argv: List[str]) -&gt; Args:
+        &#34;&#34;&#34;Parse command-line arguments in a docopt-like way.&#34;&#34;&#34;
+        args = Args()
+        tasks: List[str] = []
+        task_cmd = &#34;&#34;
+        is_ours = True
+        is_task_arg = False
+        while argv:
+            arg = argv.pop(0)
+            if is_ours:
+                # bool
+                if arg in [
+                    &#34;--help&#34;,
+                    &#34;--version&#34;,
+                    &#34;--debug&#34;,
+                    &#34;--dry-run&#34;,
+                    &#34;--no-config&#34;,
+                    &#34;--no-project&#34;,
+                    &#34;--pre&#34;,
+                    &#34;--post&#34;,
+                ]:
+                    attr = _opt_prop(arg)
+                    setattr(args, attr, True)
+                elif arg == &#34;-h&#34;:
+                    args.help = True
+                elif arg in [&#34;-l&#34;, &#34;--list&#34;]:
+                    args.list_ = True
+
+                # path
+                elif arg in [&#34;--cwd&#34;, &#34;--env-file&#34;, &#34;--file&#34;]:
+                    attr = _opt_prop(arg)
+                    setattr(args, attr, Path(argv.pop(0)).resolve())
+                elif arg == &#34;-f&#34;:
+                    args.file = Path(argv.pop(0)).resolve()
+
+                # other
+                elif arg in [&#34;-e&#34;, &#34;--env&#34;]:
+                    key, val = argv.pop(0).split(&#34;=&#34;)
+                    args.env[key] = val
+                elif arg in [&#34;-w&#34;, &#34;--workspace&#34;]:
+                    args.workspace.append(argv.pop(0))
+                elif arg == &#34;-w*&#34;:  # special shorthand
+                    args.workspace.append(&#34;*&#34;)
+                else:
+                    is_ours = False
+
+            if is_ours:
+                continue  # processed
+            # our args processed
+
+            if task_cmd and arg == ARG_BEG:  # explicit arg start
+                is_task_arg = True
+                continue  # not an argument
+
+            if arg == ARG_END:  # explicit arg end
+                task_cmd, is_task_arg = &#34;&#34;, False
+                continue  # not an argument
+
+            if task_cmd and arg.startswith(ARG_OPTION):  # implicit arg start
+                is_task_arg = True
+
+            if is_task_arg:  # append task args
+                tasks[-1] += f&#34; {arg}&#34;
+                continue  # processed
+
+            if arg.endswith(ARG_BEG):  # task name + explicit arg start
+                arg = arg[: -len(ARG_BEG)]
+                is_task_arg = True
+
+            task_cmd = arg
+            tasks.append(task_cmd)
+
+        args.task = parse_composite(args.task, tasks)
+        args.task.cwd = args.cwd
+        args.task.env = args.env
+        args.task.env_file = args.env_file
+
+        if not args.help and not args.version and not args.task.depends:
+            # default action
+            args.list_ = True
+
+        # all args processed
+        return args</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -157,6 +255,14 @@ class Args:
 <dd>
 <div class="desc"><p>Whether to skip actually running tasks.</p></div>
 </dd>
+<dt id="ds.args.Args.no_config"><code class="name">var <span class="ident">no_config</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>Disable searching for config.</p></div>
+</dd>
+<dt id="ds.args.Args.no_project"><code class="name">var <span class="ident">no_project</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>Disable searching for project dependencies (<code>.venv</code>, <code>node_modules</code>).</p></div>
+</dd>
 <dt id="ds.args.Args.list_"><code class="name">var <span class="ident">list_</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>Whether to show available tasks</p></div>
@@ -169,9 +275,26 @@ class Args:
 <dd>
 <div class="desc"><p>Path to environment variables.</p></div>
 </dd>
-<dt id="ds.args.Args.file_"><code class="name">var <span class="ident">file_</span> : Optional[pathlib.Path]</code></dt>
+<dt id="ds.args.Args.file"><code class="name">var <span class="ident">file</span> : Optional[pathlib.Path]</code></dt>
 <dd>
 <div class="desc"><p>Path to task definitions.</p></div>
+</dd>
+<dt id="ds.args.Args.pre"><code class="name">var <span class="ident">pre</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>EXPERIMENTAL: Whether to run pre- tasks.</p></div>
+</dd>
+<dt id="ds.args.Args.post"><code class="name">var <span class="ident">post</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>EXPERIMENTAL: Whether to run post- tasks.</p></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="ds.args.Args.parse"><code class="name flex">
+<span>def <span class="ident">parse</span></span>(<span>argv: List[str]) ‑> <a title="ds.args.Args" href="#ds.args.Args">Args</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parse command-line arguments in a docopt-like way.</p></div>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -203,16 +326,12 @@ class Args:
 <li><code><a title="ds" href="index.html">ds</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="">
-<li><code><a title="ds.args.parse_args" href="#ds.args.parse_args">parse_args</a></code></li>
-</ul>
-</li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
 <h4><code><a title="ds.args.Args" href="#ds.args.Args">Args</a></code></h4>
 <ul class="two-column">
+<li><code><a title="ds.args.Args.parse" href="#ds.args.Args.parse">parse</a></code></li>
 <li><code><a title="ds.args.Args.copy" href="#ds.args.Args.copy">copy</a></code></li>
 <li><code><a title="ds.args.Args.as_argv" href="#ds.args.Args.as_argv">as_argv</a></code></li>
 <li><code><a title="ds.args.Args.env" href="#ds.args.Args.env">env</a></code></li>
@@ -222,10 +341,14 @@ class Args:
 <li><code><a title="ds.args.Args.version" href="#ds.args.Args.version">version</a></code></li>
 <li><code><a title="ds.args.Args.debug" href="#ds.args.Args.debug">debug</a></code></li>
 <li><code><a title="ds.args.Args.dry_run" href="#ds.args.Args.dry_run">dry_run</a></code></li>
+<li><code><a title="ds.args.Args.no_config" href="#ds.args.Args.no_config">no_config</a></code></li>
+<li><code><a title="ds.args.Args.no_project" href="#ds.args.Args.no_project">no_project</a></code></li>
 <li><code><a title="ds.args.Args.list_" href="#ds.args.Args.list_">list_</a></code></li>
 <li><code><a title="ds.args.Args.cwd" href="#ds.args.Args.cwd">cwd</a></code></li>
 <li><code><a title="ds.args.Args.env_file" href="#ds.args.Args.env_file">env_file</a></code></li>
-<li><code><a title="ds.args.Args.file_" href="#ds.args.Args.file_">file_</a></code></li>
+<li><code><a title="ds.args.Args.file" href="#ds.args.Args.file">file</a></code></li>
+<li><code><a title="ds.args.Args.pre" href="#ds.args.Args.pre">pre</a></code></li>
+<li><code><a title="ds.args.Args.post" href="#ds.args.Args.post">post</a></code></li>
 </ul>
 </li>
 </ul>

@@ -32,13 +32,13 @@ hljs.highlightAll();
 <section>
 <h2 class="section-title" id="header-variables">Global variables</h2>
 <dl>
-<dt id="ds.tasks.ORIGINAL_CWD"><code class="name">var <span class="ident">ORIGINAL_CWD</span></code></dt>
-<dd>
-<div class="desc"><p>Save a reference to the original working directory.</p></div>
-</dd>
 <dt id="ds.tasks.Tasks"><code class="name">var <span class="ident">Tasks</span></code></dt>
 <dd>
 <div class="desc"><p>Mapping of task names to <code><a title="ds.tasks.Task" href="#ds.tasks.Task">Task</a></code> objects.</p></div>
+</dd>
+<dt id="ds.tasks.ORIGINAL_CWD"><code class="name">var <span class="ident">ORIGINAL_CWD</span></code></dt>
+<dd>
+<div class="desc"><p>Save a reference to the original working directory.</p></div>
 </dd>
 </dl>
 </section>
@@ -56,21 +56,6 @@ hljs.highlightAll();
 </code></dt>
 <dd>
 <div class="desc"><p>Pretty print task names.</p></div>
-</dd>
-<dt id="ds.tasks.glob_names"><code class="name flex">
-<span>def <span class="ident">glob_names</span></span>(<span>names: Iterable[str], patterns: List[str]) ‑> List[str]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Return the names of <code>tasks</code> that match <code>patterns</code>.</p>
-<p>Prefixing a pattern with <code>!</code> will remove that matched pattern
-from the result.</p>
-<pre><code class="language-python-repl">&gt;&gt;&gt; names = ['cab', 'car', 'cat', 'crab']
-&gt;&gt;&gt; glob_names(names, ['c?r', 'c*b'])
-['cab', 'car', 'crab']
-</code></pre>
-<pre><code class="language-python-repl">&gt;&gt;&gt; glob_names(names, ['*', '!crab'])
-['cab', 'car', 'cat']
-</code></pre></div>
 </dd>
 </dl>
 </section>
@@ -117,7 +102,7 @@ the same, to make it clear that it is cyclic.</p></div>
 </dd>
 <dt id="ds.tasks.Task"><code class="flex name class">
 <span>class <span class="ident">Task</span></span>
-<span>(</span><span>origin: Optional[Path] = None, origin_key: str = '', name: str = '', help: str = '', cmd: str = '', cwd: Optional[Path] = None, env: Dict[str, str] = &lt;factory&gt;, depends: List[<a title="ds.tasks.Task" href="#ds.tasks.Task">Task</a>] = &lt;factory&gt;, keep_going: bool = False, verbatim: bool = False)</span>
+<span>(</span><span>origin: Optional[Path] = None, origin_key: str = '', name: str = '', help: str = '', verbatim: bool = False, depends: List[<a title="ds.tasks.Task" href="#ds.tasks.Task">Task</a>] = &lt;factory&gt;, cmd: str = '', code: int = 0, args: List[str] = &lt;factory&gt;, cwd: Optional[Path] = None, env: Dict[str, str] = &lt;factory&gt;, env_file: Optional[Path] = None, keep_going: bool = False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Represents a thing to be done.</p></div>
@@ -141,8 +126,23 @@ class Task:
     help: str = &#34;&#34;
     &#34;&#34;&#34;Task description.&#34;&#34;&#34;
 
+    verbatim: bool = False
+    &#34;&#34;&#34;Whether to format the command at all.&#34;&#34;&#34;
+
+    depends: List[Task] = field(default_factory=list)
+    &#34;&#34;&#34;Tasks to execute before this one.&#34;&#34;&#34;
+
     cmd: str = &#34;&#34;
     &#34;&#34;&#34;Shell command to execute after `depends`.&#34;&#34;&#34;
+
+    code: int = 0
+    &#34;&#34;&#34;Return code from running this task.&#34;&#34;&#34;
+
+    # NOTE: args, cwd, env, keep_going are overridable
+    # via the CLI or when calling a composite command.
+
+    args: List[str] = field(default_factory=list)
+    &#34;&#34;&#34;Additional arguments to `cmd`.&#34;&#34;&#34;
 
     cwd: Optional[Path] = None
     &#34;&#34;&#34;Task working directory.&#34;&#34;&#34;
@@ -150,217 +150,78 @@ class Task:
     env: Dict[str, str] = field(default_factory=dict)
     &#34;&#34;&#34;Task environment variables.&#34;&#34;&#34;
 
-    depends: List[Task] = field(default_factory=list)
-    &#34;&#34;&#34;Tasks to execute before this one.&#34;&#34;&#34;
+    _env: Dict[str, str] = field(default_factory=dict)
+    &#34;&#34;&#34;Hidden environment variables.&#34;&#34;&#34;
+
+    env_file: Optional[Path] = None
+    &#34;&#34;&#34;Path to an environment file to load.&#34;&#34;&#34;
 
     keep_going: bool = False
     &#34;&#34;&#34;Ignore a non-zero return code.&#34;&#34;&#34;
 
-    verbatim: bool = False
-    &#34;&#34;&#34;Whether to format the command at all.&#34;&#34;&#34;
+    def pprint(self, override: Optional[Task] = None, dry_run: bool = False) -&gt; None:
+        &#34;&#34;&#34;Print a representation of this task.&#34;&#34;&#34;
+        is_run = override or dry_run
+        display = self
+        if override:
+            display = replace(self, cmd=override.cmd, keep_going=override.keep_going)
 
-    @staticmethod
-    def parse(config: Any, origin: Optional[Path] = None, key: str = &#34;&#34;) -&gt; Task:
-        &#34;&#34;&#34;Parse a config into a `Task`.&#34;&#34;&#34;
-        task = Task(origin=origin, origin_key=key)
-        if isinstance(config, list):
-            for item in config:
-                parsed = Task.parse(item, origin, key)
-                parsed.name = TASK_COMPOSITE
-                task.depends.append(parsed)
+        print()
 
-        elif isinstance(config, str):
-            task.keep_going, task.cmd = starts(config, TASK_KEEP_GOING)
+        if dry_run:
+            print(&#34;[DRY RUN]&#34;)
+        if display.help:
+            print(&#34;#&#34;, display.help)
+        print(&#34;&gt;&#34;, wrap_cmd(self.as_args(override)))
 
-        elif isinstance(config, Dict):
-            if &#34;verbatim&#34; in config:
-                task.verbatim = config[&#34;verbatim&#34;]
-            if &#34;help&#34; in config:
-                task.help = config[&#34;help&#34;]
-
-            if &#34;keep_going&#34; in config:
-                task.keep_going = config[&#34;keep_going&#34;]
-
-            # Working directory
-            if &#34;cwd&#34; in config:  # `working_dir` alias (ds)
-                assert origin is not None
-                task.cwd = origin.parent / config[&#34;cwd&#34;]
-            elif &#34;working_dir&#34; in config:  # `cwd` alias (pdm)
-                assert origin is not None
-                task.cwd = origin.parent / config[&#34;working_dir&#34;]
-
-            # Environment File
-            if &#34;env_file&#34; in config:  # `env-file` alias (pdm)
-                assert origin is not None
-                task.env.update(
-                    read_env((origin.parent / config[&#34;env_file&#34;]).read_text())
-                )
-            elif &#34;env-file&#34; in config:  # `env_file` alias (rye)
-                assert origin is not None
-                task.env.update(
-                    read_env((origin.parent / config[&#34;env-file&#34;]).read_text())
-                )
-
-            # Environment Variables
-            if &#34;env&#34; in config:
-                assert isinstance(config[&#34;env&#34;], dict)
-                task.env.update(config[&#34;env&#34;])
-
-            found = False
-            # Composite Task
-            if &#34;composite&#34; in config:  # `chain` alias
-                found = True
-                assert isinstance(config[&#34;composite&#34;], list)
-                parsed = Task.parse(config[&#34;composite&#34;], origin, key)
-                task.name = parsed.name
-                task.cmd = parsed.cmd
-                task.depends = parsed.depends
-            elif &#34;chain&#34; in config:  # `composite` alias
-                found = True
-                assert isinstance(config[&#34;chain&#34;], list)
-                parsed = Task.parse(config[&#34;chain&#34;], origin, key)
-                task.name = parsed.name
-                task.cmd = parsed.cmd
-                task.depends = parsed.depends
-
-            # Basic Task
-            if &#34;shell&#34; in config:
-                found = True
-                parsed = Task.parse(str(config[&#34;shell&#34;]), origin, key)
-                task.cmd = parsed.cmd
-                task.keep_going = parsed.keep_going
-            elif &#34;cmd&#34; in config:
-                found = True
-                cmd = config[&#34;cmd&#34;]
-                parsed = Task.parse(
-                    &#34; &#34;.join(cmd) if isinstance(cmd, list) else str(cmd),
-                    origin,
-                    key,
-                )
-                task.cmd = parsed.cmd
-                task.keep_going = parsed.keep_going
-
-            if not found:
-                if &#34;call&#34; in config:
-                    raise ValueError(f&#34;`call` commands not supported: {config}&#34;)
-                raise TypeError(f&#34;Unknown task type: {config}&#34;)
-        else:
-            raise TypeError(f&#34;Unknown task type: {config}&#34;)
-        return task
-
-    def pprint(self) -&gt; None:
-        &#34;&#34;&#34;Pretty-print a representation of this task.&#34;&#34;&#34;
-        if self.help:
-            print(&#34;#&#34;, self.help)
-        print(&#34;&gt;&#34;, wrap_cmd(self.as_args()))
-        if self.depends:
+        if not is_run and display.depends:
             print(
                 [
                     f&#34;{TASK_KEEP_GOING if t.keep_going else &#39;&#39;}{t.cmd}&#34;
-                    for t in self.depends
+                    for t in display.depends
                 ]
             )
-        if self.cmd:
-            if self.verbatim:
-                print(&#34;$&#34;, self.cmd.strip().replace(&#34;\n&#34;, &#34;\n$ &#34;))
-            else:
-                print(f&#34;$ {wrap_cmd(self.cmd)}&#34;)
-        print()
 
-    def as_args(
-        self,
-        cwd: Optional[Path] = None,
-        env: Optional[Dict[str, str]] = None,
-        keep_going: bool = False,
-    ) -&gt; str:
+        if display.cmd:
+            if display.verbatim:
+                print(&#34;$&#34;, display.cmd.strip().replace(&#34;\n&#34;, &#34;\n$ &#34;))
+            else:
+                print(f&#34;$ {wrap_cmd(display.cmd)}&#34;)
+
+    def as_args(self, override: Optional[Task] = None) -&gt; str:
         &#34;&#34;&#34;Return a shell representation of running this task.&#34;&#34;&#34;
+        override = override or Task()
+
         args = [&#34;ds&#34;]
-        if cwd or self.cwd:
-            args.extend([&#34;--cwd&#34;, str(cwd or self.cwd)])
-        for key, val in (env or self.env or {}).items():
+        if self.cwd:
+            args.extend([&#34;--cwd&#34;, str(self.cwd)])
+        if self.env_file:
+            args.extend([&#34;--env-file&#34;, str(self.env_file)])
+        for key, val in (self.env or {}).items():
             args.extend([&#34;-e&#34;, f&#34;{key}={val}&#34;])
 
         prefix = &#34;&#34;
-        if keep_going or self.keep_going:
+        if self.keep_going or override.keep_going:
             prefix = TASK_KEEP_GOING
         if self.name == TASK_COMPOSITE:
             args.append(f&#34;{prefix}{self.cmd}&#34;)
         elif self.name:
             args.append(f&#34;{prefix}{self.name}&#34;)
-        return join(args)
-
-    def run(
-        self,
-        tasks: Tasks,
-        extra: Optional[List[str]] = None,
-        cwd: Optional[Path] = None,
-        env: Optional[Dict[str, str]] = None,
-        keep_going: bool = False,
-        dry_run: bool = False,
-    ) -&gt; int:
-        &#34;&#34;&#34;Run this task.&#34;&#34;&#34;
-        extra = extra or []
-        cwd = cwd or self.cwd
-        env = env or self.env
-        keep_going = keep_going or self.keep_going
-
-        # 1. Run all the dependencies.
-        for dep in self.depends:
-            dep.run(tasks, extra, cwd, env, keep_going, dry_run)
-
-        # 2. Check if we have anything to do.
-        if not self.cmd.strip():  # nothing to do
-            return 0
-
-        # 3. Check if a part of a composite task is calling another task.
-        if self.name == TASK_COMPOSITE:
-            cmd, *args = split(self.cmd)
-            others = glob_names(tasks.keys(), cmd.split(GLOB_DELIMITER))
-            ran, code = False, 0
-            for other_name in others:
-                other = tasks.get(other_name)
-                if other and other != self and self not in other.depends:
-                    ran = True
-                    code = other.run(tasks, args + extra, cwd, env, keep_going, dry_run)
-            if ran:
-                return code
-
-        # 4. Run in the shell.
-        cmd = interpolate_args(self.cmd, extra)
-        dry_prefix = &#34;[DRY RUN]\n&#34; if dry_run else &#34;&#34;
-        print(f&#34;\n{dry_prefix}&gt;&#34;, wrap_cmd(self.as_args(cwd, env, keep_going)))
-        if self.verbatim:
-            print(&#34;$&#34;, cmd.strip().replace(&#34;\n&#34;, &#34;\n$ &#34;))
-        else:
-            print(f&#34;$ {wrap_cmd(cmd)}&#34;)
-        if dry_run:  # do not actually run the command
-            return 0
-
-        combined_env = {**ENV, **env}
-        proc = run(
-            cmd,
-            shell=True,
-            text=True,
-            cwd=cwd,
-            env=combined_env,
-            executable=combined_env.get(&#34;SHELL&#34;),
-        )
-        code = proc.returncode
-
-        if code != 0 and not keep_going:
-            print(&#34;ERROR: return code =&#34;, code)
-            sys.exit(code)
-        return 0  # either it was zero or we keep going</code></pre>
+        return join(args)</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="ds.tasks.Task.env"><code class="name">var <span class="ident">env</span> : Dict[str, str]</code></dt>
-<dd>
-<div class="desc"><p>Task environment variables.</p></div>
-</dd>
 <dt id="ds.tasks.Task.depends"><code class="name">var <span class="ident">depends</span> : List[<a title="ds.tasks.Task" href="#ds.tasks.Task">Task</a>]</code></dt>
 <dd>
 <div class="desc"><p>Tasks to execute before this one.</p></div>
+</dd>
+<dt id="ds.tasks.Task.args"><code class="name">var <span class="ident">args</span> : List[str]</code></dt>
+<dd>
+<div class="desc"><p>Additional arguments to <code>cmd</code>.</p></div>
+</dd>
+<dt id="ds.tasks.Task.env"><code class="name">var <span class="ident">env</span> : Dict[str, str]</code></dt>
+<dd>
+<div class="desc"><p>Task environment variables.</p></div>
 </dd>
 <dt id="ds.tasks.Task.origin"><code class="name">var <span class="ident">origin</span> : Optional[pathlib.Path]</code></dt>
 <dd>
@@ -378,51 +239,44 @@ class Task:
 <dd>
 <div class="desc"><p>Task description.</p></div>
 </dd>
+<dt id="ds.tasks.Task.verbatim"><code class="name">var <span class="ident">verbatim</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>Whether to format the command at all.</p></div>
+</dd>
 <dt id="ds.tasks.Task.cmd"><code class="name">var <span class="ident">cmd</span> : str</code></dt>
 <dd>
 <div class="desc"><p>Shell command to execute after <code>depends</code>.</p></div>
+</dd>
+<dt id="ds.tasks.Task.code"><code class="name">var <span class="ident">code</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Return code from running this task.</p></div>
 </dd>
 <dt id="ds.tasks.Task.cwd"><code class="name">var <span class="ident">cwd</span> : Optional[pathlib.Path]</code></dt>
 <dd>
 <div class="desc"><p>Task working directory.</p></div>
 </dd>
+<dt id="ds.tasks.Task.env_file"><code class="name">var <span class="ident">env_file</span> : Optional[pathlib.Path]</code></dt>
+<dd>
+<div class="desc"><p>Path to an environment file to load.</p></div>
+</dd>
 <dt id="ds.tasks.Task.keep_going"><code class="name">var <span class="ident">keep_going</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>Ignore a non-zero return code.</p></div>
-</dd>
-<dt id="ds.tasks.Task.verbatim"><code class="name">var <span class="ident">verbatim</span> : bool</code></dt>
-<dd>
-<div class="desc"><p>Whether to format the command at all.</p></div>
-</dd>
-</dl>
-<h3>Static methods</h3>
-<dl>
-<dt id="ds.tasks.Task.parse"><code class="name flex">
-<span>def <span class="ident">parse</span></span>(<span>config: Any, origin: Optional[Path] = None, key: str = '') ‑> <a title="ds.tasks.Task" href="#ds.tasks.Task">Task</a></span>
-</code></dt>
-<dd>
-<div class="desc"><p>Parse a config into a <code><a title="ds.tasks.Task" href="#ds.tasks.Task">Task</a></code>.</p></div>
 </dd>
 </dl>
 <h3>Methods</h3>
 <dl>
 <dt id="ds.tasks.Task.pprint"><code class="name flex">
-<span>def <span class="ident">pprint</span></span>(<span>self) ‑> None</span>
+<span>def <span class="ident">pprint</span></span>(<span>self, override: Optional[<a title="ds.tasks.Task" href="#ds.tasks.Task">Task</a>] = None, dry_run: bool = False) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Pretty-print a representation of this task.</p></div>
+<div class="desc"><p>Print a representation of this task.</p></div>
 </dd>
 <dt id="ds.tasks.Task.as_args"><code class="name flex">
-<span>def <span class="ident">as_args</span></span>(<span>self, cwd: Optional[Path] = None, env: Optional[Dict[str, str]] = None, keep_going: bool = False) ‑> str</span>
+<span>def <span class="ident">as_args</span></span>(<span>self, override: Optional[<a title="ds.tasks.Task" href="#ds.tasks.Task">Task</a>] = None) ‑> str</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return a shell representation of running this task.</p></div>
-</dd>
-<dt id="ds.tasks.Task.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self, tasks: <a title="ds.tasks.Tasks" href="#ds.tasks.Tasks">Tasks</a>, extra: Optional[List[str]] = None, cwd: Optional[Path] = None, env: Optional[Dict[str, str]] = None, keep_going: bool = False, dry_run: bool = False) ‑> int</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Run this task.</p></div>
 </dd>
 </dl>
 </dd>
@@ -441,15 +295,14 @@ class Task:
 </li>
 <li><h3><a href="#header-variables">Global variables</a></h3>
 <ul class="">
-<li><code><a title="ds.tasks.ORIGINAL_CWD" href="#ds.tasks.ORIGINAL_CWD">ORIGINAL_CWD</a></code></li>
 <li><code><a title="ds.tasks.Tasks" href="#ds.tasks.Tasks">Tasks</a></code></li>
+<li><code><a title="ds.tasks.ORIGINAL_CWD" href="#ds.tasks.ORIGINAL_CWD">ORIGINAL_CWD</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="ds.tasks.check_cycles" href="#ds.tasks.check_cycles">check_cycles</a></code></li>
 <li><code><a title="ds.tasks.print_tasks" href="#ds.tasks.print_tasks">print_tasks</a></code></li>
-<li><code><a title="ds.tasks.glob_names" href="#ds.tasks.glob_names">glob_names</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -460,20 +313,21 @@ class Task:
 <li>
 <h4><code><a title="ds.tasks.Task" href="#ds.tasks.Task">Task</a></code></h4>
 <ul class="two-column">
-<li><code><a title="ds.tasks.Task.parse" href="#ds.tasks.Task.parse">parse</a></code></li>
 <li><code><a title="ds.tasks.Task.pprint" href="#ds.tasks.Task.pprint">pprint</a></code></li>
 <li><code><a title="ds.tasks.Task.as_args" href="#ds.tasks.Task.as_args">as_args</a></code></li>
-<li><code><a title="ds.tasks.Task.run" href="#ds.tasks.Task.run">run</a></code></li>
-<li><code><a title="ds.tasks.Task.env" href="#ds.tasks.Task.env">env</a></code></li>
 <li><code><a title="ds.tasks.Task.depends" href="#ds.tasks.Task.depends">depends</a></code></li>
+<li><code><a title="ds.tasks.Task.args" href="#ds.tasks.Task.args">args</a></code></li>
+<li><code><a title="ds.tasks.Task.env" href="#ds.tasks.Task.env">env</a></code></li>
 <li><code><a title="ds.tasks.Task.origin" href="#ds.tasks.Task.origin">origin</a></code></li>
 <li><code><a title="ds.tasks.Task.origin_key" href="#ds.tasks.Task.origin_key">origin_key</a></code></li>
 <li><code><a title="ds.tasks.Task.name" href="#ds.tasks.Task.name">name</a></code></li>
 <li><code><a title="ds.tasks.Task.help" href="#ds.tasks.Task.help">help</a></code></li>
-<li><code><a title="ds.tasks.Task.cmd" href="#ds.tasks.Task.cmd">cmd</a></code></li>
-<li><code><a title="ds.tasks.Task.cwd" href="#ds.tasks.Task.cwd">cwd</a></code></li>
-<li><code><a title="ds.tasks.Task.keep_going" href="#ds.tasks.Task.keep_going">keep_going</a></code></li>
 <li><code><a title="ds.tasks.Task.verbatim" href="#ds.tasks.Task.verbatim">verbatim</a></code></li>
+<li><code><a title="ds.tasks.Task.cmd" href="#ds.tasks.Task.cmd">cmd</a></code></li>
+<li><code><a title="ds.tasks.Task.code" href="#ds.tasks.Task.code">code</a></code></li>
+<li><code><a title="ds.tasks.Task.cwd" href="#ds.tasks.Task.cwd">cwd</a></code></li>
+<li><code><a title="ds.tasks.Task.env_file" href="#ds.tasks.Task.env_file">env_file</a></code></li>
+<li><code><a title="ds.tasks.Task.keep_going" href="#ds.tasks.Task.keep_going">keep_going</a></code></li>
 </ul>
 </li>
 </ul>
