@@ -1,18 +1,18 @@
-"""Parse arguments."""
+"""Parse command-line arguments."""
 
 # std
 from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
-from shlex import split
+from shlex import join
 from typing import Dict
 from typing import List
 from typing import Optional
 import dataclasses
 
 # pkg
-from .env import read_env
+from .parsers.ds_toml import parse_composite
 from .symbols import ARG_BEG
 from .symbols import ARG_END
 from .symbols import ARG_OPTION
@@ -23,13 +23,16 @@ USAGE = """ds: Run dev scripts.
 
 Usage: ds [--help | --version] [--debug]
           [--dry-run]
+          [--no-config]
+          [--no-project]
           [--list]
           [--cwd PATH]
           [--file PATH]
           [--env-file PATH]
           [(--env NAME=VALUE)...]
           [--workspace GLOB]...
-          [<task>[: <options>... --]...]
+          [--pre][--post]
+          [<task>...]
 
 Options:
   -h, --help
@@ -65,6 +68,12 @@ Options:
   -l, --list
     List available tasks and exit.
 
+  --no-config
+    Do not search for or load a configuration file. Supersedes `--file`.
+
+  --no-project
+    Do not search for project dependencies, e.g., `.venv`, `node_modules`
+
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.
 
@@ -74,11 +83,19 @@ Options:
     Read more about configuring workspaces:
     https://github.com/metaist/ds#workspaces
 
-  <task>[: <options>... --]
+  --pre, --post
+    EXPERIMENTAL: Run tasks with pre- and post- names.
+
+  <task>
     One or more tasks to run with task-specific arguments.
 
-    Use a colon (`:`) to indicate start of arguments and
-    double-dash (`--`) to indicate the end.
+    The simplest way to pass arguments to tasks is to put them in quotes:
+
+    $ ds 'echo "Hello world"'
+
+    For more complex cases you can use a colon (`:`) to indicate start of arguments and double-dash (`--`) to indicate the end:
+
+    $ ds echo: "Hello from" -- echo: "the world"
 
     If the first <option> starts with a hyphen (`-`), you may omit the
     colon (`:`). If there are no more tasks after the last option, you
@@ -110,6 +127,10 @@ $ ds clean --all && ds build && ds test --no-gpu
 """
 
 
+def _opt_prop(option: str) -> str:
+    return option[2:].replace("-", "_")
+
+
 @dataclass
 class Args:
     """Type-checked arguments."""
@@ -126,6 +147,12 @@ class Args:
     dry_run: bool = False
     """Whether to skip actually running tasks."""
 
+    no_config: bool = False
+    """Disable searching for config."""
+
+    no_project: bool = False
+    """Disable searching for project dependencies (`.venv`, `node_modules`)."""
+
     list_: bool = False
     """Whether to show available tasks"""
 
@@ -138,11 +165,17 @@ class Args:
     env_file: Optional[Path] = None
     """Path to environment variables."""
 
-    file_: Optional[Path] = None
+    file: Optional[Path] = None
     """Path to task definitions."""
 
     workspace: List[str] = field(default_factory=list)
     """List of workspace patterns to run tasks in."""
+
+    pre: bool = False
+    """EXPERIMENTAL: Whether to run pre- tasks."""
+
+    post: bool = False
+    """EXPERIMENTAL: Whether to run post- tasks."""
 
     task: Task = field(default_factory=Task)
     """A composite task for the tasks given on the command-line."""
@@ -154,105 +187,125 @@ class Args:
     def as_argv(self) -> List[str]:
         """Return args as a string."""
         result = ["ds"]
-        if self.help:
-            result.append("--help")
-        if self.version:
-            result.append("--version")
-        if self.debug:
-            result.append("--debug")
-        if self.dry_run:
-            result.append("--dry-run")
+
+        # bool
+        for option in [
+            "--help",
+            "--version",
+            "--debug",
+            "--dry-run",
+            "--no-config",
+            "--no-project",
+            "--pre",
+            "--post",
+        ]:
+            if getattr(self, _opt_prop(option)):
+                result.append(option)
         if self.list_:
             result.append("--list")
-        if self.cwd:
-            result.extend(["--cwd", str(self.cwd)])
-        if self.env_file:
-            result.extend(["--env-file", str(self.env_file)])
-        if self.file_:
-            result.extend(["--file", str(self.file_)])
+
+        # path
+        for option in ["--cwd", "--env-file", "--file"]:
+            value = getattr(self, _opt_prop(option))
+            if value:
+                result.extend([option, str(value)])
+
+        # workspace
         if self.workspace:
             for w in self.workspace:
                 result.extend(["--workspace", w])
 
+        # env
         for key, val in self.env.items():
             result.extend(["--env", f"'{key}={val}'"])
 
+        # tasks
         for t in self.task.depends:
-            parts = split(t.cmd)
-            result.extend([parts[0], ARG_BEG, *parts[1:], ARG_END])
+            parts = join([t.cmd, *t.args])
+            result.append(parts)
         return result
 
+    @staticmethod
+    def parse(argv: List[str]) -> Args:
+        """Parse command-line arguments in a docopt-like way."""
+        args = Args()
+        tasks: List[str] = []
+        task_cmd = ""
+        is_ours = True
+        is_task_arg = False
+        while argv:
+            arg = argv.pop(0)
+            if is_ours:
+                # bool
+                if arg in [
+                    "--help",
+                    "--version",
+                    "--debug",
+                    "--dry-run",
+                    "--no-config",
+                    "--no-project",
+                    "--pre",
+                    "--post",
+                ]:
+                    attr = _opt_prop(arg)
+                    setattr(args, attr, True)
+                elif arg == "-h":
+                    args.help = True
+                elif arg in ["-l", "--list"]:
+                    args.list_ = True
 
-def parse_args(argv: List[str]) -> Args:
-    """Parse command-line arguments in a docopt-like way."""
-    args = Args()
-    tasks: List[str] = []
-    task = ""
-    is_ours = True
-    is_task = False
-    while argv:
-        arg = argv.pop(0)
-        if is_ours:
-            if arg in ["--help", "--version", "--debug", "--dry-run"]:
-                attr = arg[2:].replace("-", "_")
-                setattr(args, attr, True)
-            elif arg == "-h":
-                args.help = True
-            elif arg in ["-l", "--list"]:
-                args.list_ = True
-            elif arg == "--cwd":
-                args.cwd = Path(argv.pop(0)).resolve()
-            elif arg == "--env-file":
-                args.env_file = Path(argv.pop(0)).resolve()
-            elif arg in ["-e", "--env"]:
-                key, val = argv.pop(0).split("=")
-                args.env[key] = val
-            elif arg in ["-f", "--file"]:
-                args.file_ = Path(argv.pop(0)).resolve()
-            elif arg in ["-w", "--workspace"]:
-                args.workspace.append(argv.pop(0))
-            elif arg == "-w*":  # special shorthand
-                args.workspace.append("*")
-            else:
-                is_ours = False
+                # path
+                elif arg in ["--cwd", "--env-file", "--file"]:
+                    attr = _opt_prop(arg)
+                    setattr(args, attr, Path(argv.pop(0)).resolve())
+                elif arg == "-f":
+                    args.file = Path(argv.pop(0)).resolve()
 
-        if is_ours:
-            continue  # processed
-        # our args processed
+                # other
+                elif arg in ["-e", "--env"]:
+                    key, val = argv.pop(0).split("=")
+                    args.env[key] = val
+                elif arg in ["-w", "--workspace"]:
+                    args.workspace.append(argv.pop(0))
+                elif arg == "-w*":  # special shorthand
+                    args.workspace.append("*")
+                else:
+                    is_ours = False
 
-        if task and arg == ARG_BEG:  # explicit arg start
-            is_task = True
-            continue  # not an argument
+            if is_ours:
+                continue  # processed
+            # our args processed
 
-        if arg == ARG_END:  # explicit arg end
-            task, is_task = "", False
-            continue  # not an argument
+            if task_cmd and arg == ARG_BEG:  # explicit arg start
+                is_task_arg = True
+                continue  # not an argument
 
-        if task and arg.startswith(ARG_OPTION):  # implicit arg start
-            is_task = True
+            if arg == ARG_END:  # explicit arg end
+                task_cmd, is_task_arg = "", False
+                continue  # not an argument
 
-        if is_task:  # append task args
-            tasks[-1] += f" {arg}"
-            continue  # processed
+            if task_cmd and arg.startswith(ARG_OPTION):  # implicit arg start
+                is_task_arg = True
 
-        if arg.endswith(ARG_BEG):  # task name + explicit arg start
-            arg = arg[: -len(ARG_BEG)]
-            is_task = True
+            if is_task_arg:  # append task args
+                tasks[-1] += f" {arg}"
+                continue  # processed
 
-        task = arg
-        tasks.append(task)
+            if arg.endswith(ARG_BEG):  # task name + explicit arg start
+                arg = arg[: -len(ARG_BEG)]
+                is_task_arg = True
 
-    args.task = Task.parse(tasks)
-    args.task.cwd = args.cwd
+            task_cmd = arg
+            tasks.append(task_cmd)
 
-    env = args.env
-    if args.env_file:
-        env = {**read_env(args.env_file.read_text()), **args.env}
-    args.task.env = env
+        args.task = parse_composite(args.task, tasks)
+        args.task.cwd = args.cwd
+        args.task.env = args.env
+        args.task.env_file = args.env_file
 
-    if not args.help and not args.version and not args.task.depends:
-        # default action
-        args.list_ = True
+        if not args.help and not args.version and not args.task.depends:
+            # default action
+            args.list_ = True
 
-    # all args processed
-    return args
+        # all args processed
+        return args

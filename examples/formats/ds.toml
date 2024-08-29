@@ -53,3 +53,6 @@ keep_going3 = ["+will_fail", "echo 'Works'"] # suppress within a composite
 # the configuration file.
 working1 = { cmd = "ls -la", cwd = "test" } # ds-style
 working2 = { cmd = "ls -la", working_dir = "test" } # pdm-style
+
+# This task is called from package.json in the same directory.
+outside = "echo $DS_INTERNAL__FILE"

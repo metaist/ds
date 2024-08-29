@@ -13,9 +13,6 @@ _seed.py
 *.code-workspace
 .DS_Store
 
-# run
-__pycache__
-
 # test
 .coverage
 .mypy_cache
@@ -24,10 +21,12 @@ __pycache__
 /htmlcov
 
 # build
+__pycache__
 .pdm-python
 *.egg-info
 /build
 /dist
+node_modules/
 
 # rye
 .python-version

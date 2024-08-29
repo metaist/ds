@@ -1,5 +1,5 @@
 # Example: `pyproject.toml` workspace configuration using `uv`.
 
-[tool.rye.workspace]
+[tool.uv.workspace]
 members = ["members/*"]
 exclude = ["members/x"]

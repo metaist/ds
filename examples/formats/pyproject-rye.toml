@@ -22,8 +22,7 @@ lint = { chain = ["lint:black", "lint:flake8"] }
 "lint:black" = "black --check src"
 "lint:flake8" = "flake8 src"
 
-# `call`: Not Supported
-# See: https://github.com/metaist/ds#not-supported-call-tasks
-# serve = { call = "http.server" }
-# help = { call = "builtins:help" }
-# hello-world = { call = "builtins:print('Hello World!')" }
+# `call`
+serve = { call = "http.server" }
+help = { call = "builtins:help" }
+hello-world = { call = "builtins:print('Hello World!')" }

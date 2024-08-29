@@ -55,6 +55,3 @@ release = """
   git merge --no-ff --no-edit prod;
   git push
 """
-
-# This task is called from package.json in the same directory.
-outside = "echo $_DS_CURRENT_FILE"

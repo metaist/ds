@@ -86,6 +86,7 @@ test = &quot;&quot;&quot;
 <li><strong>PHP</strong> (<code>composer.json</code>): <a href="https://getcomposer.org/doc/articles/scripts.md#running-scripts-manually"><code>composer run-script</code></a></li>
 <li><strong>Rust</strong> (<code>Cargo.toml</code>): <a href="https://github.com/JoshMcguigan/cargo-run-script/"><code>cargo run-script</code></a></li>
 </ul>
+<p><strong>Experimental</strong>: We also support an extremely small subset of the <a href="./Makefile"><code>Makefile</code></a> format (see <a href="https://github.com/metaist/ds/issues/68">#68</a>).</p>
 <p>See: <a href="#inspirations">Inspirations</a></p>
 <p>🗂️ <strong>Add monorepo/workspace support anywhere</strong><br />
 Easily <a href="#workspaces">manage monorepos and sub-projects</a>, even if they use different tooling.</p>
@@ -105,6 +106,7 @@ Currently working on removing all of these (see <a href="https://github.com/meta
 <ul>
 <li>Not Supported: <a href="#not-supported-lifecycle-events">Lifecycle Events</a></li>
 <li>Not Supported: <a href="#not-supported-call-tasks"><code>call</code> Tasks</a></li>
+<li>Partial Support: <a href="https://github.com/metaist/ds/issues/68"><code>Makefile</code> format</a> (see <a href="https://github.com/metaist/ds/issues/68">#68</a>)</li>
 <li>In Progress: <a href="https://github.com/metaist/ds/issues/44">Shell Completions</a> (see <a href="https://github.com/metaist/ds/issues/44">#44</a>)</li>
 <li>In Progress: <a href="https://github.com/metaist/ds/issues/46">Remove Python Dependency</a> (see <a href="https://github.com/metaist/ds/issues/46">#46</a>)</li>
 </ul>
@@ -206,6 +208,7 @@ Options:
 <li><strong>Rust</strong>: <code>Cargo.toml</code> under <code>[package.metadata.scripts]</code> or <code>[workspace.metadata.scripts]</code></li>
 <li><strong>Other</strong>: <code>ds.toml</code> under <code>[scripts]</code></li>
 </ul>
+<p><strong>Experimental</strong>: We support an extremely small subset of the <a href="./Makefile"><code>Makefile</code></a> format (see <a href="https://github.com/metaist/ds/issues/68">#68</a>).</p>
 <p>Read more:</p>
 <ul>
 <li><a href="https://github.com/metaist/ds/tree/main/examples/formats">Example configuration files</a></li>
@@ -227,6 +230,8 @@ cog.outl()
 <li><code>composer.json</code></li>
 <li><code>package.json</code></li>
 <li><code>pyproject.toml</code></li>
+<li><code>Makefile</code></li>
+<li><code>makefile</code></li>
 </ul>
 <!--[[[end]]]-->
 <p>If you provide one or more <code>--workspace</code> options, the file must contain a <a href="#workspaces">workspace key</a>. Otherwise, then the file must contain a <a href="#task-keys">task key</a>.</p>
@@ -253,6 +258,7 @@ cog.outl()
 <li><code>tool.rye.scripts</code></li>
 <li><code>package.metadata.scripts</code></li>
 <li><code>workspace.metadata.scripts</code></li>
+<li><code>Makefile</code></li>
 </ul>
 <!--[[[end]]]-->
 <h2 id="task-names">Task Names</h2>
@@ -412,7 +418,7 @@ run3 = { composite = [&quot;run&quot;], env = { FLASK_PORT = &quot;8081&quot; } 
 ds --env-file .env run
 </code></pre>
 <h2 id="workspaces">Workspaces</h2>
-<p>Workspaces are a way of managing multiple sub-projects from a top-level. <code><a title="ds" href="#ds">ds</a></code> supports <code>npm</code>, <code>rye</code>, and <code>Cargo</code> style workspaces (see <a href="https://github.com/metaist/ds/tree/main/examples/workspace">examples</a>).</p>
+<p>Workspaces are a way of managing multiple sub-projects from a top-level. <code><a title="ds" href="#ds">ds</a></code> supports <code>npm</code>, <code>rye</code>, <code>uv</code>, and <code>Cargo</code> style workspaces (see <a href="https://github.com/metaist/ds/tree/main/examples/workspace">examples</a>).</p>
 <p>When <code><a title="ds" href="#ds">ds</a></code> is called with the <code>--workspace</code> option, the configuration file must have one of the following keys:</p>
 <!--[[[cog
 from ds.configs import SEARCH_KEYS_WORKSPACE
@@ -425,6 +431,7 @@ cog.outl()
 <li><code>workspace.members</code></li>
 <li><code>tool.ds.workspace.members</code></li>
 <li><code>tool.rye.workspace.members</code></li>
+<li><code>tool.uv.workspace.members</code></li>
 <li><code>workspaces</code></li>
 </ul>
 <!--[[[end]]]-->
@@ -439,7 +446,7 @@ cog.outl()
 <li><code>**</code>: matches multiple characters, including <code>/</code> (e.g., <code>members/**</code> matches all files in <code>members</code> and all sub-directories and all of their contents)</li>
 </ul>
 <p>If you prefix any pattern with an exclamation point (<code>!</code>) then the rest of the pattern describes which files should <em>not</em> be matched.</p>
-<p>Patterns are applied in order so subsequent patterns can include or exclude sub-directories as needed. For compatibility with <code>Cargo</code>, <a href="https://github.com/metaist/ds/tree/main/examples/workspace/Cargo.toml">we also support the <code>excludes</code> key</a> which is applied <em>after</em> all the members.</p>
+<p>Patterns are applied in order so subsequent patterns can include or exclude sub-directories as needed. <a href="https://github.com/metaist/ds/tree/main/examples/workspace/Cargo.toml">We also support the <code>excludes</code> key</a> (for <code>uv</code> and <code>Cargo</code>) which is applied <em>after</em> all the members.</p>
 <!--[[[cog insert_file("examples/workspace/ds.toml")]]]-->
 <pre><code class="language-toml"># Example: workspace includes everything in `members` except `members/x`.
 

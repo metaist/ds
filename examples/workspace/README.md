@@ -18,6 +18,8 @@ Members are usually in `./modules`
 - `rye`: [`pyproject-rye.toml`](./pyproject-rye.toml)
 - `uv`: [`pyproject-uv.toml`](./pyproject-uv.toml)
 
+**Experimental**: `poetry` does not officially support workspaces, but there are are two plugins that do: [`pyproject-poetry1.toml`](./pyproject-poetry1.toml) or [`pyproject-poetry2.toml`](./pyproject-poetry2.toml)
+
 ## Rust
 
 Members are usually in `./crates`.

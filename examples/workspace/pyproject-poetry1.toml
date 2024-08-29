@@ -1,0 +1,5 @@
+# Example: `pyproject.toml` workspace configuration using `poetry` with `poetry-workspace-plugin`
+
+[tool.poetry.workspace]
+a = "members/a"
+b = "members/b"

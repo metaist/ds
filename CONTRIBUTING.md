@@ -41,9 +41,6 @@ Checkout `prod`:
 ```bash
 git checkout prod
 git merge --no-ff --no-edit main
-
-# check every supported python version
-ds dev-all # requires uv >= 0.3.0
 ```
 
 Update top-most `__init__.py`:
@@ -81,8 +78,11 @@ Sections order is: `Fixed`, `Changed`, `Added`, `Deprecated`, `Removed`, `Securi
 ```bash
 export VER="X.0.1"
 
-# final checks, docs, build
-ds dev docs build
+# final checks again every supported python version
+ds dev-all # requires uv >= 0.3.0
+
+# final build
+ds docs build
 
 # commit and push tags
 ds release: $VER

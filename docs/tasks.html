@@ -117,7 +117,7 @@ the same, to make it clear that it is cyclic.</p></div>
 </dd>
 <dt id="ds.tasks.Task"><code class="flex name class">
 <span>class <span class="ident">Task</span></span>
-<span>(</span><span>origin: Optional[Path] = None, origin_key: str = '', name: str = '', help: str = '', cmd: str = '', cwd: Optional[Path] = None, env: Dict[str, str] = &lt;factory&gt;, depends: List[<a title="ds.tasks.Task" href="#ds.tasks.Task">Task</a>] = &lt;factory&gt;, keep_going: bool = False, allow_shell: bool = True)</span>
+<span>(</span><span>origin: Optional[Path] = None, origin_key: str = '', name: str = '', help: str = '', cmd: str = '', cwd: Optional[Path] = None, env: Dict[str, str] = &lt;factory&gt;, depends: List[<a title="ds.tasks.Task" href="#ds.tasks.Task">Task</a>] = &lt;factory&gt;, keep_going: bool = False, verbatim: bool = False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Represents a thing to be done.</p></div>
@@ -156,8 +156,8 @@ class Task:
     keep_going: bool = False
     &#34;&#34;&#34;Ignore a non-zero return code.&#34;&#34;&#34;
 
-    allow_shell: bool = True
-    &#34;&#34;&#34;Whether this task is allowed to run on the shell.&#34;&#34;&#34;
+    verbatim: bool = False
+    &#34;&#34;&#34;Whether to format the command at all.&#34;&#34;&#34;
 
     @staticmethod
     def parse(config: Any, origin: Optional[Path] = None, key: str = &#34;&#34;) -&gt; Task:
@@ -173,51 +173,64 @@ class Task:
             task.keep_going, task.cmd = starts(config, TASK_KEEP_GOING)
 
         elif isinstance(config, Dict):
+            if &#34;verbatim&#34; in config:
+                task.verbatim = config[&#34;verbatim&#34;]
             if &#34;help&#34; in config:
                 task.help = config[&#34;help&#34;]
 
             if &#34;keep_going&#34; in config:
                 task.keep_going = config[&#34;keep_going&#34;]
 
+            # Working directory
             if &#34;cwd&#34; in config:  # `working_dir` alias (ds)
                 assert origin is not None
                 task.cwd = origin.parent / config[&#34;cwd&#34;]
-            if &#34;working_dir&#34; in config:  # `cwd` alias (pdm)
+            elif &#34;working_dir&#34; in config:  # `cwd` alias (pdm)
                 assert origin is not None
                 task.cwd = origin.parent / config[&#34;working_dir&#34;]
 
+            # Environment File
             if &#34;env_file&#34; in config:  # `env-file` alias (pdm)
                 assert origin is not None
                 task.env.update(
                     read_env((origin.parent / config[&#34;env_file&#34;]).read_text())
                 )
-            if &#34;env-file&#34; in config:  # `env_file` alias (rye)
+            elif &#34;env-file&#34; in config:  # `env_file` alias (rye)
                 assert origin is not None
                 task.env.update(
                     read_env((origin.parent / config[&#34;env-file&#34;]).read_text())
                 )
+
+            # Environment Variables
             if &#34;env&#34; in config:
                 assert isinstance(config[&#34;env&#34;], dict)
                 task.env.update(config[&#34;env&#34;])
 
+            found = False
+            # Composite Task
             if &#34;composite&#34; in config:  # `chain` alias
+                found = True
                 assert isinstance(config[&#34;composite&#34;], list)
                 parsed = Task.parse(config[&#34;composite&#34;], origin, key)
                 task.name = parsed.name
+                task.cmd = parsed.cmd
                 task.depends = parsed.depends
-
             elif &#34;chain&#34; in config:  # `composite` alias
+                found = True
                 assert isinstance(config[&#34;chain&#34;], list)
                 parsed = Task.parse(config[&#34;chain&#34;], origin, key)
                 task.name = parsed.name
+                task.cmd = parsed.cmd
                 task.depends = parsed.depends
 
-            elif &#34;shell&#34; in config:
+            # Basic Task
+            if &#34;shell&#34; in config:
+                found = True
                 parsed = Task.parse(str(config[&#34;shell&#34;]), origin, key)
                 task.cmd = parsed.cmd
                 task.keep_going = parsed.keep_going
-
             elif &#34;cmd&#34; in config:
+                found = True
                 cmd = config[&#34;cmd&#34;]
                 parsed = Task.parse(
                     &#34; &#34;.join(cmd) if isinstance(cmd, list) else str(cmd),
@@ -227,9 +240,9 @@ class Task:
                 task.cmd = parsed.cmd
                 task.keep_going = parsed.keep_going
 
-            elif &#34;call&#34; in config:
-                raise ValueError(f&#34;`call` commands not supported: {config}&#34;)
-            else:
+            if not found:
+                if &#34;call&#34; in config:
+                    raise ValueError(f&#34;`call` commands not supported: {config}&#34;)
                 raise TypeError(f&#34;Unknown task type: {config}&#34;)
         else:
             raise TypeError(f&#34;Unknown task type: {config}&#34;)
@@ -237,19 +250,21 @@ class Task:
 
     def pprint(self) -&gt; None:
         &#34;&#34;&#34;Pretty-print a representation of this task.&#34;&#34;&#34;
-        cmd = self.cmd
         if self.help:
             print(&#34;#&#34;, self.help)
         print(&#34;&gt;&#34;, wrap_cmd(self.as_args()))
-        if not self.depends:
-            print(&#34;$&#34;, wrap_cmd(cmd))
-        else:
+        if self.depends:
             print(
                 [
                     f&#34;{TASK_KEEP_GOING if t.keep_going else &#39;&#39;}{t.cmd}&#34;
                     for t in self.depends
                 ]
             )
+        if self.cmd:
+            if self.verbatim:
+                print(&#34;$&#34;, self.cmd.strip().replace(&#34;\n&#34;, &#34;\n$ &#34;))
+            else:
+                print(f&#34;$ {wrap_cmd(self.cmd)}&#34;)
         print()
 
     def as_args(
@@ -310,21 +325,30 @@ class Task:
             if ran:
                 return code
 
-        if not self.allow_shell:
-            raise ValueError(f&#34;Unknown task: {self.cmd}&#34;)
-
         # 4. Run in the shell.
-        cmd = interpolate_args(self.cmd, [*extra])
+        cmd = interpolate_args(self.cmd, extra)
         dry_prefix = &#34;[DRY RUN]\n&#34; if dry_run else &#34;&#34;
         print(f&#34;\n{dry_prefix}&gt;&#34;, wrap_cmd(self.as_args(cwd, env, keep_going)))
-        print(f&#34;$ {wrap_cmd(cmd)}&#34;)
+        if self.verbatim:
+            print(&#34;$&#34;, cmd.strip().replace(&#34;\n&#34;, &#34;\n$ &#34;))
+        else:
+            print(f&#34;$ {wrap_cmd(cmd)}&#34;)
         if dry_run:  # do not actually run the command
             return 0
 
-        proc = run(cmd, shell=True, text=True, cwd=cwd, env={**ENV, **env})
+        combined_env = {**ENV, **env}
+        proc = run(
+            cmd,
+            shell=True,
+            text=True,
+            cwd=cwd,
+            env=combined_env,
+            executable=combined_env.get(&#34;SHELL&#34;),
+        )
         code = proc.returncode
 
         if code != 0 and not keep_going:
+            print(&#34;ERROR: return code =&#34;, code)
             sys.exit(code)
         return 0  # either it was zero or we keep going</code></pre>
 </details>
@@ -366,9 +390,9 @@ class Task:
 <dd>
 <div class="desc"><p>Ignore a non-zero return code.</p></div>
 </dd>
-<dt id="ds.tasks.Task.allow_shell"><code class="name">var <span class="ident">allow_shell</span> : bool</code></dt>
+<dt id="ds.tasks.Task.verbatim"><code class="name">var <span class="ident">verbatim</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Whether this task is allowed to run on the shell.</p></div>
+<div class="desc"><p>Whether to format the command at all.</p></div>
 </dd>
 </dl>
 <h3>Static methods</h3>
@@ -449,7 +473,7 @@ class Task:
 <li><code><a title="ds.tasks.Task.cmd" href="#ds.tasks.Task.cmd">cmd</a></code></li>
 <li><code><a title="ds.tasks.Task.cwd" href="#ds.tasks.Task.cwd">cwd</a></code></li>
 <li><code><a title="ds.tasks.Task.keep_going" href="#ds.tasks.Task.keep_going">keep_going</a></code></li>
-<li><code><a title="ds.tasks.Task.allow_shell" href="#ds.tasks.Task.allow_shell">allow_shell</a></code></li>
+<li><code><a title="ds.tasks.Task.verbatim" href="#ds.tasks.Task.verbatim">verbatim</a></code></li>
 </ul>
 </li>
 </ul>

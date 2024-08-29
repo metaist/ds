@@ -30,6 +30,9 @@ GLOB_DELIMITER = ";"
 KEY_DELIMITER = "."
 """Separator between key parts."""
 
+KEY_MISSING = object()
+"""Sentinel for missing key."""
+
 SHELL_CONTINUE = "\\\n"
 """Line continuation."""
 
@@ -47,6 +50,9 @@ TASK_DISABLED = "#"
 
 TASK_KEEP_GOING = "+"
 """Prefix of an error-suppressed task."""
+
+TASK_SHARED = "_"
+"""Shared options task name."""
 
 
 def starts(haystack: str, needle: str) -> Tuple[bool, str]:

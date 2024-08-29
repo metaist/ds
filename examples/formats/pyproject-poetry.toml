@@ -1,0 +1,5 @@
+# Example: `pyproject.toml` using `poetry`
+
+[tool.poetry.scripts]
+# `poetry` only supports a `call` with no arguments.
+ds = "ds:main"

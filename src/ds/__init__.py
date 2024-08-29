@@ -15,23 +15,32 @@ from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Union
+import logging
 import os
 import sys
 
 # pkg
+from . import parsers
 from .args import Args
-from .args import parse_args
 from .args import USAGE
 from .configs import Config
-from .configs import find_config
-from .configs import glob_refine
 from .env import TempEnv
+from .runner import find_project
+from .runner import Runner
+from .searchers import glob_paths
 from .tasks import check_cycles
 from .tasks import CycleError
 from .tasks import print_tasks
 
-__version__ = "1.1.0post"
+__version__ = "1.2.0post"
 __pubdate__ = "unpublished"
+
+log_normal = "%(levelname)s: %(message)s"
+log_debug = "%(name)s.%(funcName)s: %(levelname)s: %(message)s"
+log_verbose = " %(filename)s:%(lineno)s %(funcName)s(): %(levelname)s: %(message)s"
+logging.basicConfig(level=logging.WARN, format=log_normal)
+
+log = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -40,32 +49,39 @@ def pushd(dest: Union[str, Path]) -> Iterator[Path]:
     if isinstance(dest, str):
         dest = Path(dest)
 
-    cwd = os.getcwd()
+    dest = dest.resolve()
+    cwd = Path.cwd()
+    if cwd == dest:
+        log.debug(f"staying in: {dest}")
+        yield dest
+        return
+
+    log.debug(f"going to: {dest}")
     os.chdir(dest)
     try:
-        yield Path(dest).resolve()
+        yield dest
     finally:
+        log.debug(f"coming back: {cwd}")
         os.chdir(cwd)
 
 
 def load_config(args: Args) -> Config:
     """Load configuration file."""
     try:
-        if not args.file_:
-            if path := ENV.get("_DS_CURRENT_FILE"):
-                if args.debug:
-                    print("ds:load_config", "setting args.file_ from ENV=", path)
-                args.file_ = Path(path)
+        if not args.file:
+            if path := ENV.get("DS_INTERNAL__FILE"):
+                log.debug(f"Setting --file to $DS_INTERNAL__FILE = {path}")
+                args.file = Path(path)
 
         require_workspace = bool(args.workspace)
-        if args.file_:
-            if not args.file_.exists():
-                raise FileNotFoundError(f"Cannot find file: {args.file_}")
-            config = Config.load(args.file_).parse(require_workspace)
+        if args.file:
+            if not args.file.exists():
+                raise FileNotFoundError(f"Cannot find file: {args.file}")
+            config = parsers.parse(args.file, require_workspace)
         else:
             # search for a valid config
-            config = find_config(Path.cwd(), require_workspace, args.debug)
-            args.file_ = config.path
+            config = parsers.find_and_parse(Path.cwd(), require_workspace)
+            args.file = config.path
         # config loaded
 
         check_cycles(config.tasks)
@@ -73,12 +89,12 @@ def load_config(args: Args) -> Config:
         args.cwd = args.cwd or config.path.parent
         if not args.cwd.exists():
             raise NotADirectoryError(f"Cannot find directory: {args.cwd}")
-    except CycleError as e:
+    except CycleError as e:  # TODO: move this into check_cycles
         cycle = e.args[1]
-        print("ERROR: Task cycle detected:", " => ".join(cycle))
+        log.error(f"Task cycle detected: {' => '.join(cycle)}")
         sys.exit(1)
     except (FileNotFoundError, NotADirectoryError, LookupError) as e:
-        print("ERROR:", e)
+        log.error(str(e))
         sys.exit(1)
 
     return config
@@ -87,7 +103,14 @@ def load_config(args: Args) -> Config:
 def run_workspace(args: Args, config: Config) -> None:
     """Run tasks in the context of each member."""
     members = {m: False for m, i in config.members.items() if i}  # reset
-    members = glob_refine(config.path.parent, args.workspace, members)
+    members = glob_paths(
+        config.path.parent,
+        args.workspace,
+        allow_all=True,
+        allow_excludes=True,
+        allow_new=False,
+        previous=members,
+    )
     for member, include in members.items():
         if not include:
             continue
@@ -98,12 +121,12 @@ def run_workspace(args: Args, config: Config) -> None:
 
         member_config = member / config.path.name
         if member_config.exists():  # try config with same name
-            member_args.file_ = member_config
+            member_args.file = member_config
         else:
-            member_args.file_ = None
+            member_args.file = None
 
         try:
-            with TempEnv(_DS_CURRENT_FILE=None):
+            with TempEnv(DS_INTERNAL__FILE=None):
                 with pushd(member):
                     cli_args = member_args.as_argv()
                     print(f"$ pushd {member}")
@@ -117,9 +140,15 @@ def run_workspace(args: Args, config: Config) -> None:
 
 def main(argv: Optional[List[str]] = None) -> None:
     """Main entry point."""
-    args = parse_args((argv or sys.argv)[1:])
+    args = Args.parse((argv or sys.argv)[1:])
+
+    # TODO: add --verbose option
     if args.debug:
-        print(args)
+        log.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(log_debug)
+        for handler in logging.getLogger().handlers:
+            handler.setFormatter(formatter)
+        log.debug(args)
 
     if args.help:
         print(USAGE)
@@ -129,21 +158,37 @@ def main(argv: Optional[List[str]] = None) -> None:
         print(f"{__version__} ({__pubdate__})")
         return
 
-    config = load_config(args)
+    if __pubdate__ == "unpublished":  # pragma: no cover
+        # NOTE: When testing we're always using the development version.
+        log.warning("You are using a development version of ds.")
 
-    if args.workspace:
-        run_workspace(args, config)
-        return
-
-    if args.list_:
-        print_tasks(config.path, config.tasks)
-        return
+    runner = Runner(args, {})
+    if args.no_config:
+        log.debug("Not loading config. To enable: remove --no-config")
+        if args.workspace:
+            log.error("Cannot use --workspace together with --no-config.")
+            sys.exit(1)
+        if args.list_:
+            log.error("Cannot use --list together with --no-config.")
+            sys.exit(1)
+    else:
+        log.debug("Loading config. To disable: add --no-config")
+        config = load_config(args)
+        # NOTE: We process --workspace first so that you can run $ ds -w*
+        # to be roughly equal to: $ ds --workspace '*' 'ds --list'
+        if args.workspace:
+            run_workspace(args, config)
+            return
+        if args.list_:
+            print_tasks(config.path, config.tasks)
+            return
+        runner.tasks = config.tasks
 
     try:
-        with TempEnv(_DS_CURRENT_FILE=str(args.file_)):
-            assert args.cwd is not None
-            with pushd(args.cwd):
-                args.task.run(config.tasks, dry_run=args.dry_run)
+        with TempEnv(DS_INTERNAL__FILE=str(args.file)):
+            with pushd(args.cwd or Path()):
+                override = find_project(args, args.task)
+                runner.run(args.task, override)
     except KeyboardInterrupt:  # pragma: no cover
         # Not sure how to cover CTRL+C.
         return

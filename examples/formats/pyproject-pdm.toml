@@ -17,10 +17,9 @@ start3 = { cmd = [
 # `shell` (treated the same as `cmd`)
 filter_error = { shell = "cat error.log|grep CRITICAL > critical.log" }
 
-# `call`: Not supported
-# See: https://github.com/metaist/ds#not-supported-call-tasks
-# call1 = { call = "ds:main" }
-# call2 = { call = "ds:main(['ds', '--version'])" }
+# `call`
+call1 = { call = "ds:main" }
+call2 = { call = "ds:main(['ds', '--version'])" }
 
 # `composite`
 lint = "flake8"
@@ -50,10 +49,10 @@ start7.working_dir = "subdir"
 # `site_packages`: Not Supported
 # (no example)
 
-# Shared Options: Not Supported
-# _.env_file = ".env"
-# start = "flask run -p 54321"
-# migrate_db = "flask db upgrade"
+# Shared Options
+_.env_file = ".env"
+start = "flask run -p 54321"
+migrate_db = "flask db upgrade"
 
 # Arguments Placeholder
 cmd = "echo '--before {args} --after'"
@@ -67,14 +66,11 @@ test2 = "echo '--before {args:--default --value} --after'"
 # `help`
 test_cmd = { cmd = "pytest", help = "flask db upgrade" }
 
-# Pre & Post Scripts: Not Supported
-# See: https://github.com/metaist/ds#not-supported-lifecycle-events
-# pre_compress = "echo 'Run BEFORE the `compress` script'"
-# compress = "tar czvf compressed.tar.gz data/"
-# post_compress = "echo 'Run AFTER the `compress` script'"
-
-# NOTE: You can accomplish approximately the same result:
+# Pre & Post Scripts
 pre_compress = "echo 'Run BEFORE the `compress` script'"
-compress_ = "tar czvf compressed.tar.gz data/"
+compress = "tar czvf compressed.tar.gz data/"
 post_compress = "echo 'Run AFTER the `compress` script'"
-compress = { composite = ["pre_compress", "compress_", "post_compress"] }
+
+pre_echo = "echo 'About to echo'"
+echo = "echo 'Running echo'"
+post_echo = "echo 'After echo'"

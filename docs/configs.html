@@ -42,7 +42,7 @@ hljs.highlightAll();
 </dd>
 <dt id="ds.configs.LOADERS"><code class="name">var <span class="ident">LOADERS</span> : Dict[str, Callable[[str], Dict[str, Any]]]</code></dt>
 <dd>
-<div class="desc"><p>Mapping of file extensions to string load functions.</p></div>
+<div class="desc"><p>Mapping of file patterns to load functions.</p></div>
 </dd>
 <dt id="ds.configs.SEARCH_FILES"><code class="name">var <span class="ident">SEARCH_FILES</span></code></dt>
 <dd>
@@ -136,11 +136,10 @@ class Config:
     @staticmethod
     def load(path: Path) -&gt; Config:
         &#34;&#34;&#34;Try to load a configuration file.&#34;&#34;&#34;
-        if path.suffix not in LOADERS:
-            raise LookupError(f&#34;Not sure how to read a {path.suffix} file: {path}&#34;)
-
-        config = LOADERS[path.suffix](path.read_text())
-        return Config(path, config)
+        for pattern, loader in LOADERS.items():
+            if fnmatch(path.name, pattern):
+                return Config(path, loader(path.read_text()))
+        raise LookupError(f&#34;Not sure how to read file: {path}&#34;)
 
     def parse(self, require_workspace: bool = False) -&gt; Config:
         &#34;&#34;&#34;Parse a configuration file.&#34;&#34;&#34;

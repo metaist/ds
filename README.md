@@ -75,7 +75,7 @@ ds test
 - **PHP** (`composer.json`): [`composer run-script`][composer run-script]
 - **Rust** (`Cargo.toml`): [`cargo run-script`][cargo run-script]
 
-**Experimental**: We also support an extremely small subset of the [`Makefile`](./Makefile) format (see [#68]).
+**Experimental**: We also support an extremely small subset of the [`Makefile`][#68] format (see [#68]).
 
 See: [Inspirations](#inspirations)
 
@@ -116,6 +116,17 @@ python -m pip install ds-run
 uv tool install ds-run
 ```
 
+You can also [download a Cosmopolitan binary](https://github.com/metaist/ds/releases/latest/download/ds) which runs on Windows, macOS, and Linux:
+
+```bash
+export LOCAL_BIN=$HOME/.local/bin # or anywhere on your PATH
+mkdir -p $LOCAL_BIN
+wget -O $LOCAL_BIN/ds -N https://github.com/metaist/ds/releases/latest/download/ds
+chmod +x $LOCAL_BIN/ds
+ds --version
+# NOTE: it takes a few seconds the first time you run it
+```
+
 If you just want to try `ds`:
 
 ```bash
@@ -131,13 +142,16 @@ pipx run ds-run --version
 ```text
 Usage: ds [--help | --version] [--debug]
           [--dry-run]
+          [--no-config]
+          [--no-project]
           [--list]
           [--cwd PATH]
           [--file PATH]
           [--env-file PATH]
           [(--env NAME=VALUE)...]
           [--workspace GLOB]...
-          [<task>[: <options>... --]...]
+          [--pre][--post]
+          [<task>...]
 
 Options:
   -h, --help
@@ -173,6 +187,12 @@ Options:
   -l, --list
     List available tasks and exit.
 
+  --no-config
+    Do not search for or load a configuration file. Supersedes `--file`.
+
+  --no-project
+    Do not search for project dependencies, e.g., `.venv`, `node_modules`
+
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.
 
@@ -182,11 +202,19 @@ Options:
     Read more about configuring workspaces:
     https://github.com/metaist/ds#workspaces
 
-  <task>[: <options>... --]
+  --pre, --post
+    EXPERIMENTAL: Run tasks with pre- and post- names.
+
+  <task>
     One or more tasks to run with task-specific arguments.
 
-    Use a colon (`:`) to indicate start of arguments and
-    double-dash (`--`) to indicate the end.
+    The simplest way to pass arguments to tasks is to put them in quotes:
+
+    $ ds 'echo "Hello world"'
+
+    For more complex cases you can use a colon (`:`) to indicate start of arguments and double-dash (`--`) to indicate the end:
+
+    $ ds echo: "Hello from" -- echo: "the world"
 
     If the first <option> starts with a hyphen (`-`), you may omit the
     colon (`:`). If there are no more tasks after the last option, you
@@ -219,7 +247,7 @@ Dev scripts act as another form of documentation that helps developers understan
 - **Rust**: `Cargo.toml` under `[package.metadata.scripts]` or `[workspace.metadata.scripts]`
 - **Other**: `ds.toml` under `[scripts]`
 
-**Experimental**: We support an extremely small subset of the [`Makefile`](./Makefile) format (see [#68]).
+**Experimental**: We support an extremely small subset of the [`Makefile`][#68] format (see [#68]).
 
 Read more:
 
@@ -228,22 +256,23 @@ Read more:
 
 ## How does `ds` find my config?
 
-If you don't provide a config file using the `--file` option, `ds` will search the current directory and all of its parents for files with these names in the following order:
+If you don't provide a config file using the `--file` option, `ds` will search the current directory and all of its parents for files with these name patterns in the following order:
 
 <!--[[[cog
-from ds.configs import SEARCH_FILES
+from ds.parsers import PARSERS
 cog.outl()
-for key in SEARCH_FILES:
+for key in list(PARSERS):
     cog.outl(f"- `{key}`")
 cog.outl()
 ]]] -->
 
 - `ds.toml`
-- `.ds.toml`
+- `pyproject.toml`
+- `uv.toml`
+- `package.json`
 - `Cargo.toml`
 - `composer.json`
-- `package.json`
-- `pyproject.toml`
+- `[Mm]akefile`
 
 <!--[[[end]]]-->
 
@@ -265,24 +294,7 @@ If you provide one or more `--workspace` options, `--cwd` is ignored and tasks a
 
 ## Task Keys
 
-`ds` searches configuration files for the following keys, in the following order, to find task definitions. The first key that's found is used and should contain a mapping from [task names](#task-names) to [basic tasks](#basic-task) or [composite tasks](#composite-task).
-
-<!--[[[cog
-from ds.configs import SEARCH_KEYS_TASKS
-cog.outl()
-for key in SEARCH_KEYS_TASKS:
-    cog.outl(f"- `{key}`")
-cog.outl()
-]]]-->
-
-- `scripts`
-- `tool.ds.scripts`
-- `tool.pdm.scripts`
-- `tool.rye.scripts`
-- `package.metadata.scripts`
-- `workspace.metadata.scripts`
-
-<!--[[[end]]]-->
+`ds` searches configuration files for [tool-specific keys][example-tasks] to find task definitions which should contain a mapping from [task names](#task-names) to [basic tasks](#basic-task) or [composite tasks](#composite-task).
 
 ## Task Names
 
@@ -491,25 +503,9 @@ ds --env-file .env run
 
 ## Workspaces
 
-Workspaces are a way of managing multiple sub-projects from a top-level. `ds` supports `npm`, `rye`, `uv`, and `Cargo` style workspaces (see [examples](https://github.com/metaist/ds/tree/main/examples/workspace)).
+Workspaces are a way of managing multiple sub-projects from a top-level. `ds` supports `npm`, `rye`, `uv`, and `Cargo` style workspaces.
 
-When `ds` is called with the `--workspace` option, the configuration file must have one of the following keys:
-
-<!--[[[cog
-from ds.configs import SEARCH_KEYS_WORKSPACE
-cog.outl()
-for key in SEARCH_KEYS_WORKSPACE:
-    cog.outl(f"- `{key}`")
-cog.outl()
-]]]-->
-
-- `workspace.members`
-- `tool.ds.workspace.members`
-- `tool.rye.workspace.members`
-- `tool.uv.workspace.members`
-- `workspaces`
-
-<!--[[[end]]]-->
+When `ds` is called with the `--workspace` option, the configuration file must have one of the [tool-specific workspace keys](https://github.com/metaist/ds/tree/main/examples/workspace).
 
 If no configuration file was provided with the `--file` option, search continues up the directory tree.
 

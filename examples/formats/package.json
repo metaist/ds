@@ -1,17 +1,18 @@
 {
   "scripts": {
     "#disabled": "this task doesn't run",
+    "#basic1": "description for basic1 task",
     "basic1": "ls -la",
     "basic2": "touch foo.txt",
     "composite": "ds basic1 basic2",
     "ruff": "ruff check $1 ${@:-}",
-    "args": "ds ruff: . --fix",
+    "args": "ds 'ruff . --fix'",
     "serve": "flask run --debug",
     "env": "ds -e FLASK_PORT=8080 serve",
     "will_fail": "exit 1",
     "keep_going": "ds +will_fail",
     "working": "ds --cwd test basic1",
-    "inside": "echo $_DS_CURRENT_FILE",
-    "outside": "ds -f pyproject-ds.toml outside"
+    "inside": "echo $DS_INTERNAL__FILE",
+    "outside": "ds -f ds.toml outside"
   }
 }
