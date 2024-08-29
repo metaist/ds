@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.0">
 <title>ds.configs API documentation</title>
-<meta name="description" content="Find and parse configuration files.">
+<meta name="description" content="Configs are a path and data.">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -25,91 +25,27 @@ hljs.highlightAll();
 <h1 class="title">Module <code>ds.configs</code></h1>
 </header>
 <section id="section-intro">
-<p>Find and parse configuration files.</p>
+<p>Configs are a path and data.</p>
 </section>
 <section>
 </section>
 <section>
 <h2 class="section-title" id="header-variables">Global variables</h2>
 <dl>
-<dt id="ds.configs.GlobMatches"><code class="name">var <span class="ident">GlobMatches</span></code></dt>
+<dt id="ds.configs.Membership"><code class="name">var <span class="ident">Membership</span></code></dt>
 <dd>
-<div class="desc"><p>Mapping a path to whether it should be included.</p></div>
-</dd>
-<dt id="ds.configs.Loader"><code class="name">var <span class="ident">Loader</span></code></dt>
-<dd>
-<div class="desc"><p>A loader takes text and returns a mapping of strings to values.</p></div>
-</dd>
-<dt id="ds.configs.LOADERS"><code class="name">var <span class="ident">LOADERS</span> : Dict[str, Callable[[str], Dict[str, Any]]]</code></dt>
-<dd>
-<div class="desc"><p>Mapping of file patterns to load functions.</p></div>
-</dd>
-<dt id="ds.configs.SEARCH_FILES"><code class="name">var <span class="ident">SEARCH_FILES</span></code></dt>
-<dd>
-<div class="desc"><p>Search order for configuration file names.</p></div>
-</dd>
-<dt id="ds.configs.SEARCH_KEYS_TASKS"><code class="name">var <span class="ident">SEARCH_KEYS_TASKS</span></code></dt>
-<dd>
-<div class="desc"><p>Search order for configuration keys.</p></div>
-</dd>
-<dt id="ds.configs.SEARCH_KEYS_WORKSPACE"><code class="name">var <span class="ident">SEARCH_KEYS_WORKSPACE</span></code></dt>
-<dd>
-<div class="desc"><p>Search for workspace configuration keys.</p></div>
+<div class="desc"><p>Mapping of paths to whether they are members.</p></div>
 </dd>
 </dl>
 </section>
 <section>
-<h2 class="section-title" id="header-functions">Functions</h2>
-<dl>
-<dt id="ds.configs.get_path"><code class="name flex">
-<span>def <span class="ident">get_path</span></span>(<span>src: Dict[str, Any], name: Union[str, List[str]], default: Optional[Any] = None) ‑> Any</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Return value of <code>name</code> within <code>src</code> or <code>default</code> if it's missing.</p>
-<pre><code class="language-python-repl">&gt;&gt;&gt; get_path({&quot;a&quot;: {&quot;b&quot;: {&quot;c&quot;: 1}}}, &quot;a.b.c&quot;) == 1
-True
-&gt;&gt;&gt; get_path({&quot;a&quot;: {&quot;b&quot;: {&quot;c&quot;: 1}}}, [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;]) == 1
-True
-</code></pre></div>
-</dd>
-<dt id="ds.configs.glob_apply"><code class="name flex">
-<span>def <span class="ident">glob_apply</span></span>(<span>path: Path, patterns: List[str], matches: Optional[<a title="ds.configs.GlobMatches" href="#ds.configs.GlobMatches">GlobMatches</a>] = None) ‑> Dict[pathlib.Path, bool]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Apply glob <code>patterns</code> to <code>path</code>.</p></div>
-</dd>
-<dt id="ds.configs.glob_refine"><code class="name flex">
-<span>def <span class="ident">glob_refine</span></span>(<span>path: Path, patterns: List[str], matches: <a title="ds.configs.GlobMatches" href="#ds.configs.GlobMatches">GlobMatches</a>) ‑> Dict[pathlib.Path, bool]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Apply glob-like <code>patterns</code> to <code>path</code> to refine <code>matches</code>.</p></div>
-</dd>
-<dt id="ds.configs.parse_workspace"><code class="name flex">
-<span>def <span class="ident">parse_workspace</span></span>(<span>path: Path, config: Dict[str, Any]) ‑> Tuple[bool, Dict[pathlib.Path, bool]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Parse workspace configurations.</p></div>
-</dd>
-<dt id="ds.configs.parse_tasks"><code class="name flex">
-<span>def <span class="ident">parse_tasks</span></span>(<span>config: Dict[str, Any], origin: Optional[Path] = None) ‑> Tuple[bool, Dict[str, <a title="ds.tasks.Task" href="tasks.html#ds.tasks.Task">Task</a>]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Parse task configurations.</p></div>
-</dd>
-<dt id="ds.configs.find_config"><code class="name flex">
-<span>def <span class="ident">find_config</span></span>(<span>start: Path, require_workspace: bool = False, debug: bool = False) ‑> <a title="ds.configs.Config" href="#ds.configs.Config">Config</a></span>
-</code></dt>
-<dd>
-<div class="desc"><p>Return the config file in <code>start</code> or its parents.</p></div>
-</dd>
-</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
 <dt id="ds.configs.Config"><code class="flex name class">
 <span>class <span class="ident">Config</span></span>
-<span>(</span><span>path: Path, config: Dict[str, Any], tasks: Tasks = &lt;factory&gt;, members: <a title="ds.configs.GlobMatches" href="#ds.configs.GlobMatches">GlobMatches</a> = &lt;factory&gt;)</span>
+<span>(</span><span>path: pathlib.Path, data: Dict[str, Any], tasks: Dict[str, ForwardRef('Task')] = &lt;factory&gt;, members: Dict[pathlib.Path, bool] = &lt;factory&gt;)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>ds configuration.</p></div>
@@ -117,41 +53,23 @@ True
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@dataclass
+<pre><code class="python">@dataclasses.dataclass
 class Config:
     &#34;&#34;&#34;ds configuration.&#34;&#34;&#34;
 
     path: Path
     &#34;&#34;&#34;Path to the configuration file.&#34;&#34;&#34;
 
-    config: Dict[str, Any]
+    data: Dict[str, Any]
     &#34;&#34;&#34;Configuration data.&#34;&#34;&#34;
 
-    tasks: Tasks = field(default_factory=dict)
+    # `tasks` and `members` are loaded by tool-specific parsers
+
+    tasks: Tasks = dataclasses.field(default_factory=dict)
     &#34;&#34;&#34;Task definitions.&#34;&#34;&#34;
 
-    members: GlobMatches = field(default_factory=dict)
-    &#34;&#34;&#34;Workspace members mapped to `True` for active members.&#34;&#34;&#34;
-
-    @staticmethod
-    def load(path: Path) -&gt; Config:
-        &#34;&#34;&#34;Try to load a configuration file.&#34;&#34;&#34;
-        for pattern, loader in LOADERS.items():
-            if fnmatch(path.name, pattern):
-                return Config(path, loader(path.read_text()))
-        raise LookupError(f&#34;Not sure how to read file: {path}&#34;)
-
-    def parse(self, require_workspace: bool = False) -&gt; Config:
-        &#34;&#34;&#34;Parse a configuration file.&#34;&#34;&#34;
-        found, self.members = parse_workspace(self.path.parent, self.config)
-        if require_workspace and not found:
-            raise LookupError(&#34;Could not find workspace configuration.&#34;)
-
-        found, self.tasks = parse_tasks(self.config, self.path)
-        if not require_workspace and not found:
-            raise LookupError(&#34;Could not find task configuration.&#34;)
-
-        return self</code></pre>
+    members: Membership = dataclasses.field(default_factory=dict)
+    &#34;&#34;&#34;Workspace members mapped to `True` for active members.&#34;&#34;&#34;</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -159,35 +77,17 @@ class Config:
 <dd>
 <div class="desc"><p>Path to the configuration file.</p></div>
 </dd>
-<dt id="ds.configs.Config.config"><code class="name">var <span class="ident">config</span> : Dict[str, Any]</code></dt>
+<dt id="ds.configs.Config.data"><code class="name">var <span class="ident">data</span> : Dict[str, Any]</code></dt>
 <dd>
 <div class="desc"><p>Configuration data.</p></div>
 </dd>
-<dt id="ds.configs.Config.tasks"><code class="name">var <span class="ident">tasks</span> : Dict[str, <a title="ds.tasks.Task" href="tasks.html#ds.tasks.Task">Task</a>]</code></dt>
+<dt id="ds.configs.Config.tasks"><code class="name">var <span class="ident">tasks</span> : Dict[str, Task]</code></dt>
 <dd>
 <div class="desc"><p>Task definitions.</p></div>
 </dd>
 <dt id="ds.configs.Config.members"><code class="name">var <span class="ident">members</span> : Dict[pathlib.Path, bool]</code></dt>
 <dd>
 <div class="desc"><p>Workspace members mapped to <code>True</code> for active members.</p></div>
-</dd>
-</dl>
-<h3>Static methods</h3>
-<dl>
-<dt id="ds.configs.Config.load"><code class="name flex">
-<span>def <span class="ident">load</span></span>(<span>path: Path) ‑> <a title="ds.configs.Config" href="#ds.configs.Config">Config</a></span>
-</code></dt>
-<dd>
-<div class="desc"><p>Try to load a configuration file.</p></div>
-</dd>
-</dl>
-<h3>Methods</h3>
-<dl>
-<dt id="ds.configs.Config.parse"><code class="name flex">
-<span>def <span class="ident">parse</span></span>(<span>self, require_workspace: bool = False) ‑> <a title="ds.configs.Config" href="#ds.configs.Config">Config</a></span>
-</code></dt>
-<dd>
-<div class="desc"><p>Parse a configuration file.</p></div>
 </dd>
 </dl>
 </dd>
@@ -206,33 +106,16 @@ class Config:
 </li>
 <li><h3><a href="#header-variables">Global variables</a></h3>
 <ul class="">
-<li><code><a title="ds.configs.GlobMatches" href="#ds.configs.GlobMatches">GlobMatches</a></code></li>
-<li><code><a title="ds.configs.Loader" href="#ds.configs.Loader">Loader</a></code></li>
-<li><code><a title="ds.configs.LOADERS" href="#ds.configs.LOADERS">LOADERS</a></code></li>
-<li><code><a title="ds.configs.SEARCH_FILES" href="#ds.configs.SEARCH_FILES">SEARCH_FILES</a></code></li>
-<li><code><a title="ds.configs.SEARCH_KEYS_TASKS" href="#ds.configs.SEARCH_KEYS_TASKS">SEARCH_KEYS_TASKS</a></code></li>
-<li><code><a title="ds.configs.SEARCH_KEYS_WORKSPACE" href="#ds.configs.SEARCH_KEYS_WORKSPACE">SEARCH_KEYS_WORKSPACE</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="two-column">
-<li><code><a title="ds.configs.get_path" href="#ds.configs.get_path">get_path</a></code></li>
-<li><code><a title="ds.configs.glob_apply" href="#ds.configs.glob_apply">glob_apply</a></code></li>
-<li><code><a title="ds.configs.glob_refine" href="#ds.configs.glob_refine">glob_refine</a></code></li>
-<li><code><a title="ds.configs.parse_workspace" href="#ds.configs.parse_workspace">parse_workspace</a></code></li>
-<li><code><a title="ds.configs.parse_tasks" href="#ds.configs.parse_tasks">parse_tasks</a></code></li>
-<li><code><a title="ds.configs.find_config" href="#ds.configs.find_config">find_config</a></code></li>
+<li><code><a title="ds.configs.Membership" href="#ds.configs.Membership">Membership</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
 <h4><code><a title="ds.configs.Config" href="#ds.configs.Config">Config</a></code></h4>
-<ul class="two-column">
-<li><code><a title="ds.configs.Config.load" href="#ds.configs.Config.load">load</a></code></li>
-<li><code><a title="ds.configs.Config.parse" href="#ds.configs.Config.parse">parse</a></code></li>
+<ul class="">
 <li><code><a title="ds.configs.Config.path" href="#ds.configs.Config.path">path</a></code></li>
-<li><code><a title="ds.configs.Config.config" href="#ds.configs.Config.config">config</a></code></li>
+<li><code><a title="ds.configs.Config.data" href="#ds.configs.Config.data">data</a></code></li>
 <li><code><a title="ds.configs.Config.tasks" href="#ds.configs.Config.tasks">tasks</a></code></li>
 <li><code><a title="ds.configs.Config.members" href="#ds.configs.Config.members">members</a></code></li>
 </ul>

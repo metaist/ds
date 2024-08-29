@@ -19,6 +19,57 @@ These are changes that are on `main` that are not yet in `prod`.
 
 ---
 
+[#24]: https://github.com/metaist/ds/issues/24
+[#65]: https://github.com/metaist/ds/issues/65
+[#72]: https://github.com/metaist/ds/issues/72
+[#74]: https://github.com/metaist/ds/issues/74
+[#75]: https://github.com/metaist/ds/issues/75
+[#76]: https://github.com/metaist/ds/issues/76
+[#77]: https://github.com/metaist/ds/issues/77
+[#78]: https://github.com/metaist/ds/issues/78
+[#79]: https://github.com/metaist/ds/issues/79
+[#80]: https://github.com/metaist/ds/issues/80
+[#81]: https://github.com/metaist/ds/issues/81
+[#82]: https://github.com/metaist/ds/issues/82
+[#83]: https://github.com/metaist/ds/issues/83
+[#84]: https://github.com/metaist/ds/issues/84
+[#87]: https://github.com/metaist/ds/issues/87
+[1.3.0]: https://github.com/metaist/ds/compare/1.2.0...1.3.0
+
+## [1.3.0] - 2024-08-29T13:08:58Z
+
+This release represents a shift from only supporting the overlap of all file formats to specific parsers for each supported format.
+
+**Fixed**
+
+- [#72]: `Makefile` links and Cosmopolitan instructions
+- [#76]: logging in normal and debug modes
+
+**Changed**
+
+- [#65]: tried to detect current `SHELL` on Windows
+- [#77]: refactored parsers, runner; each file format now has its own parser
+- [#80]: config file search order
+- [#81]: renamed environment variable `_DS_CURRENT_FILE` to `DS_INTERNAL__FILE`
+- [#83]: moved `env_file` loading later (during run) instead of earlier (during parsing)
+- [#84]: pass `env` values to `str`
+- [#87]: moved project detection (`venv`, `node_modules/.bin`) earlier (right before top-level task run) instead of later (right before command run)
+
+**Added**
+
+- [#24]: `--pre` and `--post` options to run pre-/post- tasks
+- [#73]: search for nearby `node_modules/.bin`
+- [#74]/[#78]: search for nearby `venv` if `VIRTUAL_ENV` is not set
+- [#75]: `--no-config` and `--no-project` options to suppress searching for config files and project dependencies, respectively
+- [#79]: more helpful debug messages (e.g., how to enable / disable options)
+- [#82]: support for `poetry`
+
+**Removed**
+
+- As part [#77], `.ds.toml` is not longer a supported file format name.
+
+---
+
 [#14]: https://github.com/metaist/ds/issues/14
 [#31]: https://github.com/metaist/ds/issues/31
 [#64]: https://github.com/metaist/ds/issues/64
