@@ -29,10 +29,8 @@ dynamic = ["version"]
 requires-python = ">=3.8"
 dependencies = [
   # app => version pinned exactly
-
   # TODO 2024-10-31 [3.8 EOL]: remove
   "graphlib_backport==1.1.0; python_version < '3.9'",
-
   # TODO 2026-10-04 [3.10 EOL]: remove
   "tomli==2.0.1; python_version < '3.11'",
 ]
@@ -158,6 +156,11 @@ cosmo.shell = """
     zip -d $PKG.zip Lib/site-packages/pip;
     zip -d $PKG.zip 'usr/*';
     mv $PKG.zip $PKG
+
+    json=$(jq -n '{algo: "sha256"}')
+    json=$(echo "$json" | jq --arg check "$(sha256sum $PKG | awk '{print $1}')" '. + {check: $check}')
+    json=$(echo "$json" | jq --arg version "$($PKG --version | awk '{print $1}')" '. + {version: $version}')
+    echo "$json" > $PKG.json
   popd
 """
 
