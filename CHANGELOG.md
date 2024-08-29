@@ -22,6 +22,7 @@ These are changes that are on `main` that are not yet in `prod`.
 [#24]: https://github.com/metaist/ds/issues/24
 [#65]: https://github.com/metaist/ds/issues/65
 [#72]: https://github.com/metaist/ds/issues/72
+[#73]: https://github.com/metaist/ds/issues/73
 [#74]: https://github.com/metaist/ds/issues/74
 [#75]: https://github.com/metaist/ds/issues/75
 [#76]: https://github.com/metaist/ds/issues/76
@@ -59,7 +60,7 @@ This release represents a shift from only supporting the overlap of all file for
 
 - [#24]: `--pre` and `--post` options to run pre-/post- tasks
 - [#73]: search for nearby `node_modules/.bin`
-- [#74]/[#78]: search for nearby `venv` if `VIRTUAL_ENV` is not set
+- [#74], [#78]: search for nearby `venv` if `VIRTUAL_ENV` is not set
 - [#75]: `--no-config` and `--no-project` options to suppress searching for config files and project dependencies, respectively
 - [#79]: more helpful debug messages (e.g., how to enable / disable options)
 - [#82]: support for `poetry`
