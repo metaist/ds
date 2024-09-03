@@ -33,14 +33,14 @@ KEY_DELIMITER = "."
 KEY_MISSING = object()
 """Sentinel for missing key."""
 
+SHELL_BREAK = "; &&".split()
+"""Prefer line breaks after these."""
+
 SHELL_CONTINUE = "\\\n"
 """Line continuation."""
 
 SHELL_TERMINATORS = ";; && |& || ; & |".split()
 """No line continuation needed after these."""
-
-SHELL_BREAK = "; &&".split()
-"""Prefer line breaks after these."""
 
 TASK_COMPOSITE = "#composite"
 """Composite task name."""

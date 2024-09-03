@@ -114,9 +114,9 @@ class Task:
 
         if display.cmd:
             if display.verbatim:
-                print("$", display.cmd.strip().replace("\n", "\n$ "))
+                print("$", display.cmd.strip().replace("\n", "\n$ "), flush=True)
             else:
-                print(f"$ {wrap_cmd(display.cmd)}")
+                print(f"$ {wrap_cmd(display.cmd)}", flush=True)
 
     def as_args(self, override: Optional[Task] = None) -> str:
         """Return a shell representation of running this task."""

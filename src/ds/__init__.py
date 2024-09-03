@@ -129,10 +129,10 @@ def run_workspace(args: Args, config: Config) -> None:
             with TempEnv(DS_INTERNAL__FILE=None):
                 with pushd(member):
                     cli_args = member_args.as_argv()
-                    print(f"$ pushd {member}")
-                    print(f"$ {join(cli_args)}")
+                    print(f"$ pushd {member}", flush=True)
+                    print(f"$ {join(cli_args)}", flush=True)
                     main(cli_args)
-                    print()
+                    print(flush=True)
         except SystemExit:  # pragma: no cover
             # Not sure how to cover this case.
             pass
@@ -155,7 +155,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         return
 
     if args.version:
-        print(f"{__version__} ({__pubdate__})")
+        print(f"{__version__} ({__pubdate__})", flush=True)
         return
 
     if __pubdate__ == "unpublished":  # pragma: no cover

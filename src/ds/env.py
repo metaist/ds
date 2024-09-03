@@ -44,7 +44,7 @@ RE_SPLIT = re.compile(
 """Regex for splitting commands."""
 
 DEFAULT_WIDTH = 80
-"""Default width for warping commands."""
+"""Default width for wrapping commands."""
 
 try:
     DEFAULT_WIDTH = min(100, max(80, get_terminal_size().columns - 2))
