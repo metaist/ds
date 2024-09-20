@@ -158,6 +158,14 @@ def main(argv: Optional[List[str]] = None) -> None:
         print(f"{__version__} ({__pubdate__})", flush=True)
         return
 
+    if args.self_update:
+        # We can only get here if cosmofy.updater didn't self-update.
+        log.error(
+            "Cannot update a non-Cosmopolitan install. "
+            "Please use your package manager (uv or pip) to update."
+        )
+        return
+
     if __pubdate__ == "unpublished":  # pragma: no cover
         # NOTE: When testing we're always using the development version.
         log.warning("You are using a development version of ds.")

@@ -32,6 +32,11 @@ def test_version(capsys: CaptureFixture[str]) -> None:
     assert captured.out.startswith(__version__)
 
 
+def test_self_update() -> None:
+    """--self-update in non-cosmo build shows error"""
+    main(split("ds --self-update"))
+
+
 def test_list() -> None:
     """--list shows available tasks"""
     for arg in ["", "-l", "--list"]:

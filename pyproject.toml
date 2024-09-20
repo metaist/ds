@@ -29,9 +29,9 @@ dynamic = ["version"]
 requires-python = ">=3.8"
 dependencies = [
   # app => version pinned exactly
-  # TODO 2024-10-31 [3.8 EOL]: remove
+  # TODO 2024-10-31 @ py3.8 EOL: remove
   "graphlib_backport==1.1.0; python_version < '3.9'",
-  # TODO 2026-10-04 [3.10 EOL]: remove
+  # TODO 2026-10-31 @ py3.10 EOL: remove
   "tomli==2.0.1; python_version < '3.11'",
 ]
 optional-dependencies = { dev = [
@@ -46,6 +46,7 @@ optional-dependencies = { dev = [
   "pytest-cov",
   "pytest",
   "ruff",
+  "cosmofy>=0.1.0",
 ] }
 readme = "README.md"
 license = { text = "MIT" }
@@ -141,43 +142,8 @@ build = ["pip install -e .", "python -m build", "cosmo"]
 
 cosmo.help = "build portable executable (cosmopolitan)"
 cosmo.shell = """
-  PKG="ds";
-  DIR="dist/cosmo";
-  DIR_SITE="Lib/site-packages";
-  DIR_PKG="$DIR_SITE/$PKG";
-  rm -rf "$DIR/$DIR_SITE" || true;
-  mkdir -p "$DIR/$DIR_SITE";
-  cp -r src/$PKG "$DIR/$DIR_SITE";
-  pushd $DIR;
-    printf -- "-m\\n$PKG\\n..." > .args;
-
-    echo 'Fetch: python';
-    wget -N https://cosmo.zip/pub/cosmos/bin/python;
-    chmod +x python;
-    cp python $PKG.zip;
-
-    echo '\n>>> Compile: *.pyc';
-    ./python -m compileall -b $DIR_PKG;
-
-    echo '\n>>> Delete: *.py';
-    find $DIR_PKG -name "*.py" -delete -print;
-
-    echo '\n>>> Zip: add files';
-    zip -r $PKG.zip .args Lib;
-
-    echo '\n>>> Zip: delete files';
-    zip -d $PKG.zip Lib/site-packages/pip;
-    zip -d $PKG.zip 'usr/*';
-
-    echo '\n>>> JSON: receipt';
-    mv $PKG.zip $PKG
-    json=$(jq -n '{algo: "sha256"}')
-    json=$(echo "$json" | jq --arg hash "$(sha256sum $PKG | cut -d ' ' -f 1)" '. + {hash: $hash}')
-    json=$(echo "$json" | jq --arg date "$($PKG --version | cut -d '(' -f 2 | cut -d ')' -f 1)" '. + {date: $date}')
-    json=$(echo "$json" | jq --arg version "$($PKG --version | cut -d ' ' -f 1)" '. + {version: $version}')
-    echo "$json" > $PKG.json
-    cat $PKG.json | jq
-  popd
+  cosmofy src/ds --output dist/ds \
+    --release-url https://github.com/metaist/ds/releases/latest/download/ds
 """
 
 clean = """

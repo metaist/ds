@@ -36,6 +36,15 @@ wheels = [
 ]
 
 [[package]]
+name = "cosmofy"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cc/b7/b34c5db1c16da97dcefa093cbb2725d9a78d50a0c0dfd259d3bd294c0931/cosmofy-0.1.0.tar.gz", hash = "sha256:570835c0551765fb3e195e8b05a979b8ac42d100230a98d89257c310b36bfb2c", size = 27861 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/15/d4/f275ec20b3aea98bb6f11754094d8fd0e8055b35b0c3927ba183ce880101/cosmofy-0.1.0-py3-none-any.whl", hash = "sha256:2b8e4900db455cf27fdc8951bbeff41f161f1905bbf7ef87c160a7510a108a40", size = 22534 },
+]
+
+[[package]]
 name = "coverage"
 version = "7.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -121,7 +130,7 @@ toml = [
 
 [[package]]
 name = "ds-run"
-version = "1.2.0.post0"
+version = "1.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "graphlib-backport", marker = "python_full_version < '3.9'" },
@@ -132,6 +141,7 @@ dependencies = [
 dev = [
     { name = "build" },
     { name = "cogapp" },
+    { name = "cosmofy" },
     { name = "coverage" },
     { name = "mypy" },
     { name = "pdoc3" },
@@ -146,6 +156,7 @@ dev = [
 requires-dist = [
     { name = "build", marker = "extra == 'dev'" },
     { name = "cogapp", marker = "extra == 'dev'" },
+    { name = "cosmofy", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "coverage", marker = "extra == 'dev'" },
     { name = "graphlib-backport", marker = "python_full_version < '3.9'", specifier = "==1.1.0" },
     { name = "mypy", marker = "extra == 'dev'" },

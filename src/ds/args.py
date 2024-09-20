@@ -23,6 +23,7 @@ USAGE = """ds: Run dev scripts.
 
 Usage: ds [--help | --version] [--debug]
           [--dry-run]
+          [--self-update]
           [--no-config]
           [--no-project]
           [--list]
@@ -73,6 +74,9 @@ Options:
 
   --no-project
     Do not search for project dependencies, e.g., `.venv`, `node_modules`
+
+  --self-update
+    Update `ds` (only for the Cosmopolitan build).
 
   -w GLOB, --workspace GLOB
     Patterns which indicate in which workspaces to run tasks.
@@ -143,6 +147,9 @@ class Args:
 
     debug: bool = False
     """Whether to show debug messages"""
+
+    self_update: bool = False
+    """Whether to update the executable."""
 
     dry_run: bool = False
     """Whether to skip actually running tasks."""
@@ -242,6 +249,7 @@ class Args:
                     "--version",
                     "--debug",
                     "--dry-run",
+                    "--self-update",
                     "--no-config",
                     "--no-project",
                     "--pre",
