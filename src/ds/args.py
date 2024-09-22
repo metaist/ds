@@ -33,6 +33,7 @@ Usage: ds [--help | --version] [--debug]
           [(--env NAME=VALUE)...]
           [--workspace GLOB]...
           [--pre][--post]
+          [--parallel]
           [<task>...]
 
 Options:
@@ -89,6 +90,9 @@ Options:
 
   --pre, --post
     EXPERIMENTAL: Run tasks with pre- and post- names.
+
+  --parallel
+    EXPERIMENTAL: Run top-level tasks in parallel.
 
   <task>
     One or more tasks to run with task-specific arguments.
@@ -184,6 +188,9 @@ class Args:
     post: bool = False
     """EXPERIMENTAL: Whether to run post- tasks."""
 
+    parallel: bool = False
+    """EXPERIMENTAL: Whether to run top-level tasks in parallel."""
+
     task: Task = field(default_factory=Task)
     """A composite task for the tasks given on the command-line."""
 
@@ -254,6 +261,7 @@ class Args:
                     "--no-project",
                     "--pre",
                     "--post",
+                    "--parallel",
                 ]:
                     attr = _opt_prop(arg)
                     setattr(args, attr, True)
@@ -310,6 +318,7 @@ class Args:
         args.task.cwd = args.cwd
         args.task.env = args.env
         args.task.env_file = args.env_file
+        args.task.parallel = args.parallel
 
         if not args.help and not args.version and not args.task.depends:
             # default action

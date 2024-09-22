@@ -197,6 +197,9 @@ def main(argv: Optional[List[str]] = None) -> None:
             with pushd(args.cwd or Path()):
                 override = find_project(args, args.task)
                 runner.run(args.task, override)
+
+        for proc in runner.processes:
+            proc.wait()
     except KeyboardInterrupt:  # pragma: no cover
         # Not sure how to cover CTRL+C.
         return

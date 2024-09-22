@@ -6,7 +6,9 @@ from os import environ as ENV
 from pathlib import Path
 from shlex import split
 from typing import Dict
+from typing import List
 from typing import Tuple
+import atexit
 import dataclasses
 import logging
 import os
@@ -124,6 +126,9 @@ class Runner:
     tasks: Tasks
     """Mapping of names to tasks."""
 
+    processes: List[subprocess.Popen] = dataclasses.field(default_factory=list)
+    """Subprocesses started in parallel."""
+
     def run(self, task: Task, override: Task) -> int:
         """Run a `task` overriding parts given `override`."""
         env_from_file = {}
@@ -143,6 +148,7 @@ class Runner:
             _env={**override._env, **override.env, **env_from_file, **task.env},
             env_file=override.env_file or task.env_file,  # for printing
             keep_going=override.keep_going or task.keep_going,
+            parallel=override.parallel or task.parallel,
         )
 
         self.run_pre_post(task, resolved, "pre")
@@ -209,17 +215,44 @@ class Runner:
             return resolved
 
         combined_env = {**ENV, **resolved.env, **resolved._env}
-        proc = subprocess.run(
-            resolved.cmd,
-            shell=True,
-            text=True,
-            cwd=resolved.cwd,
-            env=combined_env,
-            executable=combined_env.get("SHELL"),
-        )
+        if resolved.parallel:
+            proc = subprocess.Popen(
+                resolved.cmd,
+                shell=True,
+                text=False,
+                cwd=resolved.cwd,
+                env=combined_env,
+                executable=combined_env.get("SHELL"),
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+            if not self.processes:  # first parallel
+                log.warning("EXPERIMENTAL: running tasks in parallel")
+                atexit.register(self.cleanup)
+            self.processes.append(proc)
+        else:
+            proc = subprocess.run(
+                resolved.cmd,
+                shell=True,
+                text=True,
+                cwd=resolved.cwd,
+                env=combined_env,
+                executable=combined_env.get("SHELL"),
+            )
 
-        resolved.code = proc.returncode
-        if resolved.code != 0 and not resolved.keep_going:
-            log.error(f"return code = {resolved.code}")
-            sys.exit(resolved.code)
+            resolved.code = proc.returncode
+            if resolved.code != 0 and not resolved.keep_going:
+                log.error(f"return code = {resolved.code}")
+                sys.exit(resolved.code)
         return resolved
+
+    def cleanup(self) -> None:
+        """Cleanup any child processes."""
+        log.debug("cleaning up child processes")
+        for process in self.processes:
+            try:
+                process.terminate()
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()

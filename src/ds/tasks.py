@@ -62,6 +62,9 @@ class Task:
     depends: List[Task] = field(default_factory=list)
     """Tasks to execute before this one."""
 
+    parallel: bool = False
+    """Whether to run `depends` in parallel."""
+
     cmd: str = ""
     """Shell command to execute after `depends`."""
 
