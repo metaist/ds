@@ -212,6 +212,7 @@ class Args:
             "--no-project",
             "--pre",
             "--post",
+            "--parallel",
         ]:
             if getattr(self, _opt_prop(option)):
                 result.append(option)

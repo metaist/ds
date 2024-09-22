@@ -48,6 +48,10 @@ def test_parse_options() -> None:
         list_=True, env={"VAR": "VAL"}, task=Task(env={"VAR": "VAL"})
     )
 
+    assert Args.parse(split("--parallel")) == Args(
+        parallel=True, list_=True, task=Task(parallel=True)
+    )
+
     assert Args.parse(split(f"-w '{GLOB_ALL}'")) == Args(
         list_=True, workspace=[GLOB_ALL]
     )
@@ -120,6 +124,7 @@ def test_as_argv() -> None:
     assert Args(version=True).as_argv() == ["ds", "--version"]
     assert Args(debug=True).as_argv() == ["ds", "--debug"]
     assert Args(dry_run=True).as_argv() == ["ds", "--dry-run"]
+    assert Args(parallel=True).as_argv() == ["ds", "--parallel"]
     assert Args(list_=True).as_argv() == ["ds", "--list"]
     assert Args(cwd=Path()).as_argv() == ["ds", "--cwd", str(Path())]
     assert Args(file=Path()).as_argv() == ["ds", "--file", str(Path())]

@@ -47,6 +47,9 @@ def test_run_composite() -> None:
     runner = Runner(Args(), {})
     runner.run(Args.parse(["ls"]).task, Task())
 
+    runner.run(Args.parse(["--parallel", "echo hello", "echo world"]).task, Task())
+    runner.cleanup()  # simulate exit
+
 
 def test_run_env_file() -> None:
     """Load an env-file."""

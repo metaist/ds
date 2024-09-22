@@ -48,6 +48,11 @@ def test_pre_post() -> None:
     main(split("ds --pre --post -f examples/formats/pyproject-pdm.toml echo"))
 
 
+def test_parallel() -> None:
+    """--parallel"""
+    main(split("ds --no-config --parallel 'echo hello' 'echo world'"))
+
+
 def test_env_file() -> None:
     """--env-file loads an env file"""
     main(split("ds --env-file examples/formats/.env 'echo $IN_DOT_ENV'"))

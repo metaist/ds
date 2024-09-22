@@ -126,7 +126,7 @@ class Runner:
     tasks: Tasks
     """Mapping of names to tasks."""
 
-    processes: List[subprocess.Popen] = dataclasses.field(default_factory=list)
+    processes: List[subprocess.Popen[bytes]] = dataclasses.field(default_factory=list)
     """Subprocesses started in parallel."""
 
     def run(self, task: Task, override: Task) -> int:
@@ -216,20 +216,21 @@ class Runner:
 
         combined_env = {**ENV, **resolved.env, **resolved._env}
         if resolved.parallel:
-            proc = subprocess.Popen(
-                resolved.cmd,
-                shell=True,
-                text=False,
-                cwd=resolved.cwd,
-                env=combined_env,
-                executable=combined_env.get("SHELL"),
-                stdout=sys.stdout,
-                stderr=sys.stderr,
-            )
             if not self.processes:  # first parallel
                 log.warning("EXPERIMENTAL: running tasks in parallel")
                 atexit.register(self.cleanup)
-            self.processes.append(proc)
+            self.processes.append(
+                subprocess.Popen(
+                    resolved.cmd,
+                    shell=True,
+                    text=False,
+                    cwd=resolved.cwd,
+                    env=combined_env,
+                    executable=combined_env.get("SHELL"),
+                    stdout=sys.stdout,
+                    stderr=sys.stderr,
+                )
+            )
         else:
             proc = subprocess.run(
                 resolved.cmd,
@@ -253,6 +254,7 @@ class Runner:
             try:
                 process.terminate()
                 process.wait(timeout=3)
-            except subprocess.TimeoutExpired:
+            except subprocess.TimeoutExpired:  # pragma: no cover
+                # Not sure how to simulate a process that doesn't die.
                 process.kill()
                 process.wait()
