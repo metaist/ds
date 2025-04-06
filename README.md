@@ -130,7 +130,7 @@ ds --version
 If you just want to try `ds`:
 
 ```bash
-uvx --from ds-run ds --version
+uvx ds-run --version
 # or
 pipx run ds-run --version
 ```

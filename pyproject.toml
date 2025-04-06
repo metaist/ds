@@ -10,6 +10,7 @@ ds = ["py.typed"]
 
 [project.scripts]
 ds = "ds:main"
+ds-run = "ds:main" # for uvx compatibility
 
 [tool.setuptools.dynamic]
 version = { attr = "ds.__version__" }
