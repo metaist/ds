@@ -25,6 +25,7 @@ from .args import Args
 from .args import USAGE
 from .configs import Config
 from .env import TempEnv
+from .git import validate_installed_hooks, force_install_hooks, find_git_directory
 from .runner import find_project
 from .runner import Runner
 from .searchers import glob_paths
@@ -187,9 +188,30 @@ def main(argv: Optional[List[str]] = None) -> None:
         if args.workspace:
             run_workspace(args, config)
             return
+
+        # NOTE: we also process this before the directory listing!
+        # git hook sync: if we're in a git directory, then these checks apply
+        git_dir = find_git_directory()
+        if git_dir is not None:
+            # first, if we're allowed to fix stuff then check if we can
+            if args.sync_git_hooks:
+                # if we're out of sync, fix it and let the user know
+                force_install_hooks(git_dir, config.tasks)
+                log.info("Synchronized git hooks.")
+            else:
+                # if we're out of sync, let the user know
+                if not validate_installed_hooks(git_dir, config.tasks):
+                    log.warning(
+                        "Git hooks are defined, but out of sync with the git repo!"
+                    )
+        else:
+            if args.sync_git_hooks:
+                log.info("No git repository found in this or parent directories.")
+
         if args.list_:
             print_tasks(config.path, config.tasks)
             return
+
         runner.tasks = config.tasks
 
     try:

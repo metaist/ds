@@ -194,3 +194,63 @@ def test_workspace_same_name() -> None:
     with TempEnv(DS_INTERNAL__FILE=None):
         with pushd(PATH_WK):
             main(split("ds --file 'package.json' -w*"))
+
+
+def _create_git_dir(tmp_dir: Path) -> None:
+    (tmp_dir / ".git" / "hooks").mkdir(parents=True)
+
+
+def test_sync_git_hooks_no_repo(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = (Path("examples") / "misc" / "no_defined_hooks.toml").absolute()
+
+    # _create_git_dir(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text("")
+
+    with TempEnv(DS_INTERNAL__FILE=str(config_path)):
+        main(split("ds --sync-git-hooks"))
+
+
+def test_sync_git_hooks_no_hooks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = (Path("examples") / "misc" / "no_defined_hooks.toml").absolute()
+
+    monkeypatch.chdir(tmp_path)
+    _create_git_dir(tmp_path)
+    (tmp_path / ".env").write_text("")
+
+    with TempEnv(DS_INTERNAL__FILE=str(config_path)):
+        main(split("ds --sync-git-hooks"))
+
+
+def test_sync_git_hooks_bad_hooks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = (Path("examples") / "misc" / "defined_hooks.toml").absolute()
+
+    monkeypatch.chdir(tmp_path)
+    _create_git_dir(tmp_path)
+    (tmp_path / ".env").write_text("")
+
+    with TempEnv(DS_INTERNAL__FILE=str(config_path)):
+        main(split("ds"))
+
+
+def test_sync_git_hooks_install_hooks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = (Path("examples") / "misc" / "defined_hooks.toml").absolute()
+
+    monkeypatch.chdir(tmp_path)
+    _create_git_dir(tmp_path)
+    (tmp_path / ".env").write_text("")
+
+    assert not (tmp_path / ".git" / "hooks" / "pre-commit").exists()
+
+    with TempEnv(DS_INTERNAL__FILE=str(config_path)):
+        main(split("ds --sync-git-hooks"))
+
+        assert (tmp_path / ".git" / "hooks" / "pre-commit").exists()

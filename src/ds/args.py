@@ -34,6 +34,7 @@ Usage: ds [--help | --version] [--debug]
           [--workspace GLOB]...
           [--pre][--post]
           [--parallel]
+          [--sync-git-hooks]
           [<task>...]
 
 Options:
@@ -93,6 +94,9 @@ Options:
 
   --parallel
     EXPERIMENTAL: Run top-level tasks in parallel.
+
+  --sync-git-hooks
+    EXPERIMENTAL: Install tasks with git-hook- names as git hooks into .git.
 
   <task>
     One or more tasks to run with task-specific arguments.
@@ -191,6 +195,9 @@ class Args:
     parallel: bool = False
     """EXPERIMENTAL: Whether to run top-level tasks in parallel."""
 
+    sync_git_hooks: bool = False
+    """EXPERIMENTAL: Install git hooks into .git."""
+
     task: Task = field(default_factory=Task)
     """A composite task for the tasks given on the command-line."""
 
@@ -263,6 +270,7 @@ class Args:
                     "--pre",
                     "--post",
                     "--parallel",
+                    "--sync-git-hooks",
                 ]:
                     attr = _opt_prop(arg)
                     setattr(args, attr, True)

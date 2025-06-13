@@ -76,7 +76,7 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
         idx = int(arg) - 1
         if idx >= len(args):
             if default is None:
-                raise IndexError(f"Not enough arguments provided: ${idx+1}")
+                raise IndexError(f"Not enough arguments provided: ${idx + 1}")
             return default
 
         not_done[idx] = None

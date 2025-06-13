@@ -127,7 +127,5 @@ def test_wrap_cmd() -> None:
     assert "$ " + wrap_cmd(
         "echo 'This is a really long string that cannot be broken.';", 40
     ) == (
-        "$ echo \\\n"
-        "    'This is a really long string that cannot be broken.' \\\n"
-        "    ;"
+        "$ echo \\\n    'This is a really long string that cannot be broken.' \\\n    ;"
     )
