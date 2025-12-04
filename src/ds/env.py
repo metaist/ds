@@ -76,7 +76,7 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
         idx = int(arg) - 1
         if idx >= len(args):
             if default is None:
-                raise IndexError(f"Not enough arguments provided: ${idx+1}")
+                raise IndexError(f"Not enough arguments provided: ${idx + 1}")
             return default
 
         not_done[idx] = None
@@ -245,9 +245,10 @@ def read_env(text: str) -> Dict[str, str]:
 
 def wrap_cmd(cmd: str, width: int = DEFAULT_WIDTH) -> str:
     """Return a nicely wrapped command."""
-    result = []
-    line = ""
-    space = " " * 2
+    result: list[str] = []
+    line: str = ""
+    space: str = " " * 2
+    item: str
     for item in RE_SPLIT.split(cmd.replace(SHELL_CONTINUE, "").strip()):
         item = item.strip()
         if not item:

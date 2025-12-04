@@ -1,32 +1,43 @@
 # Contributing
 
-## Local Development
+## Toolchain
 
-We recommend installing , but you can also use `pip`.
+This project requires these tools to set up and run the project (tested on Linux and macOS):
+
+- [`ds`](https://github.com/metaist/ds#install)
+- [`gh`](https://github.com/cli/cli#installation)
+- [`git`](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [`npx`](https://docs.npmjs.com/cli/commands/npx) (part of [`npm`](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm); used for [`cspell`](https://cspell.org/docs/installation/), [`pyright`](https://github.com/microsoft/pyright))
+- [`uv`](https://github.com/astral-sh/uv#installation)
+- [`uv`](https://github.com/astral-sh/uv#installation) & [`uvx`](https://docs.astral.sh/uv/guides/tools/) (part of `uv`)
+
+Some tasks also use the following shell commands:
+
+- `awk`
+- `do` / `done`
+- `echo`
+- `exit`
+- `for`
+- `if` / `fi`
+- `mkdir`
+- `mv`
+- `rm`
+- `sed`
+- `touch`
+
+All remaining tools are installed below.
+
+## Local Development
 
 ```bash
 # get the code
 git clone git@github.com:metaist/ds.git
 cd ds
+uv sync
+uv tool install ds-run
 ```
 
-If using [`uv`](https://github.com/astral-sh/uv) (recommended):
-
-```bash
-uv sync --extra dev
-. .venv/bin/activate
-```
-
-If using `pip`:
-
-```bash
-python -m venv .venv
-. .venv/bin/activate
-pip install --upgrade pip
-pip install -e ".[dev]"
-```
-
-As you work on the code, you should periodically run:
+Periodically, you should run:
 
 ```bash
 ds dev # check lint, type-checks, and run tests
@@ -47,6 +58,12 @@ Update top-most `__init__.py`:
 
 ```python
 __version__ = "X.0.1"
+```
+
+Update `pyproject.toml`:
+
+```toml
+version = "X.0.1"
 ```
 
 Update `CHANGELOG.md`. To see recently closed issues run:
@@ -90,8 +107,8 @@ ds dev-all # requires uv >= 0.3.0
 # final build
 ds docs build
 
-# commit and push tags
+# commit, push tags, create a new release
 ds release: $VER
 ```
 
-[Create the release on GitHub](https://github.com/metaist/ds/releases/new). The `pypi.yaml` workflow will attempt to publish it to PyPI.
+[Review the release on GitHub](https://github.com/metaist/ds/releases). Once published, the `pypi.yaml` workflow will attempt to publish it to PyPI.

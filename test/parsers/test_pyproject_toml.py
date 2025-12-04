@@ -5,13 +5,12 @@
 # lib
 import pytest
 
-from . import EXAMPLE_FORMATS
-from . import EXAMPLE_WORKSPACE
-
 from ds.configs import Config
 from ds.parsers.pyproject_toml import loads
 from ds.parsers.pyproject_toml import parse_tasks
 from ds.parsers.pyproject_toml import parse_workspace
+from test.parsers import EXAMPLE_FORMATS
+from test.parsers import EXAMPLE_WORKSPACE
 
 
 def test_workspace() -> None:

@@ -8,13 +8,13 @@ from pathlib import Path
 import pytest
 
 # pkg
-from . import EXAMPLE_FORMATS
-from . import nest
 from ds.configs import Config
 from ds.parsers.makefile import loads
 from ds.parsers.makefile import parse_tasks
 from ds.parsers.makefile import parse_workspace
 from ds.tasks import Task
+from test.parsers import EXAMPLE_FORMATS
+from test.parsers import nest
 
 PATH = Path("Makefile")
 """Default path."""

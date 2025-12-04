@@ -91,9 +91,8 @@ Tries to use familiar syntax and a few clear rules. Checks for basic cycles and 
 🚀 **Minimal dependencies**<br />
 Currently working on removing all of these (see [#46]):
 
-- python (3.8+)
+- python (3.10+)
 - `tomli` (for python < 3.11)
-- `graphlib_backport` (for python < 3.9)
 
 ## Limitations
 

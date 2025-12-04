@@ -8,9 +8,6 @@ from pathlib import Path
 import pytest
 
 # pkg
-from . import EXAMPLE_FORMATS
-from . import EXAMPLE_WORKSPACE
-from . import nest
 from ds.configs import Config
 from ds.parsers.ds_toml import loads
 from ds.parsers.ds_toml import parse_tasks
@@ -18,6 +15,9 @@ from ds.parsers.ds_toml import parse_workspace
 from ds.parsers.pyproject_rye import PYTHON_CALL
 from ds.symbols import TASK_COMPOSITE
 from ds.tasks import Task
+from test.parsers import EXAMPLE_FORMATS
+from test.parsers import EXAMPLE_WORKSPACE
+from test.parsers import nest
 
 PATH = Path("pyproject.toml")
 """Default path."""

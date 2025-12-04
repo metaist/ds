@@ -8,15 +8,15 @@ from pathlib import Path
 import pytest
 
 # pkg
-from . import EXAMPLE_FORMATS
-from . import EXAMPLE_WORKSPACE
-from . import nest
 from ds.configs import Config
 from ds.parsers.package_json import loads
 from ds.parsers.package_json import parse_tasks
 from ds.parsers.package_json import parse_workspace
 from ds.symbols import TASK_KEEP_GOING
 from ds.tasks import Task
+from test.parsers import EXAMPLE_FORMATS
+from test.parsers import EXAMPLE_WORKSPACE
+from test.parsers import nest
 
 PATH = Path("package.json")
 """Default path."""

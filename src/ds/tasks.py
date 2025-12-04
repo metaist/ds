@@ -12,15 +12,8 @@ from shlex import split
 from typing import Dict
 from typing import List
 from typing import Optional
+import graphlib
 import logging
-import sys
-
-# Coverage disabled to cover all python versions.
-# TODO 2024-10-31 @ py3.8 EOL: remove conditional
-if sys.version_info >= (3, 9):  # pragma: no cover
-    import graphlib
-else:  # pragma: no cover
-    import graphlib  # type: ignore
 
 # pkg
 from .env import wrap_cmd

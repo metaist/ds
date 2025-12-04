@@ -8,15 +8,15 @@ from pathlib import Path
 import pytest
 
 # pkg
-from . import EXAMPLE_FORMATS
-from . import EXAMPLE_WORKSPACE
-from . import nest
 from ds.configs import Config
 from ds.parsers.pyproject_poetry import loads
 from ds.parsers.pyproject_poetry import parse_tasks
 from ds.parsers.pyproject_poetry import parse_workspace
 from ds.parsers.pyproject_rye import PYTHON_CALL
 from ds.tasks import Task
+from test.parsers import EXAMPLE_FORMATS
+from test.parsers import EXAMPLE_WORKSPACE
+from test.parsers import nest
 
 PATH = Path("pyproject.toml")
 """Default path."""
