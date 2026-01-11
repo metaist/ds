@@ -135,7 +135,9 @@ def test_makefile_automatic_variables() -> None:
     """Test automatic variable expansion (issue #112)."""
     # $@ - target name
     assert loads("target:\n\techo $@") == {
-        "recipes": {"target": {"composite": [], "shell": "echo target\n", "verbatim": True}}
+        "recipes": {
+            "target": {"composite": [], "shell": "echo target\n", "verbatim": True}
+        }
     }
 
     # $< - first prerequisite

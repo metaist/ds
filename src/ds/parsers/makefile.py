@@ -185,8 +185,12 @@ def loads(text: str, debug: bool = False) -> NestedDict:
         cmd = cmd.replace("$@", name)  # target name
         if deps:
             cmd = cmd.replace("$<", deps[0])  # first prerequisite
-        cmd = cmd.replace("$?", " ".join(deps))  # prerequisites (NOTE: ds doesn't track "newer")
-        cmd = cmd.replace("$^", " ".join(dict.fromkeys(deps)))  # prerequisites, no duplicates
+        cmd = cmd.replace(
+            "$?", " ".join(deps)
+        )  # prerequisites (NOTE: ds doesn't track "newer")
+        cmd = cmd.replace(
+            "$^", " ".join(dict.fromkeys(deps))
+        )  # prerequisites, no duplicates
         cmd = cmd.replace("$+", " ".join(deps))  # prerequisites, with duplicates
         rule["shell"] = cmd
 

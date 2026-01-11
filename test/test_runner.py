@@ -253,7 +253,9 @@ def test_parallel_error_with_keep_going() -> None:
         parallel=True,
         depends=[
             Task(name=TASK_COMPOSITE, cmd="echo A"),
-            Task(name=TASK_COMPOSITE, cmd="exit 1", keep_going=True),  # Fails but ignored
+            Task(
+                name=TASK_COMPOSITE, cmd="exit 1", keep_going=True
+            ),  # Fails but ignored
         ],
     )
 

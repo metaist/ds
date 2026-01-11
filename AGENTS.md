@@ -6,6 +6,7 @@ This document captures preferences for AI agents (Claude, etc.) working on this 
 
 - Commit frequently as you complete fixes, but **do not push until asked** or until a batch of related changes is ready
 - Pushing to `main` triggers CI, so batch multiple commits before pushing to limit CI runs to a few times per hour
+- Run `ds dev` periodically to make sure there are no lint, type check, or test issues before committing
 - When ready to push, the user will explicitly ask or approve
 
 ## Commit Messages
@@ -32,12 +33,13 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 - Keep titles lowercase where possible
 - Use backticks for code references in titles
 - Add `aigen` label for AI-generated issues
-- Include "Created by {Model Name} during code review" at end of issue body
+- Include "Created by {Model Name} during code review" at start of issue body
 
 ## Development Commands
 
+- **Setup dependencies**: `ds setup`
+- **Run linter+tests**: `ds dev`
 - **Run tests**: `ds test` (not raw pytest)
-- **Sync dependencies**: `uv sync` or `uv sync --all-extras`
 - **Run with local changes**: `uv run ds <args>`
 - **Install package**: handled by `uv sync`, not `pip install -e .`
 

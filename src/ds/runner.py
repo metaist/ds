@@ -185,7 +185,9 @@ class Runner:
 
         # Sync point: wait for parallel children to complete before parent continues
         if task.parallel and len(self.processes) > processes_before:
-            log.debug(f"waiting for {len(self.processes) - processes_before} parallel tasks")
+            log.debug(
+                f"waiting for {len(self.processes) - processes_before} parallel tasks"
+            )
             failures: list[tuple[int, str]] = []
             for proc, keep_going, cmd in self.processes[processes_before:]:
                 proc.wait()
@@ -194,7 +196,9 @@ class Runner:
             if failures:
                 # Report first failure (matches sequential behavior)
                 code, cmd = failures[0]
-                raise TaskError(f"parallel task failed: {cmd!r} (return code = {code})", code)
+                raise TaskError(
+                    f"parallel task failed: {cmd!r} (return code = {code})", code
+                )
         # dependencies ran
 
         if not task.cmd.strip():  # nothing to do
@@ -269,7 +273,7 @@ class Runner:
             )
             self.processes.append((proc, resolved.keep_going, resolved.cmd))
         else:
-            proc = subprocess.run(
+            result = subprocess.run(
                 resolved.cmd,
                 shell=True,
                 text=True,
@@ -278,7 +282,7 @@ class Runner:
                 executable=combined_env.get("SHELL"),
             )
 
-            resolved.code = proc.returncode
+            resolved.code = result.returncode
             if resolved.code != 0 and not resolved.keep_going:
                 raise TaskError(f"return code = {resolved.code}", resolved.code)
         return resolved

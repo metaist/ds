@@ -1,7 +1,6 @@
 """`ds.toml` parser."""
 
 # std
-from dataclasses import replace
 from pathlib import Path
 from typing import Any
 import logging
@@ -15,7 +14,6 @@ from ..searchers import glob_paths
 from ..symbols import GLOB_EXCLUDE
 from ..symbols import KEY_MISSING
 from ..symbols import starts
-from ..symbols import TASK_COMPOSITE
 from ..symbols import TASK_DISABLED
 from ..symbols import TASK_KEEP_GOING
 from ..symbols import TASK_SHARED
