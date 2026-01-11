@@ -211,7 +211,9 @@ def parse_task(
 
         if env := item.get("env"):
             if not isinstance(env, dict):
-                raise TypeError(f"'env' must be a dict, got {type(env).__name__}: {path or 'CLI'}")
+                raise TypeError(
+                    f"'env' must be a dict, got {type(env).__name__}: {path or 'CLI'}"
+                )
             task.env = {k: str(v) for k, v in env.items()}
 
         base = path.parent if path else Path.cwd()

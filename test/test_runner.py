@@ -23,7 +23,9 @@ from ds import pushd
 def test_is_powershell() -> None:
     """Detect PowerShell environment (issue #109)."""
     # Not PowerShell by default (in test environment)
-    with TempEnv(SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
+    with TempEnv(
+        SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None
+    ):
         assert _is_powershell() is False
 
     # PowerShell Core sets POWERSHELL_DISTRIBUTION_CHANNEL
@@ -31,36 +33,56 @@ def test_is_powershell() -> None:
         assert _is_powershell() is True
 
     # SHELL contains pwsh
-    with TempEnv(SHELL="/usr/bin/pwsh", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
+    with TempEnv(
+        SHELL="/usr/bin/pwsh", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None
+    ):
         assert _is_powershell() is True
 
     # SHELL contains powershell (case-insensitive)
-    with TempEnv(SHELL="C:\\Windows\\PowerShell\\powershell.exe", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
+    with TempEnv(
+        SHELL="C:\\Windows\\PowerShell\\powershell.exe",
+        POWERSHELL_DISTRIBUTION_CHANNEL=None,
+        PSModulePath=None,
+    ):
         assert _is_powershell() is True
 
     # PSModulePath with 3+ paths (fallback heuristic)
     folders = os.pathsep.join(["path1", "path2", "path3"])
-    with TempEnv(SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=folders):
+    with TempEnv(
+        SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=folders
+    ):
         assert _is_powershell() is True
 
     # PSModulePath with fewer than 3 paths - not enough
     folders = os.pathsep.join(["path1", "path2"])
-    with TempEnv(SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=folders):
+    with TempEnv(
+        SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=folders
+    ):
         assert _is_powershell() is False
 
 
 def test_venv_activate() -> None:
     """Return the correct .venv command."""
     venv = Path(".venv")
-    with TempEnv(SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
+    with TempEnv(
+        SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None
+    ):
         assert venv_activate_cmd(venv) == "source .venv/bin/activate;"
-    with TempEnv(SHELL="/bin/zsh", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
+    with TempEnv(
+        SHELL="/bin/zsh", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None
+    ):
         assert venv_activate_cmd(venv) == "source .venv/bin/activate;"
-    with TempEnv(SHELL="/bin/csh", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
+    with TempEnv(
+        SHELL="/bin/csh", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None
+    ):
         assert venv_activate_cmd(venv) == "source .venv/bin/activate.csh;"
-    with TempEnv(SHELL="/bin/fish", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
+    with TempEnv(
+        SHELL="/bin/fish", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None
+    ):
         assert venv_activate_cmd(venv) == "source .venv/bin/activate.fish;"
-    with TempEnv(SHELL="/bin/unknown", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):  # unknown POSIX
+    with TempEnv(
+        SHELL="/bin/unknown", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None
+    ):  # unknown POSIX
         assert venv_activate_cmd(venv) == "source .venv/bin/activate;"
 
     # simulate PowerShell
