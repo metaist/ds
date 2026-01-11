@@ -204,22 +204,33 @@ def print_tasks(path: Path, tasks: Tasks) -> None:
         task.pprint()
 
 
-def print_tree(path: Path, tasks: Tasks) -> None:
-    """Print task dependency tree."""
-    count = len(tasks)
-    plural = "s" if count != 1 else ""
+def print_tree(path: Path, tasks: Tasks, task: Task | None = None) -> None:
+    """Print task dependency tree.
 
+    Args:
+        path: Path to the config file.
+        tasks: All tasks from the config.
+        task: Optional specific task to visualize. If None, show all tasks.
+    """
     path_abs = str(path.resolve())
     path_rel = relpath(path, get_original_cwd())
     location = path_abs if len(path_abs) < len(path_rel) else path_rel
 
-    print(f"# Found {count} task{plural} in {location}")
-    for name, task in tasks.items():
-        print()
-        if task.help:
-            print("#", task.help)
-        print(name)
+    if task:
+        # Show tree for the specified task
+        print(f"# Task tree from {location}")
         _print_tree_deps(task, tasks, prefix="")
+    else:
+        # Show all tasks
+        count = len(tasks)
+        plural = "s" if count != 1 else ""
+        print(f"# Found {count} task{plural} in {location}")
+        for name, t in tasks.items():
+            print()
+            if t.help:
+                print("#", t.help)
+            print(name)
+            _print_tree_deps(t, tasks, prefix="")
 
 
 def _print_tree_deps(task: Task, all_tasks: Tasks, prefix: str) -> None:

@@ -49,6 +49,11 @@ def test_tree() -> None:
     main(split("ds --tree"))
 
 
+def test_tree_with_tasks() -> None:
+    """--tree with specific tasks shows tree for those tasks"""
+    main(split("ds --tree test"))
+
+
 def test_pre_post() -> None:
     """--pre / --post run pre/post tasks"""
     main(split("ds --pre --post -f examples/formats/pyproject-pdm.toml echo"))

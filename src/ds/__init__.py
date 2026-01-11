@@ -217,7 +217,8 @@ def main(argv: list[str] | None = None) -> None:
                 print_tasks(config.path, config.tasks)
                 return
             if args.tree:
-                print_tree(config.path, config.tasks)
+                # If tasks specified, show tree for those; otherwise show all
+                print_tree(config.path, config.tasks, args.task if args.task.depends else None)
                 return
             runner.tasks = config.tasks
 
