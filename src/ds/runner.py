@@ -5,9 +5,6 @@ from dataclasses import replace
 from os import environ as ENV
 from pathlib import Path
 from shlex import split
-from typing import Dict
-from typing import List
-from typing import Tuple
 import atexit
 import dataclasses
 import logging
@@ -76,8 +73,8 @@ def find_project(args: Args, task: Task) -> Task:
 
     log.info("Searching for project dependencies. To disable: add --no-project")
     result = replace(task)  # make a copy
-    to_find: Dict[str, str] = {}
-    found: Dict[str, Path] = {}
+    to_find: dict[str, str] = {}
+    found: dict[str, Path] = {}
 
     # python
     # NOTE: We only look at the `VIRTUAL_ENV` environment variable
@@ -126,7 +123,7 @@ class Runner:
     tasks: Tasks
     """Mapping of names to tasks."""
 
-    processes: List[subprocess.Popen[bytes]] = dataclasses.field(default_factory=list)
+    processes: list[subprocess.Popen[bytes]] = dataclasses.field(default_factory=list)
     """Subprocesses started in parallel."""
 
     def run(self, task: Task, override: Task) -> int:
@@ -173,7 +170,7 @@ class Runner:
         resolved = self.run_in_shell(task, resolved)  # run in shell
         return resolved.code or self.run_pre_post(task, resolved, "post")
 
-    def run_composite(self, task: Task, override: Task) -> Tuple[bool, int]:
+    def run_composite(self, task: Task, override: Task) -> tuple[bool, int]:
         """Run a composite task."""
         ran, code = False, 0
         if not task.name == TASK_COMPOSITE:

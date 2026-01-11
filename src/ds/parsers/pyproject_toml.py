@@ -3,7 +3,6 @@
 # std
 from __future__ import annotations
 from typing import Callable
-from typing import Dict
 import logging
 
 # pkg
@@ -23,7 +22,7 @@ loads = toml.loads
 """Standard `toml` parser."""
 
 
-WORKSPACE_PARSERS: Dict[str, Callable[[Config, str], Membership]] = {
+WORKSPACE_PARSERS: dict[str, Callable[[Config, str], Membership]] = {
     "tool.ds.workspace": ds_toml.parse_workspace,
     "tool.uv.workspace": uv_toml.parse_workspace,
     "tool.rye.workspace": pyproject_rye.parse_workspace,
@@ -32,7 +31,7 @@ WORKSPACE_PARSERS: Dict[str, Callable[[Config, str], Membership]] = {
 }
 """Locations of workspace parsers in `pyproject.toml`."""
 
-TASK_PARSERS: Dict[str, Callable[[Config, str], Tasks]] = {
+TASK_PARSERS: dict[str, Callable[[Config, str], Tasks]] = {
     "tool.ds.scripts": ds_toml.parse_tasks,
     "tool.rye.scripts": pyproject_rye.parse_tasks,
     "tool.pdm.scripts": pyproject_pdm.parse_tasks,

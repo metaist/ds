@@ -6,9 +6,6 @@ from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 from shlex import join
-from typing import Dict
-from typing import List
-from typing import Optional
 import dataclasses
 
 # pkg
@@ -167,19 +164,19 @@ class Args:
     list_: bool = False
     """Whether to show available tasks"""
 
-    cwd: Optional[Path] = None
+    cwd: Path | None = None
     """Path to run tasks in."""
 
-    env: Dict[str, str] = field(default_factory=dict)
+    env: dict[str, str] = field(default_factory=dict)
     """Environment variable overrides."""
 
-    env_file: Optional[Path] = None
+    env_file: Path | None = None
     """Path to environment variables."""
 
-    file: Optional[Path] = None
+    file: Path | None = None
     """Path to task definitions."""
 
-    workspace: List[str] = field(default_factory=list)
+    workspace: list[str] = field(default_factory=list)
     """List of workspace patterns to run tasks in."""
 
     pre: bool = False
@@ -198,7 +195,7 @@ class Args:
         """Return a copy of this object."""
         return dataclasses.replace(self)
 
-    def as_argv(self) -> List[str]:
+    def as_argv(self) -> list[str]:
         """Return args as a string."""
         result = ["ds"]
 
@@ -241,10 +238,10 @@ class Args:
         return result
 
     @staticmethod
-    def parse(argv: List[str]) -> Args:
+    def parse(argv: list[str]) -> Args:
         """Parse command-line arguments in a docopt-like way."""
         args = Args()
-        tasks: List[str] = []
+        tasks: list[str] = []
         task_cmd = ""
         is_ours = True
         is_task_arg = False

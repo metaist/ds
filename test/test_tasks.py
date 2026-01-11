@@ -2,7 +2,6 @@
 
 # std
 from pathlib import Path
-from typing import Optional
 
 # lib
 import pytest
@@ -16,7 +15,7 @@ from ds.tasks import Tasks
 from ds.parsers.ds_toml import parse_task
 
 
-def _run(task: Task, tasks: Optional[Tasks] = None) -> int:
+def _run(task: Task, tasks: Tasks | None = None) -> int:
     return Runner(Args(), tasks or {}).run(task, Task())
 
 

@@ -5,7 +5,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 from typing import cast
-from typing import Dict
 
 # pkg
 from ds.parsers import ds_toml
@@ -26,7 +25,7 @@ EXAMPLE_WORKSPACE = EXAMPLES / "workspace"
 EXAMPLE_FORMATS = EXAMPLES / "formats"
 """Path to example formats."""
 
-PARSERS_TEST: Dict[str, ModuleType] = {
+PARSERS_TEST: dict[str, ModuleType] = {
     "pyproject-ds*.toml": ds_toml,
     "pyproject-pdm*.toml": pyproject_pdm,
     "pyproject-poetry*.toml": pyproject_poetry,
@@ -40,7 +39,7 @@ PARSERS_TEST: Dict[str, ModuleType] = {
 PARSERS.update(PARSERS_TEST)
 
 
-def nest(key: str, value: Any) -> Dict[str, Any]:
+def nest(key: str, value: Any) -> dict[str, Any]:
     """Nest keys in some levels.
 
     >>> nest("x.y.z", {"key": "value"})
@@ -49,4 +48,4 @@ def nest(key: str, value: Any) -> Dict[str, Any]:
     result = value
     for part in reversed(key.split(KEY_DELIMITER)):
         result = {part: result}
-    return cast(Dict[str, Any], result)  # even a blank string gets nested
+    return cast(dict[str, Any], result)  # even a blank string gets nested

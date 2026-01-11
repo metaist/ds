@@ -3,7 +3,6 @@
 
 # std
 from pathlib import Path
-from typing import Dict
 
 # lib
 import cog  # type: ignore
@@ -20,7 +19,7 @@ def insert_file(location: str, lang: str = "") -> None:
     fenced_block(path.read_text(), lang or path.suffix[1:])
 
 
-def replace_many(text: str, needles: Dict[str, str]) -> str:
+def replace_many(text: str, needles: dict[str, str]) -> str:
     """Return a cleaned up string after making substitutions."""
     for needle, replacement in needles.items():
         text = text.replace(needle, replacement)

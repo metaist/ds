@@ -9,9 +9,6 @@ from os.path import relpath
 from pathlib import Path
 from shlex import join
 from shlex import split
-from typing import Dict
-from typing import List
-from typing import Optional
 import graphlib
 import logging
 
@@ -23,7 +20,7 @@ from .symbols import TASK_KEEP_GOING
 
 log = logging.getLogger(__name__)
 
-Tasks = Dict[str, "Task"]
+Tasks = dict[str, "Task"]
 """Mapping of task names to `Task` objects."""
 
 CycleError = graphlib.CycleError
@@ -37,7 +34,7 @@ ORIGINAL_CWD = Path.cwd()
 class Task:
     """Represents a thing to be done."""
 
-    origin: Optional[Path] = None
+    origin: Path | None = None
     """File from which this configuration came."""
 
     origin_key: str = ""
@@ -52,7 +49,7 @@ class Task:
     verbatim: bool = False
     """Whether to format the command at all."""
 
-    depends: List[Task] = field(default_factory=list)
+    depends: list[Task] = field(default_factory=list)
     """Tasks to execute before this one."""
 
     parallel: bool = False
@@ -67,25 +64,25 @@ class Task:
     # NOTE: args, cwd, env, keep_going are overridable
     # via the CLI or when calling a composite command.
 
-    args: List[str] = field(default_factory=list)
+    args: list[str] = field(default_factory=list)
     """Additional arguments to `cmd`."""
 
-    cwd: Optional[Path] = None
+    cwd: Path | None = None
     """Task working directory."""
 
-    env: Dict[str, str] = field(default_factory=dict)
+    env: dict[str, str] = field(default_factory=dict)
     """Task environment variables."""
 
-    _env: Dict[str, str] = field(default_factory=dict)
+    _env: dict[str, str] = field(default_factory=dict)
     """Hidden environment variables."""
 
-    env_file: Optional[Path] = None
+    env_file: Path | None = None
     """Path to an environment file to load."""
 
     keep_going: bool = False
     """Ignore a non-zero return code."""
 
-    def pprint(self, override: Optional[Task] = None, dry_run: bool = False) -> None:
+    def pprint(self, override: Task | None = None, dry_run: bool = False) -> None:
         """Print a representation of this task."""
         is_run = override or dry_run
         display = self
@@ -114,7 +111,7 @@ class Task:
             else:
                 print(f"$ {wrap_cmd(display.cmd)}", flush=True)
 
-    def as_args(self, override: Optional[Task] = None) -> str:
+    def as_args(self, override: Task | None = None) -> str:
         """Return a shell representation of running this task."""
         override = override or Task()
 
@@ -136,7 +133,7 @@ class Task:
         return join(args)
 
 
-def check_cycles(tasks: Tasks) -> List[str]:
+def check_cycles(tasks: Tasks) -> list[str]:
     """Raise a `CycleError` if there is a cycle in the task graph."""
     graph = {}
     for name, task in tasks.items():

@@ -5,12 +5,9 @@ from __future__ import annotations
 from os import environ as ENV
 from os import get_terminal_size
 from typing import Any
-from typing import Dict
 from typing import Iterator
-from typing import List
 from typing import Mapping
 from typing import Match
-from typing import Optional
 import logging
 import re
 
@@ -52,9 +49,9 @@ except OSError:
     DEFAULT_WIDTH = 80
 
 
-def interpolate_args(cmd: str, args: List[str]) -> str:
+def interpolate_args(cmd: str, args: list[str]) -> str:
     """Return `args` interpolated into `cmd`."""
-    not_done: List[Optional[str]] = [arg for arg in args]
+    not_done: list[str | None] = [arg for arg in args]
 
     # Replace `pdm`-style args.
     cmd = cmd.replace("{args}", "${@}")
@@ -88,7 +85,7 @@ def interpolate_args(cmd: str, args: List[str]) -> str:
 class TempEnv:
     """Temporary environment variables."""
 
-    def __init__(self, **initial: Optional[str]):
+    def __init__(self, **initial: str | None):
         """Construct a temporary environment object.
 
         Args:
@@ -103,7 +100,7 @@ class TempEnv:
         ...         env2["a"] is None and env2["c"] == "e"
         True
         """
-        self.saved: Dict[str, Optional[str]] = {}
+        self.saved: dict[str, str | None] = {}
         for key, value in initial.items():
             if value is None:
                 del self[key]
@@ -148,7 +145,7 @@ class TempEnv:
         """
         return key in ENV
 
-    def __getitem__(self, key: str) -> Optional[str]:
+    def __getitem__(self, key: str) -> str | None:
         """Return the current value of `key` or `None` if it isn't set."""
         return ENV.get(key, None)
 
@@ -174,7 +171,7 @@ class TempEnv:
             del ENV[key]
 
 
-def expand(value: str, store: Optional[Mapping[str, str]] = None) -> str:
+def expand(value: str, store: Mapping[str, str] | None = None) -> str:
     """Expand variables of the form `$var` and `${var}`.
 
     Regular expansion works as expected:
@@ -207,7 +204,7 @@ def expand(value: str, store: Optional[Mapping[str, str]] = None) -> str:
     return RE_EXPAND.sub(_repl, value)
 
 
-def read_env(text: str) -> Dict[str, str]:
+def read_env(text: str) -> dict[str, str]:
     """Read an environment file.
 
     >>> read_env('''# IGNORE=line
@@ -216,7 +213,7 @@ def read_env(text: str) -> Dict[str, str]:
     ... ''')
     {'INCLUDE': 'value', 'key name': 'value with space'}
     """
-    result: Dict[str, str] = {}
+    result: dict[str, str] = {}
     for line in text.replace("\r\n", "\n").split("\n"):
         line = line.strip()
         if not line or line.startswith("#"):

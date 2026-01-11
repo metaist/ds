@@ -4,9 +4,6 @@
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 import logging
 
 # pkg
@@ -85,7 +82,7 @@ def parse_tasks(config: Config, key: str = "scripts") -> Tasks:
     if data is KEY_MISSING:
         raise KeyError(f"Missing '{key}' key in {config.path}")
 
-    common: Optional[Task] = None
+    common: Task | None = None
     tasks: Tasks = {}
     for name, item in data.items():
         if name.startswith(TASK_DISABLED):
@@ -117,8 +114,8 @@ PROPERTY_ALIASES = {
 
 
 def rename_aliases(
-    item: Dict[str, Any], renames: Dict[str, str], overwrite: bool = False
-) -> Dict[str, Any]:
+    item: dict[str, Any], renames: dict[str, str], overwrite: bool = False
+) -> dict[str, Any]:
     """Rename items in a dict.
 
     >>> rename_aliases({'old': 'value'}, {'old': 'new'})
@@ -145,7 +142,7 @@ def rename_aliases(
     return item
 
 
-def parse_composite(task: Task, item: List[str]) -> Task:
+def parse_composite(task: Task, item: list[str]) -> Task:
     """Parse composite task."""
     depends = []
     for step in item:
@@ -158,7 +155,7 @@ def parse_composite(task: Task, item: List[str]) -> Task:
 
 
 def parse_task(
-    item: Any, name: str = "", path: Optional[Path] = None, key: str = ""
+    item: Any, name: str = "", path: Path | None = None, key: str = ""
 ) -> Task:
     """Parse a task."""
 

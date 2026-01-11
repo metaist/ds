@@ -2,7 +2,6 @@
 
 # std
 from pathlib import Path
-from typing import Optional
 import logging
 
 # pkg
@@ -69,7 +68,7 @@ def parse_tasks(config: Config, key: str = "tool.pdm.scripts") -> Tasks:
     if data is KEY_MISSING:
         raise KeyError(f"Missing '{key}' key in {config.path}")
 
-    common: Optional[Task] = None
+    common: Task | None = None
     tasks: Tasks = {}
     for name, item in data.items():
         # Non-standard: disabled tasks

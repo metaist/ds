@@ -2,9 +2,6 @@
 
 # std
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
 import logging
 
 # pkg
@@ -17,7 +14,7 @@ from ..tasks import Tasks
 
 log = logging.getLogger(__name__)
 
-NestedDict = Dict[str, Dict[str, Any]]
+NestedDict = dict[str, dict[str, Any]]
 """Generic mapping of a nested dict object."""
 
 
@@ -39,7 +36,7 @@ def loads(text: str, debug: bool = False) -> NestedDict:
     result: NestedDict = {}
     prefix = "\t"
     n, lines = 0, text.split("\n")
-    targets: List[str] = []
+    targets: list[str] = []
     in_recipe = False
 
     def _log(*args: Any, **kwargs: Any) -> None:
@@ -51,7 +48,7 @@ def loads(text: str, debug: bool = False) -> NestedDict:
             line = line[: line.index("#")]
         return line
 
-    def _key_val(line: str) -> Tuple[str, str]:
+    def _key_val(line: str) -> tuple[str, str]:
         key, val = "", ""
         line = _strip_comment(line)
         if " = " in line:  # spaces around equals

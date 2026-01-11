@@ -1,8 +1,5 @@
 """Special symbols and their meanings."""
 
-# std
-from typing import Tuple
-
 ARG_OPTION = "-"
 """Implicit start of task arguments."""
 
@@ -55,7 +52,7 @@ TASK_SHARED = "_"
 """Shared options task name."""
 
 
-def starts(haystack: str, needle: str) -> Tuple[bool, str]:
+def starts(haystack: str, needle: str) -> tuple[bool, str]:
     """Return whether `haystack` starts with `needle` and a stripped version.
 
     >>> starts("!foo", "!") == (True, "foo")
@@ -69,7 +66,7 @@ def starts(haystack: str, needle: str) -> Tuple[bool, str]:
     return False, haystack
 
 
-def ends(haystack: str, needle: str) -> Tuple[bool, str]:
+def ends(haystack: str, needle: str) -> tuple[bool, str]:
     """Return whether `haystack` ends with `needle` and a stripped version.
 
     >>> ends("foo", "oo") == (True, "f")

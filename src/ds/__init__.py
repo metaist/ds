@@ -8,13 +8,12 @@
 # std
 from __future__ import annotations
 from contextlib import contextmanager
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version
 from os import environ as ENV
 from pathlib import Path
 from shlex import join
 from typing import Iterator
-from typing import List
-from typing import Optional
-from typing import Union
 import logging
 import os
 import sys
@@ -44,7 +43,7 @@ log = logging.getLogger(__name__)
 
 
 @contextmanager
-def pushd(dest: Union[str, Path]) -> Iterator[Path]:
+def pushd(dest: str | Path) -> Iterator[Path]:
     """Temporarily change the current working directory."""
     if isinstance(dest, str):
         dest = Path(dest)
@@ -138,7 +137,7 @@ def run_workspace(args: Args, config: Config) -> None:
             pass
 
 
-def main(argv: Optional[List[str]] = None) -> None:
+def main(argv: list[str] | None = None) -> None:
     """Main entry point."""
     args = Args.parse((argv or sys.argv)[1:])
 

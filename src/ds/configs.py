@@ -4,7 +4,6 @@
 import dataclasses
 from pathlib import Path
 from typing import Any
-from typing import Dict
 
 # pkg
 from .tasks import Tasks
@@ -21,7 +20,7 @@ class Config:
     path: Path
     """Path to the configuration file."""
 
-    data: Dict[str, Any]
+    data: dict[str, Any]
     """Configuration data."""
 
     # `tasks` and `members` are loaded by tool-specific parsers

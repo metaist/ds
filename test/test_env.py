@@ -1,9 +1,5 @@
 """Test env vars and interpolation."""
 
-# std
-from typing import Union
-from typing import Optional
-
 # lib
 import pytest
 
@@ -14,11 +10,7 @@ from ds.symbols import ARG_PREFIX
 from ds.symbols import ARG_REST
 
 
-def arg(
-    n: Union[int, str, None] = None,
-    b: bool = False,
-    d: Optional[str] = None,
-) -> str:
+def arg(n: int | str | None = None, b: bool = False, d: str | None = None) -> str:
     """Helper to produce args.
 
     >>> arg(1)

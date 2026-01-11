@@ -5,7 +5,6 @@ from __future__ import annotations
 from fnmatch import fnmatch
 from pathlib import Path
 from types import ModuleType
-from typing import Dict
 import logging
 
 # pkg
@@ -22,7 +21,7 @@ from ..searchers import glob_parents
 
 log = logging.getLogger(__name__)
 
-PARSERS: Dict[str, ModuleType] = {
+PARSERS: dict[str, ModuleType] = {
     "ds.toml": ds_toml,
     "pyproject.toml": pyproject_toml,
     "uv.toml": uv_toml,
