@@ -113,11 +113,11 @@ def parse_tasks(config: Config, key: str = "scripts") -> Tasks:
     for name, task in tasks.items():
         cmd, *_ = split(task.cmd)
         others = glob_names(tasks.keys(), cmd.split(GLOB_DELIMITER))
-        for name in others:
-            other = tasks.get(name)
+        for other_name in others:
+            other = tasks.get(other_name)
             if other and other != task and task not in other.depends:
                 log.warning(
-                    "package.json does not support tasks that reference other tasks."
+                    "package.json does not support tasks that reference other tasks. "
                     f'Did you mean: "{name}": "ds {task.cmd}"'
                 )
 
