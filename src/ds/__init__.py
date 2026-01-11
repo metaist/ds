@@ -22,6 +22,9 @@ from .args import Args
 from .args import USAGE
 from .configs import Config
 from .env import TempEnv
+from .exceptions import ConfigError
+from .exceptions import DsError
+from .exceptions import TaskError
 from .runner import find_project
 from .runner import Runner
 from .searchers import glob_paths
@@ -90,13 +93,11 @@ def load_config(args: Args) -> Config:
         args.cwd = args.cwd or config.path.parent
         if not args.cwd.exists():
             raise NotADirectoryError(f"Cannot find directory: {args.cwd}")
-    except CycleError as e:  # TODO: move this into check_cycles
+    except CycleError as e:
         cycle = e.args[1]
-        log.error(f"Task cycle detected: {' => '.join(cycle)}")
-        sys.exit(1)
+        raise ConfigError(f"Task cycle detected: {' => '.join(cycle)}") from e
     except (FileNotFoundError, NotADirectoryError, LookupError) as e:
-        log.error(str(e))
-        sys.exit(1)
+        raise ConfigError(str(e)) from e
 
     return config
 
@@ -106,8 +107,9 @@ def run_workspace(args: Args, config: Config) -> None:
     # Check workspace recursion depth
     depth = int(ENV.get("DS_INTERNAL__WORKSPACE_DEPTH", "0"))
     if depth >= MAX_WORKSPACE_DEPTH:
-        log.error(f"Maximum workspace nesting depth ({MAX_WORKSPACE_DEPTH}) exceeded")
-        sys.exit(1)
+        raise ConfigError(
+            f"Maximum workspace nesting depth ({MAX_WORKSPACE_DEPTH}) exceeded"
+        )
 
     members = {m: False for m, i in config.members.items() if i}  # reset
     members = glob_paths(
@@ -181,31 +183,29 @@ def main(argv: list[str] | None = None) -> None:
         log.warning("You are using a development version of ds.")
 
     runner = Runner(args, {})
-    if args.no_config:
-        log.debug("Not loading config. To enable: remove --no-config")
-        if args.workspace:
-            log.error("Cannot use --workspace together with --no-config.")
-            sys.exit(1)
-        if args.list_:
-            log.error("Cannot use --list together with --no-config.")
-            sys.exit(1)
-    else:
-        log.debug("Loading config. To disable: add --no-config")
-        config = load_config(args)
-        # NOTE: We process --workspace first so that you can run $ ds -w*
-        # to be roughly equal to: $ ds --workspace '*' 'ds --list'
-        if args.workspace:
-            run_workspace(args, config)
-            return
-        if args.list_:
-            print_tasks(config.path, config.tasks)
-            return
-        if args.tree:
-            print_tree(config.path, config.tasks)
-            return
-        runner.tasks = config.tasks
-
     try:
+        if args.no_config:
+            log.debug("Not loading config. To enable: remove --no-config")
+            if args.workspace:
+                raise ConfigError("Cannot use --workspace together with --no-config.")
+            if args.list_:
+                raise ConfigError("Cannot use --list together with --no-config.")
+        else:
+            log.debug("Loading config. To disable: add --no-config")
+            config = load_config(args)
+            # NOTE: We process --workspace first so that you can run $ ds -w*
+            # to be roughly equal to: $ ds --workspace '*' 'ds --list'
+            if args.workspace:
+                run_workspace(args, config)
+                return
+            if args.list_:
+                print_tasks(config.path, config.tasks)
+                return
+            if args.tree:
+                print_tree(config.path, config.tasks)
+                return
+            runner.tasks = config.tasks
+
         with TempEnv(DS_INTERNAL__FILE=str(args.file)):
             with pushd(args.cwd or Path()):
                 override = find_project(args, args.task)
@@ -213,6 +213,9 @@ def main(argv: list[str] | None = None) -> None:
 
         for proc in runner.processes:
             proc.wait()
+    except DsError as e:
+        log.error(str(e))
+        sys.exit(e.exit_code)
     except KeyboardInterrupt:  # pragma: no cover
         # Not sure how to cover CTRL+C.
         return

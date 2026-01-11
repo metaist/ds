@@ -14,6 +14,8 @@ import sys
 
 # pkg
 from .args import Args
+from .exceptions import ConfigError
+from .exceptions import TaskError
 from .env import interpolate_args
 from .env import read_env
 from .searchers import glob_names
@@ -131,8 +133,7 @@ class Runner:
         env_from_file = {}
         if task.env_file:
             if not task.env_file.exists():
-                log.error(f"Cannot find env-file: {task.env_file}")
-                sys.exit(1)
+                raise ConfigError(f"Cannot find env-file: {task.env_file}")
 
             log.debug(f"Reading env-file: {task.env_file}")
             env_from_file = read_env(task.env_file.read_text())
@@ -240,8 +241,7 @@ class Runner:
 
             resolved.code = proc.returncode
             if resolved.code != 0 and not resolved.keep_going:
-                log.error(f"return code = {resolved.code}")
-                sys.exit(resolved.code)
+                raise TaskError(f"return code = {resolved.code}", resolved.code)
         return resolved
 
     def cleanup(self) -> None:

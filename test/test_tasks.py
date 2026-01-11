@@ -8,6 +8,7 @@ import pytest
 
 # pkg
 from ds.args import Args
+from ds.exceptions import TaskError
 from ds.runner import Runner
 from ds.tasks import get_original_cwd
 from ds.tasks import print_tasks
@@ -136,10 +137,10 @@ def test_as_args() -> None:
 
 def test_missing() -> None:
     """Try to run a missing task."""
-    with pytest.raises(SystemExit) as e_info:
+    with pytest.raises(TaskError) as e_info:
         task = parse_task("task-and-command-not-found")
         _run(task)
-    assert e_info.value.code == 127  # command not found
+    assert e_info.value.exit_code == 127  # command not found
 
 
 def test_single() -> None:
@@ -166,6 +167,6 @@ def test_composite_shell() -> None:
 def test_failing() -> None:
     """Run a failing task."""
     tasks: Tasks = {"fail": parse_task("exit 123")}
-    with pytest.raises(SystemExit) as e_info:
+    with pytest.raises(TaskError) as e_info:
         _run(tasks["fail"], tasks)
-    assert e_info.value.code == 123
+    assert e_info.value.exit_code == 123

@@ -11,6 +11,7 @@ import pytest
 # pkg
 from ds.args import Args
 from ds.env import TempEnv
+from ds.exceptions import ConfigError
 from ds.runner import find_project
 from ds.runner import Runner
 from ds.runner import venv_activate_cmd
@@ -61,7 +62,7 @@ def test_run_env_file() -> None:
     runner.run(args.task, Task())
 
     # non-existent file
-    with pytest.raises(SystemExit):
+    with pytest.raises(ConfigError, match="Cannot find env-file"):
         args = Args.parse(["--env-file", ".env", "echo $IN_DOT_ENV"])
         runner = Runner(args, {})
         runner.run(args.task, Task())
