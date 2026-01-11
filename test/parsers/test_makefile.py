@@ -129,3 +129,71 @@ target:
             }
         }
     }
+
+
+def test_makefile_quoted_hash() -> None:
+    """Hash inside quotes should not be treated as comment (issue #113)."""
+    # hash in double quotes preserved
+    assert loads('target:\n\techo "foo # bar"') == {
+        "recipes": {
+            "target": {"composite": [], "shell": 'echo "foo # bar"\n', "verbatim": True}
+        }
+    }
+
+    # hash in single quotes preserved
+    assert loads("target:\n\techo 'foo # bar'") == {
+        "recipes": {
+            "target": {"composite": [], "shell": "echo 'foo # bar'\n", "verbatim": True}
+        }
+    }
+
+    # inline recipe with hash in quotes
+    assert loads('target: ;echo "foo # bar"') == {
+        "recipes": {
+            "target": {
+                "composite": [],
+                "shell": 'echo "foo # bar"\n',
+                "verbatim": True,
+            }
+        }
+    }
+
+    # semicolon in quotes should not split
+    assert loads('target: ;echo "a;b"') == {
+        "recipes": {
+            "target": {"composite": [], "shell": 'echo "a;b"\n', "verbatim": True}
+        }
+    }
+
+    # hash outside quotes still stripped in comments
+    assert loads("VAR = value # comment") == {"recipes": {}}
+
+    # single quote in variable assignment (exercises _strip_comment with single quotes)
+    assert loads("VAR = 'value # not comment' # real comment") == {"recipes": {}}
+
+    # single quote inside double quotes (should not toggle quote state)
+    assert loads("""VAR = "it's # not comment" # real comment""") == {"recipes": {}}
+
+    # help text with quoted content before comment
+    assert loads('target: ;"echo test" # help text') == {
+        "recipes": {
+            "target": {
+                "composite": [],
+                "shell": '"echo test" \n',  # trailing space before # preserved
+                "verbatim": True,
+                "help": "help text",
+            }
+        }
+    }
+
+    # single quotes in target line (exercises _find_unquoted with single quotes)
+    assert loads("target: ;echo 'a # b' # help") == {
+        "recipes": {
+            "target": {
+                "composite": [],
+                "shell": "echo 'a # b' \n",
+                "verbatim": True,
+                "help": "help",
+            }
+        }
+    }

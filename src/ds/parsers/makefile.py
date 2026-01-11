@@ -43,10 +43,23 @@ def loads(text: str, debug: bool = False) -> NestedDict:
         if debug:
             print(*args, **kwargs)
 
+    def _find_unquoted(line: str, char: str) -> int:
+        """Find first occurrence of char outside quoted strings. Returns -1 if not found."""
+        in_single = False
+        in_double = False
+        for i, c in enumerate(line):
+            if c == "'" and not in_double:
+                in_single = not in_single
+            elif c == '"' and not in_single:
+                in_double = not in_double
+            elif c == char and not in_single and not in_double:
+                return i
+        return -1
+
     def _strip_comment(line: str) -> str:
-        if "#" in line:
-            line = line[: line.index("#")]
-        return line
+        """Strip comment from line, respecting quoted strings."""
+        pos = _find_unquoted(line, "#")
+        return line[:pos] if pos >= 0 else line
 
     def _key_val(line: str) -> tuple[str, str]:
         key, val = "", ""
@@ -131,15 +144,19 @@ def loads(text: str, debug: bool = False) -> NestedDict:
                     result[target] = {"composite": [], "shell": "", "verbatim": True}
 
                 # NONSTANDARD: take comment on target line as description
-                if "#" in rest:
-                    rest, value = rest.split("#", 1)
+                comment_pos = _find_unquoted(rest, "#")
+                if comment_pos >= 0:
+                    value = rest[comment_pos + 1 :]
+                    rest = rest[:comment_pos]
                     for target in targets:
                         result[target]["help"] = value.strip()
 
                 # 5.1: "[...] the first recipe line may be attached to the
                 # target-and-prerequisites line with a semicolon in between."
-                if ";" in rest:
-                    rest, value = rest.split(";", 1)
+                semi_pos = _find_unquoted(rest, ";")
+                if semi_pos >= 0:
+                    value = rest[semi_pos + 1 :]
+                    rest = rest[:semi_pos]
                     for target in targets:
                         result[target]["shell"] += value + "\n"
 
