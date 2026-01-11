@@ -217,3 +217,49 @@ def test_parallel_sync_point(caplog: pytest.LogCaptureFixture) -> None:
 
     # Verify sync point was hit (waiting for parallel tasks)
     assert "waiting for 2 parallel tasks" in caplog.text
+
+
+def test_parallel_error_handling() -> None:
+    """Parallel task failures are reported (issue #92)."""
+    from ds.exceptions import TaskError
+    from ds.symbols import TASK_COMPOSITE
+
+    # Parent with parallel children, one of which fails
+    parent = Task(
+        name="build",
+        parallel=True,
+        depends=[
+            Task(name=TASK_COMPOSITE, cmd="echo A"),
+            Task(name=TASK_COMPOSITE, cmd="exit 1"),  # This will fail
+        ],
+    )
+
+    args = Args()
+    runner = Runner(args, {})
+
+    with pytest.raises(TaskError, match="parallel task failed"):
+        runner.run(parent, Task())
+
+    runner.cleanup()
+
+
+def test_parallel_error_with_keep_going() -> None:
+    """Parallel task failures are ignored with keep_going (issue #92)."""
+    from ds.symbols import TASK_COMPOSITE
+
+    # Parent with parallel children, one fails but has keep_going
+    parent = Task(
+        name="build",
+        parallel=True,
+        depends=[
+            Task(name=TASK_COMPOSITE, cmd="echo A"),
+            Task(name=TASK_COMPOSITE, cmd="exit 1", keep_going=True),  # Fails but ignored
+        ],
+    )
+
+    args = Args()
+    runner = Runner(args, {})
+
+    # Should not raise because failing task has keep_going=True
+    runner.run(parent, Task())
+    runner.cleanup()

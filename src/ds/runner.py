@@ -146,8 +146,10 @@ class Runner:
     tasks: Tasks
     """Mapping of names to tasks."""
 
-    processes: list[subprocess.Popen[bytes]] = dataclasses.field(default_factory=list)
-    """Subprocesses started in parallel."""
+    processes: list[tuple[subprocess.Popen[bytes], bool, str]] = dataclasses.field(
+        default_factory=list
+    )
+    """Subprocesses started in parallel: (process, keep_going, cmd)."""
 
     def run(self, task: Task, override: Task) -> int:
         """Run a `task` overriding parts given `override`."""
@@ -184,8 +186,15 @@ class Runner:
         # Sync point: wait for parallel children to complete before parent continues
         if task.parallel and len(self.processes) > processes_before:
             log.debug(f"waiting for {len(self.processes) - processes_before} parallel tasks")
-            for proc in self.processes[processes_before:]:
+            failures: list[tuple[int, str]] = []
+            for proc, keep_going, cmd in self.processes[processes_before:]:
                 proc.wait()
+                if proc.returncode != 0 and not keep_going:
+                    failures.append((proc.returncode, cmd))
+            if failures:
+                # Report first failure (matches sequential behavior)
+                code, cmd = failures[0]
+                raise TaskError(f"parallel task failed: {cmd!r} (return code = {code})", code)
         # dependencies ran
 
         if not task.cmd.strip():  # nothing to do
@@ -248,18 +257,17 @@ class Runner:
             if not self.processes:  # first parallel
                 log.warning("EXPERIMENTAL: running tasks in parallel")
                 atexit.register(self.cleanup)
-            self.processes.append(
-                subprocess.Popen(
-                    resolved.cmd,
-                    shell=True,
-                    text=False,
-                    cwd=resolved.cwd,
-                    env=combined_env,
-                    executable=combined_env.get("SHELL"),
-                    stdout=sys.stdout,
-                    stderr=sys.stderr,
-                )
+            proc = subprocess.Popen(
+                resolved.cmd,
+                shell=True,
+                text=False,
+                cwd=resolved.cwd,
+                env=combined_env,
+                executable=combined_env.get("SHELL"),
+                stdout=sys.stdout,
+                stderr=sys.stderr,
             )
+            self.processes.append((proc, resolved.keep_going, resolved.cmd))
         else:
             proc = subprocess.run(
                 resolved.cmd,
@@ -280,11 +288,11 @@ class Runner:
         log.debug("cleaning up child processes")
         # Copy list to avoid race condition if processes are added during cleanup
         processes = list(self.processes)
-        for process in processes:
+        for proc, _keep_going, _cmd in processes:
             try:
-                process.terminate()
-                process.wait(timeout=3)
+                proc.terminate()
+                proc.wait(timeout=3)
             except subprocess.TimeoutExpired:  # pragma: no cover
                 # Not sure how to simulate a process that doesn't die.
-                process.kill()
-                process.wait()
+                proc.kill()
+                proc.wait()

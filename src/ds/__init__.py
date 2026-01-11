@@ -226,7 +226,7 @@ def main(argv: list[str] | None = None) -> None:
                 override = find_project(args, args.task)
                 runner.run(args.task, override)
 
-        for proc in runner.processes:
+        for proc, _keep_going, _cmd in runner.processes:
             proc.wait()
     except DsError as e:
         log.error(str(e))
