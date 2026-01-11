@@ -68,6 +68,17 @@ Run multiple tasks or commands in sequence.
 | `.json` | `"task": "ds step1 step2"` |
 | `Makefile` | `task: step1 step2` |
 
+### Parallel Tasks
+
+Run dependencies concurrently (experimental).
+
+| Format | Syntax |
+|--------|--------|
+| `.toml` | `task = { composite = ["a", "b"], parallel = true }` |
+| CLI | `ds --parallel task1 task2` |
+
+**Note:** `parallel` only affects direct children; grandchildren run sequentially unless they also have `parallel = true`.
+
 ### Argument Interpolation
 
 Pass arguments to tasks.

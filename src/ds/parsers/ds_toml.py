@@ -75,6 +75,7 @@ def parse_tasks(config: Config, key: str = "scripts") -> Tasks:
     - **Supported**: `task.depends` - composite task
     - **Supported**: `task.env` - environments
     - **Supported**: `task.keep_going` - error suppression
+    - **Supported**: `task.parallel` - run dependencies in parallel
     """
     if config.path.name.startswith("pyproject") and key == "scripts":
         key = "tool.ds.scripts"
@@ -98,6 +99,7 @@ def parse_tasks(config: Config, key: str = "scripts") -> Tasks:
     if common:
         for task in tasks.values():
             task.keep_going = task.keep_going or common.keep_going
+            task.parallel = task.parallel or common.parallel
             task.env = {**common.env, **task.env}
             task.env_file = task.env_file or common.env_file
             task.cwd = task.cwd or common.cwd
@@ -187,6 +189,11 @@ def parse_task(
         keep_going = item.get("keep_going", KEY_MISSING)
         if keep_going is not KEY_MISSING:
             task.keep_going = keep_going
+
+        # parallel for running dependencies concurrently
+        parallel = item.get("parallel", KEY_MISSING)
+        if parallel is not KEY_MISSING:
+            task.parallel = parallel
 
         if env := item.get("env"):
             if not isinstance(env, dict):

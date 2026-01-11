@@ -93,3 +93,20 @@ def test_load_workspace() -> None:
 
     config = parse(WORKSPACE / "pyproject-uv.toml", True)
     assert config.members == expected
+
+
+def test_parse_parallel_option() -> None:
+    """Parse parallel option from config (issue #92)."""
+    from ds.parsers.ds_toml import parse_task
+
+    # Parse task with parallel=true
+    task = parse_task({"composite": ["a", "b"], "parallel": True}, "build")
+    assert task.parallel is True
+
+    # Parse task without parallel (defaults to False)
+    task = parse_task({"composite": ["a", "b"]}, "build")
+    assert task.parallel is False
+
+    # Parse task with parallel=false explicitly
+    task = parse_task({"composite": ["a", "b"], "parallel": False}, "build")
+    assert task.parallel is False
