@@ -200,3 +200,12 @@ def test_workspace_same_name() -> None:
     with TempEnv(DS_INTERNAL__FILE=None):
         with pushd(PATH_WK):
             main(split("ds --file 'package.json' -w*"))
+
+
+def test_workspace_max_depth() -> None:
+    """Exceed maximum workspace nesting depth (issue #114)."""
+    with TempEnv(DS_INTERNAL__FILE=None, DS_INTERNAL__WORKSPACE_DEPTH="10"):
+        with pushd(PATH_WK):
+            with pytest.raises(SystemExit) as e:
+                main(split("ds -w*"))
+            assert e.value.code == 1

@@ -33,6 +33,9 @@ from .tasks import print_tree
 __version__ = "1.3.0"
 __pubdate__ = "2024-08-29T13:08:58Z"
 
+MAX_WORKSPACE_DEPTH = 10
+"""Maximum nesting depth for workspace recursion."""
+
 log_normal = "%(levelname)s: %(message)s"
 log_debug = "%(name)s.%(funcName)s: %(levelname)s: %(message)s"
 log_verbose = " %(filename)s:%(lineno)s %(funcName)s(): %(levelname)s: %(message)s"
@@ -100,6 +103,12 @@ def load_config(args: Args) -> Config:
 
 def run_workspace(args: Args, config: Config) -> None:
     """Run tasks in the context of each member."""
+    # Check workspace recursion depth
+    depth = int(ENV.get("DS_INTERNAL__WORKSPACE_DEPTH", "0"))
+    if depth >= MAX_WORKSPACE_DEPTH:
+        log.error(f"Maximum workspace nesting depth ({MAX_WORKSPACE_DEPTH}) exceeded")
+        sys.exit(1)
+
     members = {m: False for m, i in config.members.items() if i}  # reset
     members = glob_paths(
         config.path.parent,
@@ -124,7 +133,10 @@ def run_workspace(args: Args, config: Config) -> None:
             member_args.file = None
 
         try:
-            with TempEnv(DS_INTERNAL__FILE=None):
+            with TempEnv(
+                DS_INTERNAL__FILE=None,
+                DS_INTERNAL__WORKSPACE_DEPTH=str(depth + 1),
+            ):
                 with pushd(member):
                     cli_args = member_args.as_argv()
                     print(f"$ pushd {member}", flush=True)
