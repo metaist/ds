@@ -232,6 +232,9 @@ def read_env(text: str) -> dict[str, str]:
             continue  # skip blank lines and comments
 
         _, line = starts(line, "export ")  # remove any export prefix
+        if "=" not in line:
+            log.warning(f"Skipping malformed line in env file (no '='): {line!r}")
+            continue
         key, value = line.split("=", 1)
 
         key = key.strip()

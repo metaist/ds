@@ -5,6 +5,7 @@ import pytest
 
 # pkg
 from ds.env import interpolate_args
+from ds.env import read_env
 from ds.env import wrap_cmd
 from ds.symbols import ARG_PREFIX
 from ds.symbols import ARG_REST
@@ -86,6 +87,15 @@ def test_shell_metachars_warning(caplog: pytest.LogCaptureFixture) -> None:
     # Should not warn for safe arguments
     interpolate_args("echo", ["hello", "world"])
     assert "shell metacharacters" not in caplog.text
+
+
+def test_read_env_malformed_line(caplog: pytest.LogCaptureFixture) -> None:
+    """Skip lines without '=' and warn (issue #104)."""
+    # Should skip malformed lines and warn
+    result = read_env("VALID=value\nmalformed line without equals\nALSO_VALID=ok")
+    assert result == {"VALID": "value", "ALSO_VALID": "ok"}
+    assert "malformed line" in caplog.text
+    assert "malformed line without equals" in caplog.text
 
 
 def test_wrap_cmd() -> None:
