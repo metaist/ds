@@ -17,9 +17,13 @@ from .env import wrap_cmd
 from .symbols import starts
 from .symbols import TASK_COMPOSITE
 from .symbols import TASK_KEEP_GOING
-from .symbols import TREE_INDENT
-from .symbols import TREE_PAR
-from .symbols import TREE_SEQ
+from .symbols import TREE_CONT_NONE
+from .symbols import TREE_CONT_SEQ
+from .symbols import TREE_PAR_END
+from .symbols import TREE_PAR_MID
+from .symbols import TREE_SEEN
+from .symbols import TREE_SEQ_END
+from .symbols import TREE_SEQ_MID
 
 __all__ = [
     "Task",
@@ -190,18 +194,38 @@ def check_cycles(tasks: Tasks) -> list[str]:
     return list(graphlib.TopologicalSorter(graph).static_order())
 
 
-def print_tasks(path: Path, tasks: Tasks) -> None:
-    """Pretty print task names."""
-    count = len(tasks)
-    plural = "s" if count != 1 else ""
+def print_tasks(path: Path, tasks: Tasks, task: Task | None = None) -> None:
+    """Pretty print task names.
 
+    Args:
+        path: Path to the config file.
+        tasks: All tasks from the config.
+        task: Optional specific task to visualize. If None, show all tasks.
+    """
     path_abs = str(path.resolve())
     path_rel = relpath(path, get_original_cwd())
     location = path_abs if len(path_abs) < len(path_rel) else path_rel
 
-    print(f"# Found {count} task{plural} in {location}")
-    for task in tasks.values():
-        task.pprint()
+    if task and task.depends:
+        # Show only CLI-specified tasks
+        print(f"# Task list from {location}")
+        for dep in task.depends:
+            # Resolve the task name
+            if dep.name == TASK_COMPOSITE:
+                dep_name = split(dep.cmd)[0] if dep.cmd else ""
+            else:
+                dep_name = dep.name or dep.cmd
+            if resolved := tasks.get(dep_name):
+                resolved.pprint()
+            else:
+                dep.pprint()
+    else:
+        # Show all tasks
+        count = len(tasks)
+        plural = "s" if count != 1 else ""
+        print(f"# Found {count} task{plural} in {location}")
+        for t in tasks.values():
+            t.pprint()
 
 
 def print_tree(path: Path, tasks: Tasks, task: Task | None = None) -> None:
@@ -216,28 +240,46 @@ def print_tree(path: Path, tasks: Tasks, task: Task | None = None) -> None:
     path_rel = relpath(path, get_original_cwd())
     location = path_abs if len(path_abs) < len(path_rel) else path_rel
 
-    if task:
-        # Show tree for the specified task
+    if task and task.depends:
+        # Show tree for CLI-specified tasks (they're connected as a run)
         print(f"# Task tree from {location}")
         _print_tree_deps(task, tasks, prefix="")
     else:
-        # Show all tasks
+        # Show all tasks compactly (independent, no connectors at top level)
         count = len(tasks)
         plural = "s" if count != 1 else ""
         print(f"# Found {count} task{plural} in {location}")
         for name, t in tasks.items():
-            print()
-            if t.help:
-                print("#", t.help)
             print(name)
             _print_tree_deps(t, tasks, prefix="")
 
 
-def _print_tree_deps(task: Task, all_tasks: Tasks, prefix: str) -> None:
-    """Recursively print task dependencies as a tree."""
-    for dep in task.depends:
-        # Connector based on parent's parallel setting
-        connector = TREE_PAR if task.parallel else TREE_SEQ
+def _print_tree_deps(
+    task: Task,
+    all_tasks: Tasks,
+    prefix: str,
+    seen: set[str] | None = None,
+) -> None:
+    """Recursively print task dependencies as a tree.
+
+    Args:
+        task: The task whose dependencies to print.
+        all_tasks: All tasks from the config (for resolving references).
+        prefix: Current indentation prefix.
+        seen: Set of already-displayed task names (for deduplication).
+    """
+    if seen is None:
+        seen = set()
+
+    deps = task.depends
+    for i, dep in enumerate(deps):
+        is_last = i == len(deps) - 1
+
+        # Connector based on parent's parallel setting and position
+        if task.parallel:
+            connector = TREE_PAR_END if is_last else TREE_PAR_MID
+        else:
+            connector = TREE_SEQ_END if is_last else TREE_SEQ_MID
 
         # Get display name (task name or command)
         if dep.name == TASK_COMPOSITE:
@@ -245,13 +287,23 @@ def _print_tree_deps(task: Task, all_tasks: Tasks, prefix: str) -> None:
         else:
             dep_name = dep.name or dep.cmd
 
-        print(f"{prefix}{connector}{dep_name}")
-
-        # Resolve referenced task for recursion
+        # Resolve referenced task for checking dependencies
         resolved = None
         if dep.name == TASK_COMPOSITE and dep_name:
             resolved = all_tasks.get(dep_name)
-
         child = resolved if resolved else dep
+
+        # Check if we've already shown this task's subtree
+        # Only mark with (*) if the task has dependencies (something to skip)
+        already_seen = dep_name in seen
+        if already_seen and child.depends:
+            print(f"{prefix}{connector}{dep_name} {TREE_SEEN}")
+            continue
+
+        print(f"{prefix}{connector}{dep_name}")
+        seen.add(dep_name)
+
         if child.depends:
-            _print_tree_deps(child, all_tasks, prefix + TREE_INDENT)
+            # Choose continuation prefix based on whether this is the last item
+            child_prefix = prefix + (TREE_CONT_NONE if is_last else TREE_CONT_SEQ)
+            _print_tree_deps(child, all_tasks, child_prefix, seen)

@@ -51,14 +51,30 @@ TASK_KEEP_GOING = "+"
 TASK_SHARED = "_"
 """Shared options task name."""
 
-TREE_SEQ = "|- "
-"""Sequential task connector for tree display."""
+# Tree display symbols (box-drawing characters)
+TREE_SEQ_MID = "├─ "
+"""Sequential task connector (has siblings below)."""
 
-TREE_PAR = "-- "
-"""Parallel task connector for tree display."""
+TREE_SEQ_END = "└─ "
+"""Sequential task connector (last item)."""
 
-TREE_INDENT = "   "
-"""Indentation for nested tree levels."""
+TREE_PAR_MID = "╞═ "
+"""Parallel task connector (has siblings below)."""
+
+TREE_PAR_END = "╘═ "
+"""Parallel task connector (last item)."""
+
+TREE_CONT_SEQ = "│  "
+"""Vertical continuation for sequential tasks."""
+
+TREE_CONT_PAR = "│  "
+"""Vertical continuation for parallel tasks."""
+
+TREE_CONT_NONE = "   "
+"""No continuation (after last item)."""
+
+TREE_SEEN = "(*)"
+"""Marker for already-displayed task."""
 
 
 def starts(haystack: str, needle: str) -> tuple[bool, str]:

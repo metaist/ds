@@ -43,6 +43,11 @@ def test_list() -> None:
         main(split(f"ds {arg}"))
 
 
+def test_list_with_tasks() -> None:
+    """--list with specific tasks shows list for those tasks"""
+    main(split("ds --list test"))
+
+
 def test_tree() -> None:
     """--tree shows task dependency tree"""
     main(split("ds -t"))

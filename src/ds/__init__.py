@@ -214,7 +214,8 @@ def main(argv: list[str] | None = None) -> None:
                 run_workspace(args, config)
                 return
             if args.list_:
-                print_tasks(config.path, config.tasks)
+                # If tasks specified, show list for those; otherwise show all
+                print_tasks(config.path, config.tasks, args.task if args.task.depends else None)
                 return
             if args.tree:
                 # If tasks specified, show tree for those; otherwise show all
