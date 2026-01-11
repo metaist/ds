@@ -247,7 +247,9 @@ class Runner:
     def cleanup(self) -> None:
         """Cleanup any child processes."""
         log.debug("cleaning up child processes")
-        for process in self.processes:
+        # Copy list to avoid race condition if processes are added during cleanup
+        processes = list(self.processes)
+        for process in processes:
             try:
                 process.terminate()
                 process.wait(timeout=3)
