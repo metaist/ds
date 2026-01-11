@@ -189,3 +189,31 @@ def test_parallel_does_not_propagate() -> None:
     assert "echo C" in parallel_tasks, "C should be parallel (direct child)"
     assert "echo D" not in parallel_tasks, "D should not be parallel (grandchild)"
     assert "echo E" not in parallel_tasks, "E should not be parallel (grandchild)"
+
+
+def test_parallel_sync_point(caplog: pytest.LogCaptureFixture) -> None:
+    """Parallel children complete before parent continues (issue #92)."""
+    import logging
+
+    caplog.set_level(logging.DEBUG)
+
+    from ds.symbols import TASK_COMPOSITE
+
+    # Parent with parallel=True and a cmd that runs after children
+    parent = Task(
+        name="build",
+        parallel=True,
+        cmd="echo done",
+        depends=[
+            Task(name=TASK_COMPOSITE, cmd="echo A"),
+            Task(name=TASK_COMPOSITE, cmd="echo B"),
+        ],
+    )
+
+    args = Args()
+    runner = Runner(args, {})
+    runner.run(parent, Task())
+    runner.cleanup()
+
+    # Verify sync point was hit (waiting for parallel tasks)
+    assert "waiting for 2 parallel tasks" in caplog.text

@@ -175,10 +175,17 @@ class Runner:
         # Pass task.parallel to children, but don't let grandchildren inherit it
         # This way: A(parallel=True) -> B,C run parallel; B -> D,E run sequential
         child_override = replace(resolved, parallel=task.parallel)
+        processes_before = len(self.processes)
         for dep in task.depends:
             # NOTE: we do not save the return code of any dependencies
             # because they will fail on their own merits.
             self.run(dep, child_override)
+
+        # Sync point: wait for parallel children to complete before parent continues
+        if task.parallel and len(self.processes) > processes_before:
+            log.debug(f"waiting for {len(self.processes) - processes_before} parallel tasks")
+            for proc in self.processes[processes_before:]:
+                proc.wait()
         # dependencies ran
 
         if not task.cmd.strip():  # nothing to do
