@@ -135,3 +135,57 @@ def test_node_modules_already_in_path() -> None:
                 result = find_project(args, task)
                 # node_bin should not be added again since it's already in PATH
                 assert "_env" not in result.__dict__ or "PATH" not in result._env
+
+
+def test_parallel_does_not_propagate() -> None:
+    """Parallel flag should not propagate to grandchildren (issue #92)."""
+    from ds.symbols import TASK_COMPOSITE
+
+    # Create task hierarchy:
+    # A (parallel=True) -> [B, C]
+    # B -> [D, E] (should run sequentially, not parallel)
+    tasks = {
+        "D": Task(name="D", cmd="echo D"),
+        "E": Task(name="E", cmd="echo E"),
+        "B": Task(
+            name="B",
+            depends=[
+                Task(name=TASK_COMPOSITE, cmd="D"),
+                Task(name=TASK_COMPOSITE, cmd="E"),
+            ],
+        ),
+        "C": Task(name="C", cmd="echo C"),
+    }
+
+    # Parent task with parallel=True
+    parent = Task(
+        name="A",
+        parallel=True,
+        depends=[
+            Task(name=TASK_COMPOSITE, cmd="B"),
+            Task(name=TASK_COMPOSITE, cmd="C"),
+        ],
+    )
+
+    args = Args()
+    runner = Runner(args, tasks)
+
+    # Track which tasks ran with parallel=True
+    parallel_tasks: list[str] = []
+    original_run_in_shell = runner.run_in_shell
+
+    def tracking_run_in_shell(task: Task, resolved: Task) -> Task:
+        if resolved.parallel:
+            parallel_tasks.append(resolved.cmd.strip())
+        return original_run_in_shell(task, resolved)
+
+    runner.run_in_shell = tracking_run_in_shell  # type: ignore[method-assign]
+
+    runner.run(parent, Task())
+    runner.cleanup()
+
+    # C should run in parallel (direct child of parallel parent)
+    # D and E should NOT run in parallel (grandchildren)
+    assert "echo C" in parallel_tasks, "C should be parallel (direct child)"
+    assert "echo D" not in parallel_tasks, "D should not be parallel (grandchild)"
+    assert "echo E" not in parallel_tasks, "E should not be parallel (grandchild)"

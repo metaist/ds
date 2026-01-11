@@ -172,10 +172,13 @@ class Runner:
 
         self.run_pre_post(task, resolved, "pre")
 
+        # Pass task.parallel to children, but don't let grandchildren inherit it
+        # This way: A(parallel=True) -> B,C run parallel; B -> D,E run sequential
+        child_override = replace(resolved, parallel=task.parallel)
         for dep in task.depends:
             # NOTE: we do not save the return code of any dependencies
             # because they will fail on their own merits.
-            self.run(dep, resolved)
+            self.run(dep, child_override)
         # dependencies ran
 
         if not task.cmd.strip():  # nothing to do
