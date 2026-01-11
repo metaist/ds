@@ -67,6 +67,9 @@ Options:
   -l, --list
     List available tasks and exit.
 
+  -t, --tree
+    Show task dependency tree and exit.
+
   --no-config
     Do not search for or load a configuration file. Supersedes `--file`.
 
@@ -164,6 +167,9 @@ class Args:
     list_: bool = False
     """Whether to show available tasks"""
 
+    tree: bool = False
+    """Whether to show task dependency tree."""
+
     cwd: Path | None = None
     """Path to run tasks in."""
 
@@ -215,6 +221,8 @@ class Args:
                 result.append(option)
         if self.list_:
             result.append("--list")
+        if self.tree:
+            result.append("--tree")
 
         # path
         for option in ["--cwd", "--env-file", "--file"]:
@@ -267,6 +275,8 @@ class Args:
                     args.help = True
                 elif arg in ["-l", "--list"]:
                     args.list_ = True
+                elif arg in ["-t", "--tree"]:
+                    args.tree = True
 
                 # path
                 elif arg in ["--cwd", "--env-file", "--file"]:
@@ -318,7 +328,7 @@ class Args:
         args.task.env_file = args.env_file
         args.task.parallel = args.parallel
 
-        if not args.help and not args.version and not args.task.depends:
+        if not args.help and not args.version and not args.tree and not args.task.depends:
             # default action
             args.list_ = True
 

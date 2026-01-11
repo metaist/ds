@@ -10,6 +10,7 @@ import pytest
 from ds.args import Args
 from ds.runner import Runner
 from ds.tasks import print_tasks
+from ds.tasks import print_tree
 from ds.tasks import Task
 from ds.tasks import Tasks
 from ds.parsers.ds_toml import parse_task
@@ -30,6 +31,29 @@ def test_print() -> None:
 
     print_tasks(Path(), {})
     print_tasks(Path(), {"echo": task})
+
+
+def test_print_tree() -> None:
+    """Print task tree."""
+    # empty tasks
+    print_tree(Path(), {})
+
+    # simple tasks
+    tasks: Tasks = {
+        "build": parse_task("echo build"),
+        "clean": parse_task("rm -rf build"),
+    }
+    print_tree(Path(), tasks)
+
+    # nested composite tasks: A -> B -> D, E
+    tasks = {
+        "D": parse_task("echo D"),
+        "E": parse_task("echo E"),
+        "B": parse_task(["D", "E"]),
+        "C": parse_task("echo C"),
+        "A": parse_task(["B", "C"]),
+    }
+    print_tree(Path(), tasks)
 
 
 def test_as_args() -> None:

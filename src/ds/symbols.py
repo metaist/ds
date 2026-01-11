@@ -51,6 +51,15 @@ TASK_KEEP_GOING = "+"
 TASK_SHARED = "_"
 """Shared options task name."""
 
+TREE_SEQ = "|- "
+"""Sequential task connector for tree display."""
+
+TREE_PAR = "-- "
+"""Parallel task connector for tree display."""
+
+TREE_INDENT = "   "
+"""Indentation for nested tree levels."""
+
 
 def starts(haystack: str, needle: str) -> tuple[bool, str]:
     """Return whether `haystack` starts with `needle` and a stripped version.

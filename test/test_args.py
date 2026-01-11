@@ -118,6 +118,12 @@ def test_explicit_task_args() -> None:
     )
 
 
+def test_parse_tree() -> None:
+    """Parse --tree option."""
+    assert Args.parse(split("-t")) == Args(tree=True)
+    assert Args.parse(split("--tree")) == Args(tree=True)
+
+
 def test_as_argv() -> None:
     """Test converting `Args` to `argv`."""
     assert Args(help=True).as_argv() == ["ds", "--help"]
@@ -126,6 +132,7 @@ def test_as_argv() -> None:
     assert Args(dry_run=True).as_argv() == ["ds", "--dry-run"]
     assert Args(parallel=True).as_argv() == ["ds", "--parallel"]
     assert Args(list_=True).as_argv() == ["ds", "--list"]
+    assert Args(tree=True).as_argv() == ["ds", "--tree"]
     assert Args(cwd=Path()).as_argv() == ["ds", "--cwd", str(Path())]
     assert Args(file=Path()).as_argv() == ["ds", "--file", str(Path())]
 

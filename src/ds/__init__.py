@@ -30,6 +30,7 @@ from .searchers import glob_paths
 from .tasks import check_cycles
 from .tasks import CycleError
 from .tasks import print_tasks
+from .tasks import print_tree
 
 __version__ = "1.3.0"
 __pubdate__ = "2024-08-29T13:08:58Z"
@@ -188,6 +189,9 @@ def main(argv: list[str] | None = None) -> None:
             return
         if args.list_:
             print_tasks(config.path, config.tasks)
+            return
+        if args.tree:
+            print_tree(config.path, config.tasks)
             return
         runner.tasks = config.tasks
 

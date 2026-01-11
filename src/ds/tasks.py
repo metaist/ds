@@ -16,6 +16,9 @@ import logging
 from .env import wrap_cmd
 from .symbols import TASK_COMPOSITE
 from .symbols import TASK_KEEP_GOING
+from .symbols import TREE_INDENT
+from .symbols import TREE_PAR
+from .symbols import TREE_SEQ
 
 
 log = logging.getLogger(__name__)
@@ -158,3 +161,45 @@ def print_tasks(path: Path, tasks: Tasks) -> None:
     print(f"# Found {count} task{plural} in {location}")
     for task in tasks.values():
         task.pprint()
+
+
+def print_tree(path: Path, tasks: Tasks) -> None:
+    """Print task dependency tree."""
+    count = len(tasks)
+    plural = "s" if count != 1 else ""
+
+    path_abs = str(path.resolve())
+    path_rel = relpath(path, ORIGINAL_CWD)
+    location = path_abs if len(path_abs) < len(path_rel) else path_rel
+
+    print(f"# Found {count} task{plural} in {location}")
+    for name, task in tasks.items():
+        print()
+        if task.help:
+            print("#", task.help)
+        print(name)
+        _print_tree_deps(task, tasks, prefix="")
+
+
+def _print_tree_deps(task: Task, all_tasks: Tasks, prefix: str) -> None:
+    """Recursively print task dependencies as a tree."""
+    for dep in task.depends:
+        # Connector based on parent's parallel setting
+        connector = TREE_PAR if task.parallel else TREE_SEQ
+
+        # Get display name (task name or command)
+        if dep.name == TASK_COMPOSITE:
+            dep_name = split(dep.cmd)[0] if dep.cmd else ""
+        else:
+            dep_name = dep.name or dep.cmd
+
+        print(f"{prefix}{connector}{dep_name}")
+
+        # Resolve referenced task for recursion
+        resolved = None
+        if dep.name == TASK_COMPOSITE and dep_name:
+            resolved = all_tasks.get(dep_name)
+
+        child = resolved if resolved else dep
+        if child.depends:
+            _print_tree_deps(child, all_tasks, prefix + TREE_INDENT)
