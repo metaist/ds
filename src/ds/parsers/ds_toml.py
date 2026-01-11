@@ -148,7 +148,17 @@ def parse_composite(task: Task, item: list[str]) -> Task:
     for step in item:
         keep_going, cmd = starts(step, TASK_KEEP_GOING)
         depends.append(
-            replace(task, name=TASK_COMPOSITE, cmd=cmd, keep_going=keep_going)
+            replace(
+                task,
+                name=TASK_COMPOSITE,
+                cmd=cmd,
+                keep_going=keep_going,
+                # Ensure new mutable objects to avoid shallow copy issues
+                depends=[],
+                args=[],
+                env={},
+                _env={},
+            )
         )
     task.depends = depends
     return task

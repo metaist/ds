@@ -29,8 +29,16 @@ Tasks = dict[str, "Task"]
 CycleError = graphlib.CycleError
 """Error thrown where there is a cycle in the tasks."""
 
-ORIGINAL_CWD = Path.cwd()
-"""Save a reference to the original working directory."""
+_ORIGINAL_CWD: Path | None = None
+"""Lazily initialized original working directory."""
+
+
+def get_original_cwd() -> Path:
+    """Return the original working directory, capturing it on first call."""
+    global _ORIGINAL_CWD
+    if _ORIGINAL_CWD is None:
+        _ORIGINAL_CWD = Path.cwd()
+    return _ORIGINAL_CWD
 
 
 @dataclass
@@ -155,7 +163,7 @@ def print_tasks(path: Path, tasks: Tasks) -> None:
     plural = "s" if count != 1 else ""
 
     path_abs = str(path.resolve())
-    path_rel = relpath(path, ORIGINAL_CWD)
+    path_rel = relpath(path, get_original_cwd())
     location = path_abs if len(path_abs) < len(path_rel) else path_rel
 
     print(f"# Found {count} task{plural} in {location}")
@@ -169,7 +177,7 @@ def print_tree(path: Path, tasks: Tasks) -> None:
     plural = "s" if count != 1 else ""
 
     path_abs = str(path.resolve())
-    path_rel = relpath(path, ORIGINAL_CWD)
+    path_rel = relpath(path, get_original_cwd())
     location = path_abs if len(path_abs) < len(path_rel) else path_rel
 
     print(f"# Found {count} task{plural} in {location}")

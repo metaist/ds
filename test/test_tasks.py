@@ -9,6 +9,7 @@ import pytest
 # pkg
 from ds.args import Args
 from ds.runner import Runner
+from ds.tasks import get_original_cwd
 from ds.tasks import print_tasks
 from ds.tasks import print_tree
 from ds.tasks import Task
@@ -83,6 +84,34 @@ def test_print_tree_empty_cmd() -> None:
     main_task = Task(name="main", depends=[dep])
     tasks: Tasks = {"main": main_task}
     print_tree(Path(), tasks)
+
+
+def test_get_original_cwd() -> None:
+    """get_original_cwd() returns a valid path (issue #106)."""
+    cwd = get_original_cwd()
+    assert isinstance(cwd, Path)
+    assert cwd.exists()
+    # Calling again returns the same cached value
+    assert get_original_cwd() is cwd
+
+
+def test_composite_no_shared_mutables() -> None:
+    """Composite tasks should not share mutable fields (issue #105)."""
+    tasks: Tasks = {
+        "a": parse_task("echo a"),
+        "b": parse_task("echo b"),
+        "all": parse_task(["a", "b"]),
+    }
+    # Modify one dependency's mutable fields
+    dep1 = tasks["all"].depends[0]
+    dep2 = tasks["all"].depends[1]
+
+    dep1.args.append("modified")
+    dep1.env["KEY"] = "value"
+
+    # The other dependency should not be affected
+    assert dep2.args == []
+    assert dep2.env == {}
 
 
 def test_as_args() -> None:
