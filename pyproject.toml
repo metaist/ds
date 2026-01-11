@@ -77,6 +77,9 @@ exclude_also = ["no cover: start(?s:.)*?no cover: stop"]
 [tool.mypy]
 disable_error_code = "unused-ignore"
 
+[tool.pyrefly]
+search_path = ["src", "."]
+
 [tool.pyright]
 exclude = ["**/_vendor/**"]
 
