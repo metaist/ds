@@ -131,6 +131,58 @@ target:
     }
 
 
+def test_makefile_automatic_variables() -> None:
+    """Test automatic variable expansion (issue #112)."""
+    # $@ - target name
+    assert loads("target:\n\techo $@") == {
+        "recipes": {"target": {"composite": [], "shell": "echo target\n", "verbatim": True}}
+    }
+
+    # $< - first prerequisite
+    assert loads("target: dep1 dep2\n\techo $<") == {
+        "recipes": {
+            "target": {
+                "composite": ["dep1", "dep2"],
+                "shell": "echo dep1\n",
+                "verbatim": True,
+            }
+        }
+    }
+
+    # $^ - all prerequisites, no duplicates (order preserved)
+    assert loads("target: dep1 dep2 dep1\n\techo $^") == {
+        "recipes": {
+            "target": {
+                "composite": ["dep1", "dep2", "dep1"],
+                "shell": "echo dep1 dep2\n",
+                "verbatim": True,
+            }
+        }
+    }
+
+    # $+ - all prerequisites, with duplicates
+    assert loads("target: dep1 dep2 dep1\n\techo $+") == {
+        "recipes": {
+            "target": {
+                "composite": ["dep1", "dep2", "dep1"],
+                "shell": "echo dep1 dep2 dep1\n",
+                "verbatim": True,
+            }
+        }
+    }
+
+    # $? - all prerequisites (ds doesn't track "newer")
+    assert loads("target: dep1 dep2\n\techo $?") == {
+        "recipes": {
+            "target": {
+                "composite": ["dep1", "dep2"],
+                "shell": "echo dep1 dep2\n",
+                "verbatim": True,
+            }
+        }
+    }
+
+
 def test_makefile_quoted_hash() -> None:
     """Hash inside quotes should not be treated as comment (issue #113)."""
     # hash in double quotes preserved

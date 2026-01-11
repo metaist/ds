@@ -31,7 +31,11 @@ def parse_tasks(config: Config, key: str = "recipes") -> Tasks:
 def loads(text: str, debug: bool = False) -> NestedDict:
     """Load a `Makefile`."""
     # debug = True
-    log.warning("EXPERIMENTAL: Parsing simplified `Makefile` format.")
+    log.warning(
+        "EXPERIMENTAL: Parsing simplified `Makefile` format. "
+        "Only automatic variables ($@, $<, $?, $^, $+) are supported. "
+        "User-defined variables and pattern rules are not supported."
+    )
 
     result: NestedDict = {}
     prefix = "\t"
@@ -172,15 +176,18 @@ def loads(text: str, debug: bool = False) -> NestedDict:
                     _log(f"{n:03}|>>>", "start", target, result[target])
 
     # https://www.gnu.org/software/make/manual/make.html#Automatic-Variables
+    # Supported: $@, $<, $?, $^, $+
+    # Not supported: $*, $|, $(@D), $(@F), $(<D), $(<F), $(VAR), etc.
     for name, rule in result.items():
         cmd = rule["shell"]
         deps = rule["composite"]
 
-        cmd = cmd.replace("$@", name)  # name of the rule
+        cmd = cmd.replace("$@", name)  # target name
         if deps:
             cmd = cmd.replace("$<", deps[0])  # first prerequisite
-        cmd = cmd.replace("$?", " ".join(deps))  # all "newer" prerequisites
-        cmd = cmd.replace("$^", " ".join(set(deps)))  # all prerequisites
+        cmd = cmd.replace("$?", " ".join(deps))  # prerequisites (NOTE: ds doesn't track "newer")
+        cmd = cmd.replace("$^", " ".join(dict.fromkeys(deps)))  # prerequisites, no duplicates
+        cmd = cmd.replace("$+", " ".join(deps))  # prerequisites, with duplicates
         rule["shell"] = cmd
 
     # print(result)
