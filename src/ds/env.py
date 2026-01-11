@@ -46,6 +46,9 @@ RE_SPLIT = re.compile(
 DEFAULT_WIDTH = 80
 """Default width for wrapping commands."""
 
+MAX_WRAP_LENGTH = 10_000
+"""Maximum command length to attempt wrapping (prevents ReDoS)."""
+
 try:
     DEFAULT_WIDTH = min(100, max(80, get_terminal_size().columns - 2))
 except OSError:
@@ -257,11 +260,17 @@ def read_env(text: str) -> dict[str, str]:
 
 def wrap_cmd(cmd: str, width: int = DEFAULT_WIDTH) -> str:
     """Return a nicely wrapped command."""
+    cmd = cmd.replace(SHELL_CONTINUE, "").strip()
+
+    # Skip wrapping for very long commands (prevents potential ReDoS)
+    if len(cmd) > MAX_WRAP_LENGTH:
+        return cmd
+
     result: list[str] = []
     line: str = ""
     space: str = " " * 2
     item: str
-    for item in RE_SPLIT.split(cmd.replace(SHELL_CONTINUE, "").strip()):
+    for item in RE_SPLIT.split(cmd):
         item = item.strip()
         if not item:
             continue

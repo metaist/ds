@@ -145,3 +145,19 @@ def test_wrap_cmd() -> None:
     ) == (
         "$ echo \\\n    'This is a really long string that cannot be broken.' \\\n    ;"
     )
+
+
+def test_wrap_cmd_length_limit() -> None:
+    """Skip wrapping for very long commands (issue #116)."""
+    from ds.env import MAX_WRAP_LENGTH
+
+    # Normal length command is wrapped
+    short_cmd = "echo hello world"
+    assert wrap_cmd(short_cmd) == "echo hello world"
+
+    # Command exceeding MAX_WRAP_LENGTH is returned as-is (just stripped)
+    long_cmd = "echo " + "x" * (MAX_WRAP_LENGTH + 100)
+    result = wrap_cmd(long_cmd)
+    # Should return the command without wrapping
+    assert result == long_cmd.strip()
+    assert "\\" not in result  # no line continuation added
