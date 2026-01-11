@@ -139,6 +139,13 @@ def _opt_prop(option: str) -> str:
     return option[2:].replace("-", "_")
 
 
+def _pop_arg(argv: list[str], option: str) -> str:
+    """Pop and return the next argument, or raise ValueError if missing."""
+    if not argv:
+        raise ValueError(f"Option '{option}' requires an argument")
+    return argv.pop(0)
+
+
 @dataclass
 class Args:
     """Type-checked arguments."""
@@ -281,16 +288,16 @@ class Args:
                 # path
                 elif arg in ["--cwd", "--env-file", "--file"]:
                     attr = _opt_prop(arg)
-                    setattr(args, attr, Path(argv.pop(0)).resolve())
+                    setattr(args, attr, Path(_pop_arg(argv, arg)).resolve())
                 elif arg == "-f":
-                    args.file = Path(argv.pop(0)).resolve()
+                    args.file = Path(_pop_arg(argv, "-f")).resolve()
 
                 # other
                 elif arg in ["-e", "--env"]:
-                    key, val = argv.pop(0).split("=")
+                    key, val = _pop_arg(argv, arg).split("=")
                     args.env[key] = val
                 elif arg in ["-w", "--workspace"]:
-                    args.workspace.append(argv.pop(0))
+                    args.workspace.append(_pop_arg(argv, arg))
                 elif arg == "-w*":  # special shorthand
                     args.workspace.append("*")
                 else:

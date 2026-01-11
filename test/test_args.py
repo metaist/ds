@@ -4,6 +4,9 @@
 from pathlib import Path
 from shlex import split
 
+# lib
+import pytest
+
 # pkg
 from ds.args import Args
 from ds.symbols import ARG_BEG
@@ -122,6 +125,22 @@ def test_parse_tree() -> None:
     """Parse --tree option."""
     assert Args.parse(split("-t")) == Args(tree=True)
     assert Args.parse(split("--tree")) == Args(tree=True)
+
+
+def test_missing_option_argument() -> None:
+    """Raise ValueError when option argument is missing (issue #98)."""
+    with pytest.raises(ValueError, match="'--file' requires an argument"):
+        Args.parse(split("--file"))
+    with pytest.raises(ValueError, match="'-f' requires an argument"):
+        Args.parse(split("-f"))
+    with pytest.raises(ValueError, match="'--cwd' requires an argument"):
+        Args.parse(split("--cwd"))
+    with pytest.raises(ValueError, match="'--env-file' requires an argument"):
+        Args.parse(split("--env-file"))
+    with pytest.raises(ValueError, match="'-e' requires an argument"):
+        Args.parse(split("-e"))
+    with pytest.raises(ValueError, match="'-w' requires an argument"):
+        Args.parse(split("-w"))
 
 
 def test_as_argv() -> None:
