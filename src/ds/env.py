@@ -25,6 +25,9 @@ log = logging.getLogger(__name__)
 RE_ARGS = re.compile(r"(?:\$(@|\d+)|\$\{(@|\d+)(?::-(.*?))?\})")
 """Regex for matching an argument to be interpolated."""
 
+RE_SHELL_METACHARS = re.compile(r"[;&|`$\\\"'<>(){}*?#!]")
+"""Regex for detecting shell metacharacters in arguments."""
+
 RE_EXPAND = re.compile(r"\$(\w+|\{[^}]*\})", re.ASCII)
 """Regex for finding variable expansions."""
 
@@ -51,6 +54,15 @@ except OSError:
 
 def interpolate_args(cmd: str, args: list[str]) -> str:
     """Return `args` interpolated into `cmd`."""
+    # Warn about shell metacharacters in arguments
+    for arg in args:
+        if RE_SHELL_METACHARS.search(arg):
+            log.warning(
+                f"Argument contains shell metacharacters: {arg!r}. "
+                "This may have unintended effects."
+            )
+            break  # Only warn once per command
+
     not_done: list[str | None] = [arg for arg in args]
 
     # Replace `pdm`-style args.

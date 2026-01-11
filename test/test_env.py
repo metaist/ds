@@ -74,6 +74,20 @@ def test_pdm_args() -> None:
     assert interpolate_args(cmd, []) == "echo '--before --default --value --after'"
 
 
+def test_shell_metachars_warning(caplog: pytest.LogCaptureFixture) -> None:
+    """Warn when args contain shell metacharacters (issue #97)."""
+    # Should warn for shell metacharacters
+    interpolate_args("echo", ["; rm -rf /"])
+    assert "shell metacharacters" in caplog.text
+    assert "; rm -rf /" in caplog.text
+
+    caplog.clear()
+
+    # Should not warn for safe arguments
+    interpolate_args("echo", ["hello", "world"])
+    assert "shell metacharacters" not in caplog.text
+
+
 def test_wrap_cmd() -> None:
     """Wrap commands."""
     # basic

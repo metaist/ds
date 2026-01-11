@@ -104,6 +104,24 @@ Currently working on removing all of these (see [#46]):
 - In Progress: [Shell Completions][#44] (see [#44])
 - In Progress: [Remove Python Dependency][#46] (see [#46])
 
+## Security
+
+`ds` executes commands through your system shell with `shell=True`. This is by design—it allows shell features like pipes, redirects, and variable expansion to work naturally.
+
+**Important:** Arguments passed to tasks are interpolated directly into shell commands without escaping. If arguments come from untrusted sources (user input, environment variables, CI pipelines), they could contain shell metacharacters that alter command behavior.
+
+```bash
+# Example of potentially dangerous input
+ds echo '; rm -rf /'  # The semicolon starts a new command!
+```
+
+`ds` will warn when arguments contain shell metacharacters (`; & | ` $ \ " ' < > ( ) { } * ? # !`), but does not block execution.
+
+**Recommendations:**
+- Only run `ds` with trusted task definitions and arguments
+- Be cautious when passing external input as task arguments
+- Review task definitions in shared/public repositories before running
+
 ## Install
 
 `ds` is typically installed at the system-level to make it available across all your projects.
