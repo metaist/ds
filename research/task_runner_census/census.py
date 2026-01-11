@@ -26,7 +26,6 @@ import argparse
 import json
 import os
 import re
-import sys
 import time
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
@@ -522,7 +521,6 @@ def generate_report(state: CensusState) -> None:
 
     for feature, count in sorted(feature_counts.items(), key=lambda x: -x[1]):
         pct = (count / repos_with_runners * 100) if repos_with_runners else 0
-        desc = FEATURES.get(feature, {}).get("description", "")
         report_lines.append(f"| {feature} | {count} | {pct:.1f}% |")
 
     report_lines.extend(

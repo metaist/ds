@@ -64,6 +64,7 @@ dev = [
   "pyright",
   "pytest-cov",
   "pytest",
+  "requests", # for research scripts
   "ruff",
   # TODO 2026-10-31 @ py3.10 EOL: remove tomli
   "tomli==2.0.1", # for ty
