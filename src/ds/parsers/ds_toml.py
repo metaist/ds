@@ -195,7 +195,8 @@ def parse_task(
             task.verbatim = verbatim
 
         # since keep_going might have been set elsewhere
-        if keep_going := item.get("keep_going", KEY_MISSING) is not KEY_MISSING:
+        keep_going = item.get("keep_going", KEY_MISSING)
+        if keep_going is not KEY_MISSING:
             task.keep_going = keep_going
 
         if env := item.get("env"):

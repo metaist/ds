@@ -219,6 +219,20 @@ def test_task_keep_going() -> None:
     assert parse_tasks(Config(PATH, data)) == expected
 
 
+def test_task_keep_going_false() -> None:
+    """`keep_going: false` should be respected (issue #96)."""
+    data = nest(
+        KEY,
+        {
+            "a": {"cmd": "echo a", "keep_going": False},
+        },
+    )
+    expected = {
+        "a": replace(TASK, name="a", cmd="echo a", keep_going=False),
+    }
+    assert parse_tasks(Config(PATH, data)) == expected
+
+
 def test_task_env() -> None:
     """`env` option."""
     data = nest(KEY, {"a": {"cmd": "flask $PORT", "env": {"PORT": 8080}}})
