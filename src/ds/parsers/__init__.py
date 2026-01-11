@@ -51,8 +51,8 @@ def parse(path: Path, require_workspace: bool = False) -> Config:
                 msg = f"No tasks found in: {path}"
                 config.tasks = parser.parse_tasks(config)
             return config
-        except (NotImplementedError, KeyError, TypeError):
-            raise LookupError(msg)
+        except (NotImplementedError, KeyError, TypeError) as e:
+            raise LookupError(msg) from e
         # have workspace or don't need it
 
     raise LookupError(f"No parser found for: {path}")
