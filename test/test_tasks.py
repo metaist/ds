@@ -87,6 +87,61 @@ def test_print_tree_empty_cmd() -> None:
     print_tree(Path(), tasks)
 
 
+def test_print_tree_parallel() -> None:
+    """Print task tree with parallel tasks (line 280)."""
+    tasks: Tasks = {
+        "a": parse_task("echo a"),
+        "b": parse_task("echo b"),
+        "parallel": parse_task({"composite": ["a", "b"], "parallel": True}),
+    }
+    print_tree(Path(), tasks)
+
+
+def test_print_tree_dedup_with_deps() -> None:
+    """Print task tree with deduplication for tasks with dependencies (lines 300-301)."""
+    # B has dependencies, so when it appears twice it should show (*)
+    tasks: Tasks = {
+        "D": parse_task("echo D"),
+        "E": parse_task("echo E"),
+        "B": parse_task(["D", "E"]),  # B has deps
+        "C": parse_task(["B"]),  # C depends on B
+        "A": parse_task(["B", "C"]),  # A depends on B and C; B appears twice
+    }
+    # When printing A's tree, B should show (*) the second time under C
+    cli_task = Task(depends=[tasks["A"]])
+    print_tree(Path(), tasks, cli_task)
+
+
+def test_print_tasks_with_cli_tasks() -> None:
+    """Print tasks for CLI-specified tasks (lines 217, 221)."""
+    tasks: Tasks = {
+        "build": parse_task("echo build"),
+        "test": parse_task("echo test"),
+    }
+    # Create a CLI task with composite dependencies
+    cli_task = parse_task(["build", "test"])
+    print_tasks(Path(), tasks, cli_task)
+
+
+def test_print_tasks_with_raw_command() -> None:
+    """Print tasks with raw command not in tasks dict (line 221)."""
+    tasks: Tasks = {
+        "build": parse_task("echo build"),
+    }
+    # CLI task includes a raw command that's not a known task
+    cli_task = parse_task(["build", "echo hello"])
+    print_tasks(Path(), tasks, cli_task)
+
+
+def test_print_tasks_non_composite_dep() -> None:
+    """Print tasks with non-composite dependency (line 217)."""
+    # Create a task with a named (non-composite) dependency
+    dep_task = Task(name="dep", cmd="echo dep")
+    cli_task = Task(depends=[dep_task])
+    tasks: Tasks = {"dep": dep_task}
+    print_tasks(Path(), tasks, cli_task)
+
+
 def test_get_original_cwd() -> None:
     """get_original_cwd() returns a valid path (issue #106)."""
     cwd = get_original_cwd()
