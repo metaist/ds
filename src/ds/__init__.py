@@ -22,9 +22,9 @@ from .args import Args
 from .args import USAGE
 from .configs import Config
 from .env import TempEnv
-from .exceptions import ConfigError
-from .exceptions import DsError
-from .exceptions import TaskError
+from .exceptions import ConfigError as ConfigError
+from .exceptions import DsError as DsError
+from .exceptions import TaskError as TaskError
 from .runner import find_project
 from .runner import Runner
 from .searchers import glob_paths

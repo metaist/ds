@@ -12,6 +12,7 @@ import pytest
 from ds.args import Args
 from ds.env import TempEnv
 from ds.exceptions import ConfigError
+from ds.runner import _is_powershell
 from ds.runner import find_project
 from ds.runner import Runner
 from ds.runner import venv_activate_cmd
@@ -19,18 +20,47 @@ from ds.tasks import Task
 from ds import pushd
 
 
+def test_is_powershell() -> None:
+    """Detect PowerShell environment (issue #109)."""
+    # Not PowerShell by default (in test environment)
+    with TempEnv(SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
+        assert _is_powershell() is False
+
+    # PowerShell Core sets POWERSHELL_DISTRIBUTION_CHANNEL
+    with TempEnv(POWERSHELL_DISTRIBUTION_CHANNEL="PSCore"):
+        assert _is_powershell() is True
+
+    # SHELL contains pwsh
+    with TempEnv(SHELL="/usr/bin/pwsh", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
+        assert _is_powershell() is True
+
+    # SHELL contains powershell (case-insensitive)
+    with TempEnv(SHELL="C:\\Windows\\PowerShell\\powershell.exe", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
+        assert _is_powershell() is True
+
+    # PSModulePath with 3+ paths (fallback heuristic)
+    folders = os.pathsep.join(["path1", "path2", "path3"])
+    with TempEnv(SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=folders):
+        assert _is_powershell() is True
+
+    # PSModulePath with fewer than 3 paths - not enough
+    folders = os.pathsep.join(["path1", "path2"])
+    with TempEnv(SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=folders):
+        assert _is_powershell() is False
+
+
 def test_venv_activate() -> None:
     """Return the correct .venv command."""
     venv = Path(".venv")
-    with TempEnv(SHELL="/bin/bash"):
+    with TempEnv(SHELL="/bin/bash", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
         assert venv_activate_cmd(venv) == "source .venv/bin/activate;"
-    with TempEnv(SHELL="/bin/zsh"):
+    with TempEnv(SHELL="/bin/zsh", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
         assert venv_activate_cmd(venv) == "source .venv/bin/activate;"
-    with TempEnv(SHELL="/bin/csh"):
+    with TempEnv(SHELL="/bin/csh", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
         assert venv_activate_cmd(venv) == "source .venv/bin/activate.csh;"
-    with TempEnv(SHELL="/bin/fish"):
+    with TempEnv(SHELL="/bin/fish", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):
         assert venv_activate_cmd(venv) == "source .venv/bin/activate.fish;"
-    with TempEnv(SHELL="/bin/unknown"):  # unknown POSIX
+    with TempEnv(SHELL="/bin/unknown", POWERSHELL_DISTRIBUTION_CHANNEL=None, PSModulePath=None):  # unknown POSIX
         assert venv_activate_cmd(venv) == "source .venv/bin/activate;"
 
     # simulate PowerShell

@@ -28,14 +28,35 @@ from .tasks import Tasks
 log = logging.getLogger(__name__)
 
 
+def _is_powershell() -> bool:
+    """Detect if running in PowerShell.
+
+    Uses multiple heuristics since no single method is reliable:
+    - POWERSHELL_DISTRIBUTION_CHANNEL: set by PowerShell Core (pwsh)
+    - PSModulePath with 3+ paths: common in PowerShell environments
+    - SHELL containing 'pwsh' or 'powershell': explicit shell setting
+    """
+    # PowerShell Core sets this
+    if ENV.get("POWERSHELL_DISTRIBUTION_CHANNEL"):
+        return True
+    # Check SHELL for pwsh/powershell
+    shell = ENV.get("SHELL", "").lower()
+    if "pwsh" in shell or "powershell" in shell:
+        return True
+    # Fallback heuristic: PSModulePath with 3+ paths
+    # See: https://stackoverflow.com/a/55598796/
+    ps_module_path = ENV.get("PSModulePath", "")
+    if ps_module_path and len(ps_module_path.split(os.pathsep)) >= 3:
+        return True
+    return False
+
+
 def venv_activate_cmd(venv: Path) -> str:
     """Return command for activating a .venv
 
     See: https://docs.python.org/3/library/venv.html#how-venvs-work
     """
-    # Detecting PowerShell is not great.
-    # See: https://stackoverflow.com/a/55598796/
-    is_powershell = len(ENV.get("PSModulePath", "").split(os.pathsep)) >= 3
+    is_powershell = _is_powershell()
 
     # POSIX
     shell = ENV.get("SHELL", "")
