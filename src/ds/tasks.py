@@ -14,6 +14,7 @@ import logging
 
 # pkg
 from .env import wrap_cmd
+from .symbols import starts
 from .symbols import TASK_COMPOSITE
 from .symbols import TASK_KEEP_GOING
 from .symbols import TREE_INDENT
@@ -26,6 +27,7 @@ __all__ = [
     "CycleError",
     "get_original_cwd",
     "check_cycles",
+    "parse_composite",
     "print_tasks",
     "print_tree",
 ]
@@ -151,6 +153,28 @@ class Task:
         elif self.name:
             args.append(f"{prefix}{self.name}")
         return join(args)
+
+
+def parse_composite(task: Task, item: list[str]) -> Task:
+    """Parse composite task (list of task names/commands)."""
+    depends = []
+    for step in item:
+        keep_going, cmd = starts(step, TASK_KEEP_GOING)
+        depends.append(
+            replace(
+                task,
+                name=TASK_COMPOSITE,
+                cmd=cmd,
+                keep_going=keep_going,
+                # Ensure new mutable objects to avoid shallow copy issues
+                depends=[],
+                args=[],
+                env={},
+                _env={},
+            )
+        )
+    task.depends = depends
+    return task
 
 
 def check_cycles(tasks: Tasks) -> list[str]:

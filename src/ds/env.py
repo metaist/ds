@@ -248,6 +248,15 @@ def read_env(text: str) -> dict[str, str]:
         value = expand(value, result)
         value = expand(value)
 
+        # warn about unresolved variables (e.g., self-referential FOO=$FOO)
+        if "$" in value:
+            unresolved = RE_EXPAND.findall(value)
+            if unresolved:
+                log.warning(
+                    f"Unresolved variable(s) in {key!r}: {', '.join(unresolved)}. "
+                    "Self-referential variables are not supported."
+                )
+
         value = value.strip()
         if len(value) >= 2 and (
             (value.startswith("'") and value.endswith("'"))

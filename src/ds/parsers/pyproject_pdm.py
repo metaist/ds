@@ -16,7 +16,7 @@ from ..symbols import TASK_DISABLED
 from ..symbols import TASK_SHARED
 from ..tasks import Task
 from ..tasks import Tasks
-from .pyproject_rye import python_call
+from .utils import python_call
 
 
 log = logging.getLogger(__name__)

@@ -12,7 +12,7 @@ from ..searchers import get_key
 from ..symbols import KEY_MISSING
 from ..tasks import Task
 from ..tasks import Tasks
-from .pyproject_rye import PYTHON_CALL
+from .utils import PYTHON_CALL
 
 
 log = logging.getLogger(__name__)

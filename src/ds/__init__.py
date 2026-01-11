@@ -163,7 +163,11 @@ def run_workspace(args: Args, config: Config) -> None:
 
 def main(argv: list[str] | None = None) -> None:
     """Main entry point."""
-    args = Args.parse((argv or sys.argv)[1:])
+    try:
+        args = Args.parse((argv or sys.argv)[1:])
+    except ConfigError as e:
+        log.error(str(e))
+        sys.exit(e.exit_code)
 
     # TODO: add --verbose option
     if args.debug:

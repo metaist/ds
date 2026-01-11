@@ -98,6 +98,26 @@ def test_read_env_malformed_line(caplog: pytest.LogCaptureFixture) -> None:
     assert "malformed line without equals" in caplog.text
 
 
+def test_read_env_self_referential(caplog: pytest.LogCaptureFixture) -> None:
+    """Warn about self-referential variables (issue #118)."""
+    from ds.env import TempEnv
+
+    # Clear FOO from environment to ensure it's not set
+    with TempEnv(FOO=None):
+        result = read_env("FOO=$FOO")
+        assert result == {"FOO": "$FOO"}  # value unchanged
+        assert "Unresolved variable" in caplog.text
+        assert "FOO" in caplog.text
+        assert "Self-referential" in caplog.text
+
+    caplog.clear()
+
+    # Dollar sign not followed by valid variable name - no warning
+    result = read_env("CMD=echo $")
+    assert result == {"CMD": "echo $"}
+    assert "Unresolved variable" not in caplog.text
+
+
 def test_wrap_cmd() -> None:
     """Wrap commands."""
     # basic

@@ -12,7 +12,7 @@ from ds.configs import Config
 from ds.parsers.pyproject_poetry import loads
 from ds.parsers.pyproject_poetry import parse_tasks
 from ds.parsers.pyproject_poetry import parse_workspace
-from ds.parsers.pyproject_rye import PYTHON_CALL
+from ds.parsers.utils import PYTHON_CALL
 from ds.tasks import Task
 from test.parsers import EXAMPLE_FORMATS
 from test.parsers import EXAMPLE_WORKSPACE

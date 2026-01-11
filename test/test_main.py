@@ -181,6 +181,14 @@ def test_get_file_from_env() -> None:
         main(split("ds"))
 
 
+def test_env_file_not_found() -> None:
+    """DS_INTERNAL__FILE pointing to non-existent file (covers load_config path)."""
+    with TempEnv(DS_INTERNAL__FILE="/nonexistent/path/config.toml"):
+        with pytest.raises(SystemExit) as e:
+            main(split("ds"))
+        assert e.value.code == 1
+
+
 def test_run_workspace() -> None:
     """Run a workspace."""
     with TempEnv(DS_INTERNAL__FILE=None):

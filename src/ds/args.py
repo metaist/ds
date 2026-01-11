@@ -9,10 +9,11 @@ from shlex import join
 import dataclasses
 
 # pkg
-from .parsers.ds_toml import parse_composite
+from .exceptions import ConfigError
 from .symbols import ARG_BEG
 from .symbols import ARG_END
 from .symbols import ARG_OPTION
+from .tasks import parse_composite
 from .tasks import Task
 
 # NOTE: Used by cog in README.md
@@ -288,9 +289,15 @@ class Args:
                 # path
                 elif arg in ["--cwd", "--env-file", "--file"]:
                     attr = _opt_prop(arg)
-                    setattr(args, attr, Path(_pop_arg(argv, arg)).resolve())
+                    path = Path(_pop_arg(argv, arg)).resolve()
+                    if arg == "--file" and not path.exists():
+                        raise ConfigError(f"File not found: {path}")
+                    setattr(args, attr, path)
                 elif arg == "-f":
-                    args.file = Path(_pop_arg(argv, "-f")).resolve()
+                    path = Path(_pop_arg(argv, "-f")).resolve()
+                    if not path.exists():
+                        raise ConfigError(f"File not found: {path}")
+                    args.file = path
 
                 # other
                 elif arg in ["-e", "--env"]:

@@ -15,15 +15,13 @@ from ..symbols import TASK_COMPOSITE
 from ..symbols import TASK_DISABLED
 from ..tasks import Task
 from ..tasks import Tasks
+from .utils import python_call
 
 
 log = logging.getLogger(__name__)
 
 loads = toml.loads
 """Standard `toml` parser."""
-
-PYTHON_CALL = "python -c 'import sys; import {pkg} as _1; sys.exit(_1.{fn})'"
-"""Format for a python call."""
 
 
 def parse_workspace(config: Config, key: str = "tool.rye.workspace") -> Membership:
@@ -148,27 +146,3 @@ def parse_tasks(config: Config, key: str = "tool.rye.scripts") -> Tasks:
         tasks[task.name] = task
 
     return tasks
-
-
-def python_call(call: str) -> str:
-    """Return a formatted `call` string.
-
-    See: https://rye.astral.sh/guide/pyproject/#call
-
-    >>> python_call("http.server")
-    'python -m http.server'
-
-    >>> python_call("builtins:help") == PYTHON_CALL.format(pkg="builtins", fn="help()")
-    True
-
-    >>> python_call("builtins:print('Hello World!')") == PYTHON_CALL.format(
-    ...     pkg="builtins", fn="print('Hello World!')")
-    True
-    """
-    if ":" not in call:
-        return f"python -m {call}"
-
-    pkg, fn = call.split(":", 1)
-    if not fn.endswith(")"):
-        fn = f"{fn}()"
-    return PYTHON_CALL.format(pkg=pkg, fn=fn)

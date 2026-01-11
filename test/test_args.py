@@ -9,6 +9,7 @@ import pytest
 
 # pkg
 from ds.args import Args
+from ds.exceptions import ConfigError
 from ds.symbols import ARG_BEG
 from ds.symbols import ARG_END
 from ds.symbols import GLOB_ALL
@@ -37,9 +38,11 @@ def test_parse_options() -> None:
     assert Args.parse(split("--cwd foo")) == Args(
         list_=True, cwd=Path("foo").resolve(), task=Task(cwd=Path("foo").resolve())
     )
-    assert Args.parse(split("-f foo")) == Args(list_=True, file=Path("foo").resolve())
-    assert Args.parse(split("--file foo")) == Args(
-        list_=True, file=Path("foo").resolve()
+    assert Args.parse(split("-f pyproject.toml")) == Args(
+        list_=True, file=Path("pyproject.toml").resolve()
+    )
+    assert Args.parse(split("--file pyproject.toml")) == Args(
+        list_=True, file=Path("pyproject.toml").resolve()
     )
 
     assert Args.parse(split("--env-file ./examples/formats/.env")) == Args(
@@ -141,6 +144,14 @@ def test_missing_option_argument() -> None:
         Args.parse(split("-e"))
     with pytest.raises(ValueError, match="'-w' requires an argument"):
         Args.parse(split("-w"))
+
+
+def test_file_not_found() -> None:
+    """Raise ConfigError when --file path doesn't exist (issue #117)."""
+    with pytest.raises(ConfigError, match="File not found"):
+        Args.parse(split("--file nonexistent_file.toml"))
+    with pytest.raises(ConfigError, match="File not found"):
+        Args.parse(split("-f nonexistent_file.toml"))
 
 
 def test_as_argv() -> None:

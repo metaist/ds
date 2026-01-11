@@ -19,9 +19,10 @@ from ..symbols import TASK_COMPOSITE
 from ..symbols import TASK_DISABLED
 from ..symbols import TASK_KEEP_GOING
 from ..symbols import TASK_SHARED
+from ..tasks import parse_composite
 from ..tasks import Task
 from ..tasks import Tasks
-from .pyproject_rye import python_call
+from .utils import python_call
 
 
 log = logging.getLogger(__name__)
@@ -140,28 +141,6 @@ def rename_aliases(
 
         item[dest] = item.pop(src)
     return item
-
-
-def parse_composite(task: Task, item: list[str]) -> Task:
-    """Parse composite task."""
-    depends = []
-    for step in item:
-        keep_going, cmd = starts(step, TASK_KEEP_GOING)
-        depends.append(
-            replace(
-                task,
-                name=TASK_COMPOSITE,
-                cmd=cmd,
-                keep_going=keep_going,
-                # Ensure new mutable objects to avoid shallow copy issues
-                depends=[],
-                args=[],
-                env={},
-                _env={},
-            )
-        )
-    task.depends = depends
-    return task
 
 
 def parse_task(
