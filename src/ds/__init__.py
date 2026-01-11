@@ -8,8 +8,6 @@
 # std
 from __future__ import annotations
 from contextlib import contextmanager
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version
 from os import environ as ENV
 from pathlib import Path
 from shlex import join

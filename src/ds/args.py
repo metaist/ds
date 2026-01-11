@@ -328,7 +328,12 @@ class Args:
         args.task.env_file = args.env_file
         args.task.parallel = args.parallel
 
-        if not args.help and not args.version and not args.tree and not args.task.depends:
+        if (
+            not args.help
+            and not args.version
+            and not args.tree
+            and not args.task.depends
+        ):
             # default action
             args.list_ = True
 
