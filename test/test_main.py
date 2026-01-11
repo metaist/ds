@@ -43,6 +43,12 @@ def test_list() -> None:
         main(split(f"ds {arg}"))
 
 
+def test_tree() -> None:
+    """--tree shows task dependency tree"""
+    main(split("ds -t"))
+    main(split("ds --tree"))
+
+
 def test_pre_post() -> None:
     """--pre / --post run pre/post tasks"""
     main(split("ds --pre --post -f examples/formats/pyproject-pdm.toml echo"))

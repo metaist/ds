@@ -3,6 +3,7 @@
 # std
 from pathlib import Path
 import os
+import tempfile
 
 # lib
 import pytest
@@ -10,9 +11,11 @@ import pytest
 # pkg
 from ds.args import Args
 from ds.env import TempEnv
+from ds.runner import find_project
 from ds.runner import Runner
 from ds.runner import venv_activate_cmd
 from ds.tasks import Task
+from ds import pushd
 
 
 def test_venv_activate() -> None:
@@ -62,3 +65,20 @@ def test_run_env_file() -> None:
         args = Args.parse(["--env-file", ".env", "echo $IN_DOT_ENV"])
         runner = Runner(args, {})
         runner.run(args.task, Task())
+
+
+def test_node_modules_already_in_path() -> None:
+    """Skip adding node_modules/.bin if already in PATH."""
+    with tempfile.TemporaryDirectory() as name:
+        root = Path(name)
+        node_bin = root / "node_modules" / ".bin"
+        node_bin.mkdir(parents=True, exist_ok=True)
+
+        # Set PATH to already include node_modules/.bin
+        with TempEnv(DS_INTERNAL__FILE=None, VIRTUAL_ENV=None, PATH=str(node_bin)):
+            with pushd(root):
+                args = Args()
+                task = Task(cmd="echo hello")
+                result = find_project(args, task)
+                # node_bin should not be added again since it's already in PATH
+                assert "_env" not in result.__dict__ or "PATH" not in result._env

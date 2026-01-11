@@ -242,6 +242,13 @@ def test_task_env() -> None:
     assert parse_tasks(Config(PATH, data)) == expected
 
 
+def test_task_env_invalid_type() -> None:
+    """`env` must be a dict (issue #100)."""
+    data = nest(KEY, {"a": {"cmd": "echo", "env": "invalid"}})
+    with pytest.raises(TypeError, match="'env' must be a dict"):
+        parse_tasks(Config(PATH, data))
+
+
 def test_task_env_file() -> None:
     """`env_file` option."""
     path = EXAMPLE_FORMATS / "pyproject.toml"

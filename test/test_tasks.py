@@ -56,6 +56,35 @@ def test_print_tree() -> None:
     print_tree(Path(), tasks)
 
 
+def test_print_tree_with_help() -> None:
+    """Print task tree with task help text."""
+    tasks: Tasks = {
+        "build": parse_task({"cmd": "echo build", "help": "Build the project"}),
+    }
+    print_tree(Path(), tasks)
+
+
+def test_print_tree_non_composite_dep() -> None:
+    """Print task tree with non-composite dependencies."""
+    # Create a task with a named (non-composite) dependency
+    dep_task = Task(name="dep", cmd="echo dep")
+    main_task = Task(name="main", depends=[dep_task])
+    tasks: Tasks = {
+        "dep": dep_task,
+        "main": main_task,
+    }
+    print_tree(Path(), tasks)
+
+
+def test_print_tree_empty_cmd() -> None:
+    """Print task tree with empty command in composite."""
+    # Composite task with empty cmd
+    dep = Task(name="<composite>", cmd="")
+    main_task = Task(name="main", depends=[dep])
+    tasks: Tasks = {"main": main_task}
+    print_tree(Path(), tasks)
+
+
 def test_as_args() -> None:
     """Render task as args."""
     assert Task().as_args() == "ds"
