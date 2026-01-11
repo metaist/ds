@@ -20,6 +20,15 @@ from .symbols import TREE_INDENT
 from .symbols import TREE_PAR
 from .symbols import TREE_SEQ
 
+__all__ = [
+    "Task",
+    "Tasks",
+    "CycleError",
+    "get_original_cwd",
+    "check_cycles",
+    "print_tasks",
+    "print_tree",
+]
 
 log = logging.getLogger(__name__)
 

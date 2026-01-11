@@ -33,6 +33,17 @@ from .tasks import CycleError
 from .tasks import print_tasks
 from .tasks import print_tree
 
+__all__ = [
+    "__version__",
+    "__pubdate__",
+    "main",
+    "pushd",
+    "DsError",
+    "ConfigError",
+    "TaskError",
+    "CycleError",
+]
+
 __version__ = "1.3.0"
 __pubdate__ = "2024-08-29T13:08:58Z"
 

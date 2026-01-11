@@ -1,5 +1,7 @@
 """Custom exceptions for ds."""
 
+__all__ = ["DsError", "ConfigError", "TaskError"]
+
 
 class DsError(Exception):
     """Base exception for ds errors."""
