@@ -329,7 +329,18 @@ class Args:
 
                 # other
                 elif arg in ["-e", "--env"]:
-                    key, val = _pop_arg(argv, arg).split("=")
+                    env_arg = _pop_arg(argv, arg)
+                    if "=" not in env_arg:
+                        raise ConfigError(
+                            f"Invalid format for '{arg}': '{env_arg}'. "
+                            "Expected 'KEY=VALUE'"
+                        )
+                    key, val = env_arg.split("=", 1)
+                    if not key:
+                        raise ConfigError(
+                            f"Invalid format for '{arg}': '{env_arg}'. "
+                            "Key cannot be empty"
+                        )
                     args.env[key] = val
                 elif arg in ["-w", "--workspace"]:
                     args.workspace.append(_pop_arg(argv, arg))

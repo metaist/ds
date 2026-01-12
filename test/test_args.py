@@ -183,6 +183,23 @@ def test_file_not_found() -> None:
         Args.parse(split("-f nonexistent_file.toml"))
 
 
+def test_env_format_validation() -> None:
+    """Validate -e/--env argument format (issue #127)."""
+    # Missing '='
+    with pytest.raises(ConfigError, match="Invalid format.*Expected 'KEY=VALUE'"):
+        Args.parse(split("-e VAR"))
+    with pytest.raises(ConfigError, match="Invalid format.*Expected 'KEY=VALUE'"):
+        Args.parse(split("--env VAR"))
+
+    # Empty key
+    with pytest.raises(ConfigError, match="Key cannot be empty"):
+        Args.parse(split("-e =value"))
+
+    # Multiple '=' should work (split on first only)
+    result = Args.parse(split("-e VAR=a=b"))
+    assert result.env == {"VAR": "a=b"}
+
+
 def test_as_argv() -> None:
     """Test converting `Args` to `argv`."""
     assert Args(help=True).as_argv() == ["ds", "--help"]
