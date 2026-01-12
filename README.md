@@ -1,5 +1,7 @@
 # ds: run dev scripts
 
+**One command. Every project.**
+
 <!--
 [[[cog from cog_helpers import * ]]]
 [[[end]]]
@@ -10,7 +12,7 @@
   <a href="https://pypi.org/project/ds-run"><img alt="Supported Python Versions" src="https://img.shields.io/pypi/pyversions/ds-run" /></a>
 </p>
 
-Dev scripts are the short names we give to common tasks and long commands in a software project. `ds` finds and runs dev scripts in your project's configuration file (e.g., `Cargo.toml`, `package.json`, `pyproject.toml`, etc.):
+Stop memorizing different task runners for each language. `ds` runs dev scripts from your project's existing configuration file—whether it's `package.json`, `pyproject.toml`, `Cargo.toml`, or `composer.json`:
 
 ```bash
 pip install ds-run  # or: uv tool install ds-run
