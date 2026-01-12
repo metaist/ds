@@ -91,7 +91,7 @@ def load_config(args: Args) -> Config:
         require_workspace = bool(args.workspace)
         if args.file:
             if not args.file.exists():
-                raise FileNotFoundError(f"Cannot find file: {args.file}")
+                raise FileNotFoundError(f"File not found: {args.file}")
             config = parsers.parse(args.file, require_workspace)
         else:
             # search for a valid config
@@ -103,7 +103,7 @@ def load_config(args: Args) -> Config:
 
         args.cwd = args.cwd or config.path.parent
         if not args.cwd.exists():
-            raise NotADirectoryError(f"Cannot find directory: {args.cwd}")
+            raise NotADirectoryError(f"Directory not found: {args.cwd}")
     except CycleError as e:
         cycle = e.args[1]
         raise ConfigError(f"Task cycle detected: {' => '.join(cycle)}") from e

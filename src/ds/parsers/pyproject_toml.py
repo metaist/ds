@@ -48,7 +48,7 @@ def parse_workspace(config: Config) -> Membership:
             return parser(config, key)
         except (KeyError, NotImplementedError):
             continue
-    raise KeyError(f"Missing workspace key in {config.path}")
+    raise KeyError(f"No workspace configuration found in {config.path}")
 
 
 def parse_tasks(config: Config) -> Tasks:
@@ -59,4 +59,4 @@ def parse_tasks(config: Config) -> Tasks:
             return parser(config, key)
         except (KeyError, NotImplementedError):
             continue
-    raise KeyError(f"Missing tasks key in {config.path}")
+    raise KeyError(f"No tasks configuration found in {config.path}")

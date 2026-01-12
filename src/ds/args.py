@@ -306,12 +306,16 @@ class Args:
                 elif arg == "--output-format":
                     fmt = _pop_arg(argv, arg)
                     if fmt not in ["text", "json"]:
-                        raise ConfigError(f"Invalid output format: {fmt}")
+                        raise ConfigError(
+                            f"Invalid output format '{fmt}': expected 'text' or 'json'"
+                        )
                     args.output_format = fmt
                 elif arg == "--completion":
                     shell = _pop_arg(argv, arg)
                     if shell not in ["bash", "zsh", "fish"]:
-                        raise ConfigError(f"Invalid shell: {shell}")
+                        raise ConfigError(
+                            f"Invalid shell '{shell}': expected 'bash', 'zsh', or 'fish'"
+                        )
                     args.completion = shell
 
                 # path

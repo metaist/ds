@@ -156,7 +156,7 @@ class Runner:
         env_from_file = {}
         if task.env_file:
             if not task.env_file.exists():
-                raise ConfigError(f"Cannot find env-file: {task.env_file}")
+                raise ConfigError(f"Env file not found: {task.env_file}")
 
             log.debug(f"Reading env-file: {task.env_file}")
             env_from_file = read_env(task.env_file.read_text())

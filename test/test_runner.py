@@ -114,7 +114,7 @@ def test_run_env_file() -> None:
     runner.run(args.task, Task())
 
     # non-existent file
-    with pytest.raises(ConfigError, match="Cannot find env-file"):
+    with pytest.raises(ConfigError, match="Env file not found"):
         args = Args.parse(["--env-file", ".env", "echo $IN_DOT_ENV"])
         runner = Runner(args, {})
         runner.run(args.task, Task())
