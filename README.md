@@ -7,6 +7,13 @@
 [[[end]]]
 -->
 <p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-pyproject.toml-3776AB?logo=python&logoColor=white" />
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-package.json-339933?logo=node.js&logoColor=white" />
+  <img alt="Rust" src="https://img.shields.io/badge/Rust-Cargo.toml-000000?logo=rust&logoColor=white" />
+  <img alt="PHP" src="https://img.shields.io/badge/PHP-composer.json-777BB4?logo=php&logoColor=white" />
+  <img alt="Make" src="https://img.shields.io/badge/Make-Makefile-A42E2B?logo=gnu&logoColor=white" />
+</p>
+<p align="center">
   <a href="https://github.com/metaist/ds/actions/workflows/ci.yaml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/metaist/ds/.github/workflows/ci.yaml?branch=main&logo=github"/></a>
   <a href="https://pypi.org/project/ds-run"><img alt="PyPI" src="https://img.shields.io/pypi/v/ds-run.svg?color=blue" /></a>
   <a href="https://pypi.org/project/ds-run"><img alt="Supported Python Versions" src="https://img.shields.io/pypi/pyversions/ds-run" /></a>
