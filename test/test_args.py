@@ -130,6 +130,35 @@ def test_parse_tree() -> None:
     assert Args.parse(split("--tree")) == Args(tree=True)
 
 
+def test_parse_output_format() -> None:
+    """Parse --output-format option."""
+    assert Args.parse(split("--output-format text")) == Args(
+        output_format="text", list_=True
+    )
+    assert Args.parse(split("--output-format json")) == Args(
+        output_format="json", list_=True
+    )
+
+
+def test_parse_output_format_invalid() -> None:
+    """Raise ConfigError for invalid output format."""
+    with pytest.raises(ConfigError, match="Invalid output format"):
+        Args.parse(split("--output-format xml"))
+
+
+def test_parse_completion() -> None:
+    """Parse --completion option."""
+    assert Args.parse(split("--completion bash")) == Args(completion="bash", list_=True)
+    assert Args.parse(split("--completion zsh")) == Args(completion="zsh", list_=True)
+    assert Args.parse(split("--completion fish")) == Args(completion="fish", list_=True)
+
+
+def test_parse_completion_invalid() -> None:
+    """Raise ConfigError for invalid shell."""
+    with pytest.raises(ConfigError, match="Invalid shell"):
+        Args.parse(split("--completion powershell"))
+
+
 def test_missing_option_argument() -> None:
     """Raise ValueError when option argument is missing (issue #98)."""
     with pytest.raises(ValueError, match="'--file' requires an argument"):
@@ -181,3 +210,7 @@ def test_as_argv() -> None:
             ]
         ),
     ).as_argv() == ["ds", "'a b'", "c"]
+
+    # Test output_format and completion in as_argv
+    assert Args(output_format="json").as_argv() == ["ds", "--output-format", "json"]
+    assert Args(completion="bash").as_argv() == ["ds", "--completion", "bash"]

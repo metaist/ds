@@ -10,6 +10,7 @@ from pathlib import Path
 from shlex import join
 from shlex import split
 import graphlib
+import json
 import logging
 
 # pkg
@@ -194,18 +195,61 @@ def check_cycles(tasks: Tasks) -> list[str]:
     return list(graphlib.TopologicalSorter(graph).static_order())
 
 
-def print_tasks(path: Path, tasks: Tasks, task: Task | None = None) -> None:
+def _task_to_dict(task: Task) -> dict[str, object]:
+    """Convert a Task to a JSON-serializable dict."""
+    depends = []
+    for dep in task.depends:
+        if dep.name == TASK_COMPOSITE:
+            depends.append(split(dep.cmd)[0] if dep.cmd else "")
+        else:
+            depends.append(dep.name or dep.cmd)
+    return {
+        "help": task.help,
+        "cmd": task.cmd,
+        "depends": depends,
+        "keep_going": task.keep_going,
+        "parallel": task.parallel,
+        "cwd": str(task.cwd) if task.cwd else None,
+        "env": task.env if task.env else None,
+        "env_file": str(task.env_file) if task.env_file else None,
+    }
+
+
+def print_tasks(
+    path: Path, tasks: Tasks, task: Task | None = None, output_format: str = "text"
+) -> None:
     """Pretty print task names.
 
     Args:
         path: Path to the config file.
         tasks: All tasks from the config.
         task: Optional specific task to visualize. If None, show all tasks.
+        output_format: Output format ("text" or "json").
     """
     path_abs = str(path.resolve())
     path_rel = relpath(path, get_original_cwd())
     location = path_abs if len(path_abs) < len(path_rel) else path_rel
 
+    if output_format == "json":
+        # Determine which tasks to include
+        if task and task.depends:
+            task_names = []
+            for dep in task.depends:
+                if dep.name == TASK_COMPOSITE:
+                    task_names.append(split(dep.cmd)[0] if dep.cmd else "")
+                else:
+                    task_names.append(dep.name or dep.cmd)
+            task_dict = {
+                name: _task_to_dict(tasks[name]) for name in task_names if name in tasks
+            }
+        else:
+            task_dict = {name: _task_to_dict(t) for name, t in tasks.items()}
+
+        output = {"path": location, "tasks": task_dict}
+        print(json.dumps(output, indent=2))
+        return
+
+    # Text format
     if task and task.depends:
         # Show only CLI-specified tasks
         print(f"# Task list from {location}")

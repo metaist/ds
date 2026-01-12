@@ -193,6 +193,12 @@ def main(argv: list[str] | None = None) -> None:
         )
         return
 
+    if args.completion:
+        from .completions import get_completion_script
+
+        print(get_completion_script(args.completion))
+        return
+
     if __pubdate__ == "unpublished":  # pragma: no cover
         # NOTE: When testing we're always using the development version.
         log.warning("You are using a development version of ds.")
@@ -216,7 +222,10 @@ def main(argv: list[str] | None = None) -> None:
             if args.list_:
                 # If tasks specified, show list for those; otherwise show all
                 print_tasks(
-                    config.path, config.tasks, args.task if args.task.depends else None
+                    config.path,
+                    config.tasks,
+                    args.task if args.task.depends else None,
+                    args.output_format,
                 )
                 return
             if args.tree:

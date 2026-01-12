@@ -59,6 +59,18 @@ def test_tree_with_tasks() -> None:
     main(split("ds --tree test"))
 
 
+def test_output_format_json() -> None:
+    """--output-format json outputs JSON"""
+    main(split("ds --list --output-format json"))
+
+
+def test_completion() -> None:
+    """--completion outputs shell completion scripts"""
+    main(split("ds --completion bash"))
+    main(split("ds --completion zsh"))
+    main(split("ds --completion fish"))
+
+
 def test_pre_post() -> None:
     """--pre / --post run pre/post tasks"""
     main(split("ds --pre --post -f examples/formats/pyproject-pdm.toml echo"))

@@ -142,6 +142,43 @@ def test_print_tasks_non_composite_dep() -> None:
     print_tasks(Path(), tasks, cli_task)
 
 
+def test_print_tasks_json() -> None:
+    """Print tasks in JSON format."""
+    tasks: Tasks = {
+        "build": parse_task({"cmd": "echo build", "help": "Build the project"}),
+        "test": parse_task("echo test"),
+    }
+    # All tasks
+    print_tasks(Path(), tasks, output_format="json")
+
+    # Specific tasks
+    cli_task = parse_task(["build"])
+    print_tasks(Path(), tasks, cli_task, output_format="json")
+
+
+def test_print_tasks_json_with_deps() -> None:
+    """Print tasks with dependencies in JSON format."""
+    tasks: Tasks = {
+        "a": parse_task("echo a"),
+        "b": parse_task("echo b"),
+        "all": parse_task(["a", "b"]),
+    }
+    print_tasks(Path(), tasks, output_format="json")
+
+
+def test_print_tasks_json_non_composite_dep() -> None:
+    """Print tasks with non-composite dependencies in JSON format (line 205, 241)."""
+    # Create a task with a named (non-composite) dependency
+    dep_task = Task(name="dep", cmd="echo dep")
+    main_task = Task(name="main", depends=[dep_task])
+    tasks: Tasks = {"dep": dep_task, "main": main_task}
+    # Test all tasks JSON output
+    print_tasks(Path(), tasks, output_format="json")
+    # Test CLI-specified tasks with non-composite dep
+    cli_task = Task(depends=[dep_task])
+    print_tasks(Path(), tasks, cli_task, output_format="json")
+
+
 def test_get_original_cwd() -> None:
     """get_original_cwd() returns a valid path (issue #106)."""
     cwd = get_original_cwd()

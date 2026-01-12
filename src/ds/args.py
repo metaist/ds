@@ -71,6 +71,14 @@ Options:
   -t, --tree
     Show task dependency tree and exit.
 
+  --output-format FORMAT
+    Output format for --list and --tree (default: text).
+    FORMAT is one of: text, json.
+
+  --completion SHELL
+    Output shell completion script and exit.
+    SHELL is one of: bash, zsh, fish.
+
   --no-config
     Do not search for or load a configuration file. Supersedes `--file`.
 
@@ -178,6 +186,12 @@ class Args:
     tree: bool = False
     """Whether to show task dependency tree."""
 
+    output_format: str = "text"
+    """Output format for --list and --tree (text or json)."""
+
+    completion: str | None = None
+    """Shell to generate completion script for (bash, zsh, fish)."""
+
     cwd: Path | None = None
     """Path to run tasks in."""
 
@@ -231,6 +245,10 @@ class Args:
             result.append("--list")
         if self.tree:
             result.append("--tree")
+        if self.output_format != "text":
+            result.extend(["--output-format", self.output_format])
+        if self.completion:
+            result.extend(["--completion", self.completion])
 
         # path
         for option in ["--cwd", "--env-file", "--file"]:
@@ -285,6 +303,16 @@ class Args:
                     args.list_ = True
                 elif arg in ["-t", "--tree"]:
                     args.tree = True
+                elif arg == "--output-format":
+                    fmt = _pop_arg(argv, arg)
+                    if fmt not in ["text", "json"]:
+                        raise ConfigError(f"Invalid output format: {fmt}")
+                    args.output_format = fmt
+                elif arg == "--completion":
+                    shell = _pop_arg(argv, arg)
+                    if shell not in ["bash", "zsh", "fish"]:
+                        raise ConfigError(f"Invalid shell: {shell}")
+                    args.completion = shell
 
                 # path
                 elif arg in ["--cwd", "--env-file", "--file"]:
