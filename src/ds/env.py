@@ -208,6 +208,7 @@ def expand(value: str, store: Mapping[str, str] | None = None) -> str:
     values = store or ENV
 
     def _repl(match: Match[str]) -> str:
+        """Return the expanded variable or original text if not found."""
         value = match.group(0)
         name = match.group(1)
         if name.startswith("{") and name.endswith("}"):

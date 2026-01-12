@@ -30,7 +30,6 @@ def parse_tasks(config: Config, key: str = "recipes") -> Tasks:
 
 def loads(text: str, debug: bool = False) -> NestedDict:
     """Load a `Makefile`."""
-    # debug = True
     log.warning(
         "EXPERIMENTAL: Parsing simplified `Makefile` format. "
         "Only automatic variables ($@, $<, $?, $^, $+) are supported. "
@@ -44,6 +43,7 @@ def loads(text: str, debug: bool = False) -> NestedDict:
     in_recipe = False
 
     def _log(*args: Any, **kwargs: Any) -> None:
+        """Print debug output if debug mode is enabled."""
         if debug:
             print(*args, **kwargs)
 
@@ -66,6 +66,7 @@ def loads(text: str, debug: bool = False) -> NestedDict:
         return line[:pos] if pos >= 0 else line
 
     def _key_val(line: str) -> tuple[str, str]:
+        """Parse a key=value assignment from a line."""
         key, val = "", ""
         line = _strip_comment(line)
         if " = " in line:  # spaces around equals
@@ -194,5 +195,4 @@ def loads(text: str, debug: bool = False) -> NestedDict:
         cmd = cmd.replace("$+", " ".join(deps))  # prerequisites, with duplicates
         rule["shell"] = cmd
 
-    # print(result)
     return {"recipes": result}

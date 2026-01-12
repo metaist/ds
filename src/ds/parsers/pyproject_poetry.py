@@ -12,7 +12,7 @@ from ..searchers import get_key
 from ..symbols import KEY_MISSING
 from ..tasks import Task
 from ..tasks import Tasks
-from .utils import PYTHON_CALL
+from .utils import python_call
 
 
 log = logging.getLogger(__name__)
@@ -72,12 +72,11 @@ def parse_tasks(config: Config, key: str = "tool.poetry.scripts") -> Tasks:
     tasks: Tasks = {}
     for name, script in data.items():
         # NOTE: poetry does not support passing any arguments.
-        pkg, fn = script.split(":", 1)
         tasks[name] = Task(
             origin=config.path,
             origin_key=key,
             name=name,
-            cmd=PYTHON_CALL.format(pkg=pkg, fn=f"{fn}()"),
+            cmd=python_call(script),
         )
 
     return tasks
