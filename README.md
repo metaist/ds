@@ -96,6 +96,26 @@ Currently working on removing all of these (see [#46]):
 - python (3.10+)
 - `tomli` (for python < 3.11)
 
+## Comparison
+
+How does `ds` compare to other task runners?
+
+| Feature | ds | make | just | Task | npm scripts |
+|---------|:--:|:----:|:----:|:----:|:-----------:|
+| Uses existing config | **Yes** | No | No | No | package.json only |
+| Multi-language support | **Yes** | No | No | No | No |
+| Zero migration | **Yes** | No | No | No | Node only |
+| Single binary | **Yes** | Yes | Yes | Yes | No |
+| Cross-platform | Yes | Partial | Yes | Yes | Yes |
+| Parallel execution | Yes | Yes | No | Yes | No* |
+| Composite tasks | Yes | Yes | Yes | Yes | Partial |
+| Environment variables | Yes | Yes | Yes | Yes | Partial |
+| Workspaces/monorepo | Yes | No | No | Yes | Yes |
+
+**Key differentiator**: `ds` reads your _existing_ `package.json`, `pyproject.toml`, `Cargo.toml`, or `composer.json`—no new config file needed.
+
+\* Requires additional packages like `npm-run-all`
+
 ## Limitations
 
 `ds` **does not** strive to be an all-in-one tool for every project and is not a replacement for package management tools or `make`. Here are some things that are not supported or not yet implemented.
@@ -103,7 +123,6 @@ Currently working on removing all of these (see [#46]):
 - Not Supported: [Lifecycle Events](#not-supported-lifecycle-events)
 - Not Supported: [`call` Tasks](#not-supported-call-tasks)
 - Partial Support: [`Makefile` format][#68] (see [#68])
-- In Progress: [Shell Completions][#44] (see [#44])
 - In Progress: [Remove Python Dependency][#46] (see [#46])
 
 ## Security
