@@ -9,10 +9,9 @@ from . import toml
 from ..configs import Config
 from ..configs import Membership
 from ..searchers import get_key
-from ..searchers import glob_paths
-from ..symbols import GLOB_EXCLUDE
 from ..symbols import KEY_MISSING
 from ..tasks import Tasks
+from .utils import parse_workspace_globs
 
 
 log = logging.getLogger(__name__)
@@ -30,27 +29,7 @@ def parse_workspace(config: Config, key: str = "workspace") -> Membership:
     if data is KEY_MISSING:
         raise KeyError(f"Missing '{key}' key in {config.path}")
 
-    members: Membership = {}
-    if "members" in data:
-        members = glob_paths(
-            config.path.parent,
-            data["members"],
-            allow_all=False,
-            allow_excludes=False,
-            allow_new=True,
-            previous=members,
-        )
-
-    if "exclude" in data:
-        members = glob_paths(
-            config.path.parent,
-            [f"{GLOB_EXCLUDE}{p}" for p in data["exclude"]],
-            allow_all=False,
-            allow_excludes=True,
-            allow_new=False,
-            previous=members,
-        )
-    return members
+    return parse_workspace_globs(config, data, allow_inline_excludes=False)
 
 
 def parse_tasks(config: Config, key: str = "workspace.metadata.scripts") -> Tasks:

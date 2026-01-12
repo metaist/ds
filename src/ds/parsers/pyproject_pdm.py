@@ -9,13 +9,13 @@ from ..configs import Config
 from ..configs import Membership
 from . import toml
 from ..searchers import get_key
-from ..searchers import glob_paths
 from ..symbols import KEY_MISSING
 from ..symbols import TASK_COMPOSITE
 from ..symbols import TASK_DISABLED
 from ..symbols import TASK_SHARED
 from ..tasks import Task
 from ..tasks import Tasks
+from .utils import parse_workspace_globs
 from .utils import python_call
 
 
@@ -35,18 +35,7 @@ def parse_workspace(config: Config, key: str = "tool.pdm.workspace") -> Membersh
         raise KeyError(f"Missing '{key}' key in {config.path}")
 
     log.warning("EXPERIMENTAL: pdm does not officially support workspaces")
-    members: Membership = {}
-    if "packages" in data:
-        members = glob_paths(
-            config.path.parent,
-            data["packages"],
-            allow_all=False,
-            allow_excludes=True,
-            allow_new=True,
-            previous=members,
-        )
-
-    return members
+    return parse_workspace_globs(config, data, members_key="packages", exclude_key=None)
 
 
 def parse_tasks(config: Config, key: str = "tool.pdm.scripts") -> Tasks:

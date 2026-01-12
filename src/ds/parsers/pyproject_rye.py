@@ -8,13 +8,13 @@ from ..configs import Config
 from ..configs import Membership
 from . import toml
 from ..searchers import get_key
-from ..searchers import glob_paths
 from ..symbols import KEY_DELIMITER
 from ..symbols import KEY_MISSING
 from ..symbols import TASK_COMPOSITE
 from ..symbols import TASK_DISABLED
 from ..tasks import Task
 from ..tasks import Tasks
+from .utils import parse_workspace_globs
 from .utils import python_call
 
 
@@ -40,26 +40,19 @@ def parse_workspace(config: Config, key: str = "tool.rye.workspace") -> Membersh
     parts[-1] = "virtual"
     is_virtual = bool(get_key(config.data, parts))
 
-    members: Membership = {}
+    initial: Membership = {}
     if not is_virtual:
-        members[config.path.parent.resolve()] = True
+        initial[config.path.parent.resolve()] = True
 
     if "members" in data:
-        members = glob_paths(
-            config.path.parent,
-            data["members"],
-            allow_all=False,
-            allow_excludes=True,  # Non-standard: allow excludes
-            allow_new=True,
-            previous=members,
-        )
-    else:
-        # https://rye.astral.sh/guide/pyproject/#toolryeworkspace
-        # > By default all Python projects discovered in sub folders
-        # will then become members of this workspace [...]
-        for item in config.path.parent.glob("**/pyproject.toml"):
-            members[item.parent] = True
-    return members
+        return parse_workspace_globs(config, data, exclude_key=None, initial=initial)
+
+    # https://rye.astral.sh/guide/pyproject/#toolryeworkspace
+    # > By default all Python projects discovered in sub folders
+    # will then become members of this workspace [...]
+    for item in config.path.parent.glob("**/pyproject.toml"):
+        initial[item.parent] = True
+    return initial
 
 
 def parse_tasks(config: Config, key: str = "tool.rye.scripts") -> Tasks:
