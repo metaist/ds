@@ -6,7 +6,7 @@ This document captures preferences for AI agents (Claude, etc.) working on this 
 
 - Commit frequently as you complete fixes, but **do not push until asked** or until a batch of related changes is ready
 - Pushing to `main` triggers CI, so batch multiple commits before pushing to limit CI runs to a few times per hour
-- Run `ds dev` periodically to make sure there are no lint, type check, or test issues before committing
+- **Always run `ds dev` before committing** to catch lint, type check, and test issues early
 - When ready to push, the user will explicitly ask or approve
 
 ## Commit Messages
