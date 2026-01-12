@@ -22,7 +22,7 @@
 Stop memorizing different task runners for each language. `ds` runs dev scripts from your project's existing configuration file—whether it's `package.json`, `pyproject.toml`, `Cargo.toml`, or `composer.json`:
 
 ```bash
-pip install ds-run  # or: uv tool install ds-run
+uv tool install ds-run  # or: pip install ds-run
 ds --list           # list the tasks
 ds clean lint test  # run multiple tasks
 ds format:*         # run tasks that match a glob
@@ -155,10 +155,10 @@ ds echo '; rm -rf /'  # The semicolon starts a new command!
 `ds` is typically installed at the system-level to make it available across all your projects.
 
 ```bash
-python -m pip install ds-run
-
-# or, if you use uv:
 uv tool install ds-run
+
+# or, if you use pip:
+pip install ds-run
 ```
 
 You can also [download a Cosmopolitan binary](https://github.com/metaist/ds/releases/latest/download/ds) which runs on Windows, macOS, and Linux:
@@ -594,6 +594,57 @@ ds -w '*' test            # short option
 ds -w* test               # even shorter option
 ds -w '*/a' -w '*/b' test # manually select multiple workspaces
 ```
+
+## CI/CD
+
+Use `ds` in your CI pipelines—same commands locally and in CI.
+
+### GitHub Actions
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ds
+        run: uv tool install ds-run  # or: pip install ds-run
+
+      - name: Run tests
+        run: ds test
+```
+
+Or use the [Cosmopolitan binary](https://github.com/metaist/ds/releases) for faster setup:
+
+```yaml
+      - name: Install ds
+        run: |
+          curl -L -o /usr/local/bin/ds https://github.com/metaist/ds/releases/latest/download/ds
+          chmod +x /usr/local/bin/ds
+```
+
+### GitLab CI
+
+```yaml
+test:
+  image: python:3.12
+  script:
+    - uv tool install ds-run  # or: pip install ds-run
+    - ds test
+```
+
+### Other CI Systems
+
+The pattern is the same for any CI system:
+
+1. Install: `uv tool install ds-run` (or `pip install ds-run`)
+2. Run: `ds <task>`
+
+This works with CircleCI, Travis CI, Azure Pipelines, Jenkins, and others.
 
 ## Not Supported: Lifecycle Events
 
