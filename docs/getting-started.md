@@ -93,6 +93,51 @@ If you provide one or more `--workspace` options, `--cwd` is ignored and tasks a
 
     In configuration files, you can use the `cwd` or `working_dir` option to specify a working directory for a _specific_ task and that option will be respected even when using `--workspace` or `--cwd` from the command line.
 
+## Project Dependencies
+
+`ds` automatically detects and activates project dependencies:
+
+**Python Virtual Environments**
+
+If a `.venv` directory exists (or `VIRTUAL_ENV` is set), `ds` automatically activates it before running tasks. You don't need to manually activate your virtual environment.
+
+**Node.js node_modules**
+
+If a `node_modules/.bin` directory exists, `ds` adds it to `PATH` so you can run locally-installed npm binaries directly:
+
+```toml
+[scripts]
+# These work without npx because node_modules/.bin is in PATH
+lint = "eslint src/"
+format = "prettier --write ."
+```
+
+Use `--no-project` to disable this automatic detection.
+
+## Shell Completion
+
+`ds` supports shell completion for bash, zsh, and fish.
+
+**Bash** (add to `~/.bashrc`):
+
+```bash
+eval "$(ds --completion bash)"
+```
+
+**Zsh** (add to `~/.zshrc`):
+
+```zsh
+eval "$(ds --completion zsh)"
+```
+
+**Fish** (add to `~/.config/fish/config.fish`):
+
+```fish
+ds --completion fish | source
+```
+
+After adding the appropriate line and restarting your shell, you can use Tab to complete task names and options.
+
 ## Task Keys
 
 `ds` searches configuration files for [tool-specific keys](https://github.com/metaist/ds/tree/main/examples/formats) to find task definitions which should contain a mapping from [task names](tasks.md#task-names) to [basic tasks](tasks.md#basic-task) or [composite tasks](tasks.md#composite-task).

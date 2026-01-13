@@ -18,7 +18,7 @@
 
 A basic task is just a string of what should be executed in a shell using `subprocess.run`.
 
-- Supports most `pdm`-style and `rye`-style commands ([except `call`](limitations.md#not-supported-call-tasks))
+- Supports most `pdm`-style and `rye`-style commands (including [`call`](limitations.md#call-tasks) for Python)
 - Supports [argument interpolation](#argument-interpolation)
 - Supports [error suppression](#error-suppression)
 
@@ -207,4 +207,134 @@ You can also set environment variables on the command-line, but they apply to _a
 ```bash
 ds -e FLASK_PORT=8080 run
 ds --env-file .env run
+```
+
+## Working Directory
+
+You can set a working directory for a task using `cwd` (or `working_dir`):
+
+```toml
+[scripts]
+# run server from a subdirectory
+server = { cmd = "python -m http.server", cwd = "dist" }
+```
+
+The path is relative to the configuration file location.
+
+## Task Help
+
+You can add a description to tasks using the `help` property. This is shown when running `ds --list`:
+
+```toml
+[scripts]
+test.help = "Run unit tests with coverage"
+test.cmd = "pytest --cov src test"
+
+build.help = "Build the project"
+build.composite = ["clean", "compile"]
+```
+
+## Shared Options
+
+The special task name `_` (underscore) defines options that are applied to all other tasks:
+
+```toml
+[scripts]
+# These options apply to all tasks
+_ = { env = { DEBUG = "1" }, cwd = "src" }
+
+# This task inherits env and cwd from _
+test = "pytest"
+
+# This task also inherits from _, but overrides cwd
+build = { cmd = "make", cwd = "build" }
+```
+
+This is useful for setting common environment variables or working directories across all tasks.
+
+## Parallel Execution
+
+!!! warning "Experimental Feature"
+
+    Parallel execution is experimental. Use `--parallel` on the command line.
+
+Run top-level tasks in parallel:
+
+```bash
+ds --parallel lint test build
+```
+
+You can also enable parallel execution for a task's dependencies:
+
+```toml
+[scripts]
+# Run lint-py and lint-js in parallel
+lint = { composite = ["lint-py", "lint-js"], parallel = true }
+lint-py = "ruff check ."
+lint-js = "eslint src/"
+```
+
+Note: Parallel execution only applies to direct dependencies. Nested dependencies still run sequentially.
+
+## Pre/Post Hooks
+
+!!! warning "Experimental Feature"
+
+    Pre/post hooks are experimental. Use `--pre` and/or `--post` on the command line.
+
+When enabled, `ds` will automatically look for and run tasks with `pre` or `post` prefixes:
+
+```bash
+ds --pre --post build
+# Looks for: prebuild, pre_build, or pre-build (runs first)
+# Then runs: build
+# Then looks for: postbuild, post_build, or post-build (runs last)
+```
+
+```toml
+[scripts]
+prebuild = "echo 'preparing...'"
+build = "make"
+postbuild = "echo 'done!'"
+```
+
+See [Limitations](limitations.md#lifecycle-events) for why this is not enabled by default.
+
+## Task Configuration Reference
+
+All available task properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `cmd` | string or list | Shell command to execute |
+| `shell` | string | Alias for `cmd` |
+| `composite` | list | List of tasks/commands to run in sequence |
+| `chain` | list | Alias for `composite` (rye-style) |
+| `help` | string | Description shown in `--list` |
+| `cwd` | string | Working directory (relative to config file) |
+| `working_dir` | string | Alias for `cwd` |
+| `env` | object | Environment variables for this task |
+| `env_file` | string | Path to `.env` file to load |
+| `env-file` | string | Alias for `env_file` (pdm-style) |
+| `keep_going` | boolean | Continue on error (same as `+` prefix) |
+| `parallel` | boolean | Run dependencies in parallel |
+
+### Environment File Format
+
+The `env_file` option loads variables from a file:
+
+```bash
+# .env file format
+DATABASE_URL=postgres://localhost/mydb
+SECRET_KEY=abc123
+
+# 'export' prefix is also supported
+export API_KEY=xyz789
+
+# Variable expansion works
+BASE_DIR=/app
+LOG_DIR=${BASE_DIR}/logs
+
+# Comments and blank lines are ignored
+# This is a comment
 ```

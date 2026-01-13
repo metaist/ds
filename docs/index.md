@@ -124,7 +124,8 @@ How does `ds` compare to other task runners?
 
     ```bash
     # Example of potentially dangerous input
-    ds echo '; rm -rf /'  # The semicolon starts a new command!
+    ds echo "foo; ls -la /"  # The semicolon starts a new command!
+    # Imagine if that were "rm -rf /" instead...
     ```
 
 `ds` will warn when arguments contain shell metacharacters (``; & | ` $ \ " ' < > ( ) { } * ? # !``), but does not block execution.

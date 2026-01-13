@@ -116,3 +116,87 @@ Options:
 ```
 
 <!--[[[end]]]-->
+
+## Output Examples
+
+### Task List (`--list`)
+
+```bash
+$ ds --list
+# Found 5 tasks in pyproject.toml
+build        Build the project
+clean        Remove generated files
+lint         Run linters
+test         Run unit tests
+all          Run everything
+```
+
+### Dependency Tree (`--tree`)
+
+The `--tree` flag shows task dependencies hierarchically:
+
+```bash
+$ ds --tree
+# Found 5 tasks in pyproject.toml
+build
+clean
+lint
+├─ format
+└─ check
+test
+all
+├─ clean
+├─ lint
+│  ├─ format
+│  └─ check
+└─ test
+```
+
+When tasks run in parallel, the connectors change:
+
+```bash
+$ ds --parallel --tree lint test
+# Task tree from pyproject.toml
+╞═ lint
+│  ├─ format
+│  └─ check
+╘═ test
+```
+
+Connectors:
+- `├─` / `└─` = sequential execution
+- `╞═` / `╘═` = parallel execution
+- `(*)` = already shown (deduplication)
+
+### JSON Output (`--output-format json`)
+
+```bash
+$ ds --list --output-format json
+{
+  "path": "pyproject.toml",
+  "tasks": {
+    "build": {
+      "help": "Build the project",
+      "cmd": "python -m build",
+      "depends": [],
+      "keep_going": false,
+      "parallel": false,
+      "cwd": null,
+      "env": null,
+      "env_file": null
+    },
+    "test": {
+      "help": "Run unit tests",
+      "cmd": "pytest",
+      "depends": [],
+      "keep_going": false,
+      "parallel": false,
+      "cwd": null,
+      "env": null,
+      "env_file": null
+    }
+  }
+}
+```
+
+JSON output is useful for scripting and shell completion.
