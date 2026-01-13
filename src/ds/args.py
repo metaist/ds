@@ -63,7 +63,7 @@ Options:
     File with task and workspace definitions (default: search in parents).
 
     Read more about the configuration file:
-    https://github.com/metaist/ds
+    https://docs.metaist.com/ds/getting-started/
 
   -l, --list
     List available tasks and exit.
@@ -95,7 +95,7 @@ Options:
     The special pattern '*' matches all of the workspaces.
 
     Read more about configuring workspaces:
-    https://github.com/metaist/ds#workspaces
+    https://docs.metaist.com/ds/workspaces/
 
   --pre, --post
     EXPERIMENTAL: Run tasks with pre- and post- names.
@@ -123,7 +123,7 @@ Options:
     <task> was prefixed with a (`+`) in which case execution continues.
 
     Read more about error suppression:
-    https://github.com/metaist/ds#error-suppression
+    https://docs.metaist.com/ds/tasks/#error-suppression
 
 Examples:
 List the available tasks:

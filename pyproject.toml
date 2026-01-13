@@ -7,7 +7,7 @@ module-name = "ds" # for uv build
 
 [project.urls]
 Homepage = "https://github.com/metaist/ds"
-Documentation = "https://metaist.github.io/ds/"
+Documentation = "https://docs.metaist.com/ds/"
 Repository = "https://github.com/metaist/ds.git"
 Changelog = "https://github.com/metaist/ds/blob/main/CHANGELOG.md"
 
@@ -59,7 +59,6 @@ dev = [
   "coverage",
   "ds-run",
   "mypy",
-  "pdoc3",
   "pip", # for mypy
   "pyright",
   "pytest-cov",
@@ -69,6 +68,7 @@ dev = [
   # TODO 2026-10-31 @ py3.10 EOL: remove tomli
   "tomli==2.0.1", # for ty
   "ty",
+  "mkdocs-material>=9.7.1",
 ]
 
 [tool.coverage.report]
@@ -146,20 +146,10 @@ coverage-serve = { shell = "uv run -m http.server 8080", cwd = "htmlcov" }
 coverage = ["coverage-*"]
 
 # Documentation
-docs = ["cog", "pdoc"]
-cog = "cog -r README.md"
-pdoc = """
-  rm -rf docs;
-  mkdir -p docs;
-  pdoc3 \
-    --html \
-    --output-dir docs \
-    --config sort_identifiers=False \
-    --config show_inherited_members=True \
-    --force src/$(basename $(pwd));
-  mv docs/**/* docs/;
-  touch docs/.nojekyll
-"""
+docs = ["cog", "mkdocs-build"]
+cog = "cog -r docs/*.md"
+mkdocs-build = "mkdocs build"
+mkdocs-serve = "mkdocs serve"
 
 # Common
 dev.help = "lint, type-check, and unit tests"

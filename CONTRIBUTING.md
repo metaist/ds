@@ -4,7 +4,7 @@
 
 This project requires these tools to set up and run the project (tested on Linux and macOS):
 
-- [`ds`](https://github.com/metaist/ds#install)
+- [`ds`](https://docs.metaist.com/ds/getting-started/#install)
 - [`gh`](https://github.com/cli/cli#installation)
 - [`git`](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 - [`npx`](https://docs.npmjs.com/cli/commands/npx) (part of [`npm`](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm); used for [`cspell`](https://cspell.org/docs/installation/), [`pyright`](https://github.com/microsoft/pyright))
